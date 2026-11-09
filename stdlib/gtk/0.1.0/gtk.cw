@@ -88,6 +88,9 @@ namespace Gtk {
         int64 _popup(ContextMenu source, void<fp64, fp64> action)
         int64 _valueChanged(Scrollbar source, void<fp64> action)
         int64 _valueChanged(Scale source, void<fp64> action)
+        int64 _valueChanged(SpinButton source, void<fp64> action)
+        int64 _selected(DropDown source, void<int64> action)
+        int64 _changed(TextView source, void<String> action)
         bool _disconnect(int64 token)
         bool _connected(int64 token)
         public:
@@ -135,6 +138,15 @@ namespace Gtk {
         }
         SignalConnection(Scale source, void<fp64> action) {
             _token = _valueChanged(source, action)
+        }
+        SignalConnection(SpinButton source, void<fp64> action) {
+            _token = _valueChanged(source, action)
+        }
+        SignalConnection(DropDown source, void<int64> action) {
+            _token = _selected(source, action)
+        }
+        SignalConnection(TextView source, void<String> action) {
+            _token = _changed(source, action)
         }
         bool disconnect() { return(_disconnect(_token))}
         bool connected() { return(_connected(_token))}
@@ -462,6 +474,191 @@ namespace Gtk {
         // Fraction advanced per pulse(); must be in (0.0, 1.0].
         void setPulseStep(fp64 step) { _setPulseStep(_widgetToken(), step) }
         fp64 pulseStep() { return(_getPulseStep(_widgetToken())) }
+    }
+
+    // Integer or stepped numeric entry with +/- buttons (GtkSpinButton). Prefer
+    // SpinButton for discrete counts and bounded integers; use Scale for
+    // continuous sliders and Scrollbar for pan/zoom extents.
+    class SpinButton : Widget {
+        private:
+        SpinButton _spinSelf()
+        void _configure(int64 token, fp64 value, fp64 lower, fp64 upper, fp64 step)
+        void _setValue(int64 token, fp64 value)
+        fp64 _getValue(int64 token)
+        fp64 _getLower(int64 token)
+        fp64 _getUpper(int64 token)
+        fp64 _getStep(int64 token)
+        public:
+        // Creates a GtkSpinButton. Default range is 0..100 with step 1 until
+        // configure() is called. Digits track the step size (same heuristic as Scale).
+        SpinButton() { super Widget(20, "", 0, 0) }
+        // Sets value, inclusive lower/upper bounds, and step increment.
+        // Page increment is step*10 (matches Scale / gtk_spin_button_new_with_range).
+        void configure(fp64 value, fp64 lower, fp64 upper, fp64 step) {
+            _configure(_widgetToken(), value, lower, upper, step)
+        }
+        // Writes the spin value; GTK clamps to the configured range.
+        void setValue(fp64 value) { _setValue(_widgetToken(), value) }
+        // Current spin value (may be fractional when step < 1).
+        fp64 value() { return(_getValue(_widgetToken())) }
+        // Inclusive lower bound from the last configure().
+        fp64 lower() { return(_getLower(_widgetToken())) }
+        // Inclusive upper bound from the last configure().
+        fp64 upper() { return(_getUpper(_widgetToken())) }
+        // Step increment from the last configure().
+        fp64 step() { return(_getStep(_widgetToken())) }
+        // Invoked when the user (or setValue) changes the value; arg is the new value.
+        SignalConnection onValueChanged(void<fp64> action) {
+            return(SignalConnection(_spinSelf(), action))
+        }
+    }
+
+    // Selectable string list (GtkDropDown) for enums and id pickers. Build the
+    // model with clear()/append() or setChoices(list); read selected()/selectedText().
+    class DropDown : Widget {
+        private:
+        DropDown _dropSelf()
+        void _clear(int64 token)
+        void _append(int64 token, String label)
+        void _setSelected(int64 token, int64 index)
+        int64 _getSelected(int64 token)
+        String _getSelectedText(int64 token)
+        int64 _getSize(int64 token)
+        String _getItem(int64 token, int64 index)
+        public:
+        // Creates an empty GtkDropDown backed by a GtkStringList model.
+        DropDown() { super Widget(21, "", 0, 0) }
+        // Removes every choice; selected() becomes -1 until append/setSelected.
+        void clear() { _clear(_widgetToken()) }
+        // Appends one visible choice string at the end of the model.
+        void append(String label) { _append(_widgetToken(), label) }
+        // Replaces all choices with the given list of String labels (may be empty).
+        // Keeps the prior selectedText when it still appears in the new list;
+        // otherwise selects index 0 when nonempty, or -1 when empty.
+        void setChoices(list labels) {
+            String prior = selectedText()
+            clear()
+            int64 i = 0
+            while (i < labels.length) {
+                append(labels[i])
+                i = i + 1
+            }
+            if (labels.length < 1) {
+                return()
+            }
+            if (prior.length > 0) {
+                int64 found = 0
+                while (found < labels.length) {
+                    String item = labels[found]
+                    if (item.equals(prior)) {
+                        setSelected(found)
+                        return()
+                    }
+                    found = found + 1
+                }
+            }
+            setSelected(0)
+        }
+        // Selects choice at index (0-based). Pass -1 to clear the selection.
+        // Out-of-range nonnegative indices abort.
+        void setSelected(int64 index) { _setSelected(_widgetToken(), index) }
+        // Selected 0-based index, or -1 when nothing is selected / model empty.
+        int64 selected() { return(_getSelected(_widgetToken())) }
+        // Text of the selected choice, or "" when nothing is selected.
+        String selectedText() { return(_getSelectedText(_widgetToken())) }
+        // Number of choices currently in the model.
+        int64 size() { return(_getSize(_widgetToken())) }
+        // Choice text at index; out-of-range indices abort.
+        String item(int64 index) { return(_getItem(_widgetToken(), index)) }
+        // Invoked when the selection changes (user or setSelected); arg is the
+        // new selected index, or -1 when cleared.
+        SignalConnection onSelected(void<int64> action) {
+            return(SignalConnection(_dropSelf(), action))
+        }
+    }
+
+    // Labeled decorative frame around a single child (GtkFrame). Use for grouped
+    // dialog sections; empty label hides the frame title.
+    class Frame : Widget {
+        private:
+        void _setLabel(int64 token, String label)
+        String _getLabel(int64 token)
+        public:
+        // Creates a GtkFrame; label may be empty (no title).
+        Frame(String label) { super Widget(22, label, 0, 0) }
+        // Sets the frame title; empty string clears it.
+        void setLabel(String label) { _setLabel(_widgetToken(), label) }
+        // Current frame title, or "" when unset.
+        String label() { return(_getLabel(_widgetToken())) }
+        // Sets the single child widget (replacing any previous child).
+        void setChild(Widget child) { _attachChild(child) }
+        // Detaches child if it is the current frame child.
+        void remove(Widget child) { _removeChild(child) }
+    }
+
+    // Collapsible section with a clickable header (GtkExpander). Child is shown
+    // only while expanded.
+    class Expander : Widget {
+        private:
+        void _setLabel(int64 token, String label)
+        String _getLabel(int64 token)
+        void _setExpanded(int64 token, bool expanded)
+        bool _getExpanded(int64 token)
+        public:
+        // Creates a GtkExpander; starts collapsed. Label is the header text.
+        Expander(String label) { super Widget(23, label, 0, 0) }
+        // Sets the expander header label.
+        void setLabel(String label) { _setLabel(_widgetToken(), label) }
+        // Current header label.
+        String label() { return(_getLabel(_widgetToken())) }
+        // Expands or collapses the child area.
+        void setExpanded(bool expanded) { _setExpanded(_widgetToken(), expanded) }
+        // True when the child is visible.
+        bool expanded() { return(_getExpanded(_widgetToken())) }
+        // Sets the single collapsible child widget.
+        void setChild(Widget child) { _attachChild(child) }
+        // Detaches child if it is the current expander child.
+        void remove(Widget child) { _removeChild(child) }
+    }
+
+    // Horizontal or vertical dividing line (GtkSeparator) for dialog layout.
+    class Separator : Widget {
+        public:
+        enum { HORIZONTAL = 0, VERTICAL = 1 }
+        // Creates a GtkSeparator; orientation matches Box/Paned/Scale (0/1).
+        Separator(int64 orientation) { super Widget(24, "", orientation, 0) }
+    }
+
+    // Plain multiline text editor (GtkTextView). Prefer TextView for compose /
+    // digest panes; use the sourceview package for syntax-aware editors.
+    class TextView : Widget {
+        private:
+        TextView _textSelf()
+        void _setText(int64 token, String text)
+        String _getText(int64 token)
+        void _editable(int64 token, bool editable)
+        bool _getEditable(int64 token)
+        void _wrap(int64 token, bool wrap)
+        bool _getWrap(int64 token)
+        public:
+        // Creates an empty editable GtkTextView with word wrap enabled.
+        TextView() { super Widget(25, "", 0, 0) }
+        // Replaces the entire buffer contents.
+        void setText(String text) { _setText(_widgetToken(), text) }
+        // Full buffer text (may contain newlines).
+        String text() { return(_getText(_widgetToken())) }
+        // Enables or disables user editing; programmatic setText still works.
+        void setEditable(bool editable) { _editable(_widgetToken(), editable) }
+        // True when the user can type into the view.
+        bool editable() { return(_getEditable(_widgetToken())) }
+        // Word-wraps long lines when true; otherwise scrolls horizontally.
+        void setWrap(bool wrap) { _wrap(_widgetToken(), wrap) }
+        // True when word wrap is enabled.
+        bool wrap() { return(_getWrap(_widgetToken())) }
+        // Invoked when buffer text changes; arg is the full buffer contents.
+        SignalConnection onChanged(void<String> action) {
+            return(SignalConnection(_textSelf(), action))
+        }
     }
 
     class Button : Widget {
@@ -803,6 +1000,9 @@ namespace Gtk {
     ContextMenu ContextMenu._menuSelf() from "cwhip_gtk_self"
     Scrollbar Scrollbar._barSelf() from "cwhip_gtk_self"
     Scale Scale._scaleSelf() from "cwhip_gtk_self"
+    SpinButton SpinButton._spinSelf() from "cwhip_gtk_self"
+    DropDown DropDown._dropSelf() from "cwhip_gtk_self"
+    TextView TextView._textSelf() from "cwhip_gtk_self"
     void Application.initialize() from "cwhip_gtk_initialize"
     String Application.id() from "cwhip_gtk_application_id"
     void Application.run() from "cwhip_gtk_run"
@@ -837,6 +1037,12 @@ namespace Gtk {
         from "cwhip_gtk_scrollbar_signal"
     int64 SignalConnection._valueChanged(Scale source, void<fp64> action)
         from "cwhip_gtk_scale_signal"
+    int64 SignalConnection._valueChanged(SpinButton source, void<fp64> action)
+        from "cwhip_gtk_spin_button_signal"
+    int64 SignalConnection._selected(DropDown source, void<int64> action)
+        from "cwhip_gtk_drop_down_signal"
+    int64 SignalConnection._changed(TextView source, void<String> action)
+        from "cwhip_gtk_text_view_signal"
     void DrawingArea._queueDraw(int64 token) from "cwhip_gtk_drawing_area_queue_draw"
     void DrawingArea._contentSize(int64 token, int64 width, int64 height)
         from "cwhip_gtk_drawing_area_set_content_size"
@@ -895,6 +1101,33 @@ namespace Gtk {
     void ProgressBar._setPulseStep(int64 token, fp64 step)
         from "cwhip_gtk_progress_bar_set_pulse_step"
     fp64 ProgressBar._getPulseStep(int64 token) from "cwhip_gtk_progress_bar_get_pulse_step"
+    void SpinButton._configure(int64 token, fp64 value, fp64 lower, fp64 upper, fp64 step)
+        from "cwhip_gtk_spin_button_configure"
+    void SpinButton._setValue(int64 token, fp64 value) from "cwhip_gtk_spin_button_set_value"
+    fp64 SpinButton._getValue(int64 token) from "cwhip_gtk_spin_button_get_value"
+    fp64 SpinButton._getLower(int64 token) from "cwhip_gtk_spin_button_get_lower"
+    fp64 SpinButton._getUpper(int64 token) from "cwhip_gtk_spin_button_get_upper"
+    fp64 SpinButton._getStep(int64 token) from "cwhip_gtk_spin_button_get_step"
+    void DropDown._clear(int64 token) from "cwhip_gtk_drop_down_clear"
+    void DropDown._append(int64 token, String label) from "cwhip_gtk_drop_down_append"
+    void DropDown._setSelected(int64 token, int64 index) from "cwhip_gtk_drop_down_set_selected"
+    int64 DropDown._getSelected(int64 token) from "cwhip_gtk_drop_down_get_selected"
+    String DropDown._getSelectedText(int64 token) from "cwhip_gtk_drop_down_get_selected_text"
+    int64 DropDown._getSize(int64 token) from "cwhip_gtk_drop_down_get_size"
+    String DropDown._getItem(int64 token, int64 index) from "cwhip_gtk_drop_down_get_item"
+    void Frame._setLabel(int64 token, String label) from "cwhip_gtk_frame_set_label"
+    String Frame._getLabel(int64 token) from "cwhip_gtk_frame_get_label"
+    void Expander._setLabel(int64 token, String label) from "cwhip_gtk_expander_set_label"
+    String Expander._getLabel(int64 token) from "cwhip_gtk_expander_get_label"
+    void Expander._setExpanded(int64 token, bool expanded)
+        from "cwhip_gtk_expander_set_expanded"
+    bool Expander._getExpanded(int64 token) from "cwhip_gtk_expander_get_expanded"
+    void TextView._setText(int64 token, String text) from "cwhip_gtk_text_view_set_text"
+    String TextView._getText(int64 token) from "cwhip_gtk_text_view_get_text"
+    void TextView._editable(int64 token, bool editable) from "cwhip_gtk_text_view_set_editable"
+    bool TextView._getEditable(int64 token) from "cwhip_gtk_text_view_get_editable"
+    void TextView._wrap(int64 token, bool wrap) from "cwhip_gtk_text_view_set_wrap"
+    bool TextView._getWrap(int64 token) from "cwhip_gtk_text_view_get_wrap"
     void Entry._editable(int64 token, bool editable) from "cwhip_gtk_entry_editable"
     void Notebook._closable(int64 token, int64 child, String title, void<> close)
         from "cwhip_gtk_notebook_closable"

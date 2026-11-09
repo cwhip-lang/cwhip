@@ -583,6 +583,202 @@ start {
 }
 """
 
+SPIN = """
+import system
+class UI {
+    Gtk.Window window
+    Gtk.SpinButton spin
+    int64 changes
+    fp64 last
+    void<fp64> changedAction
+    void<> checkAction
+    void require(bool condition, String label) {
+        if (!condition) {
+            System.StandardIO().writeErrorLine(label)
+            System.Process().exit(1)
+        }
+    }
+    void moved(fp64 value) {
+        changes = changes + 1
+        last = value
+    }
+    void check() {
+        require(spin.lower() == 0.0f64 && spin.upper() == 100.0f64, "range")
+        require(spin.step() == 1.0f64, "step")
+        require(spin.value() == 10.0f64, "initial")
+        spin.setValue(42.0f64)
+        require(changes >= 1 && last == 42.0f64, "setValue callback")
+        require(spin.value() == 42.0f64, "getter")
+        spin.configure(3.0f64, -5.0f64, 5.0f64, 0.25f64)
+        require(spin.lower() == -5.0f64 && spin.upper() == 5.0f64, "reconfigure range")
+        require(spin.step() == 0.25f64, "reconfigure step")
+        require(spin.value() == 3.0f64, "reconfigure value")
+        print("PASS spin")
+        Gtk.Application().quit()
+    }
+    void activate() {
+        window = Gtk.Window("SpinButton bindings")
+        window.setDefaultSize(320, 120)
+        Gtk.Box root = Gtk.Box(Gtk.Box.VERTICAL, 8)
+        spin = Gtk.SpinButton()
+        spin.configure(10.0f64, 0.0f64, 100.0f64, 1.0f64)
+        spin.onValueChanged(changedAction)
+        root.append(spin)
+        window.setChild(root)
+        window.present()
+        Gtk.Application().schedule(100, checkAction)
+    }
+}
+start {
+    Gtk.Application app = Gtk.Application("org.cwhip.BindingSpin")
+    UI ui = UI()
+    ui.changedAction = ui.moved
+    ui.checkAction = ui.check
+    app.onActivate(ui.activate)
+    app.run()
+}
+"""
+
+DROPDOWN = """
+import system
+class UI {
+    Gtk.Window window
+    Gtk.DropDown drop
+    int64 changes
+    int64 last
+    void<int64> selectedAction
+    void<> checkAction
+    void require(bool condition, String label) {
+        if (!condition) {
+            System.StandardIO().writeErrorLine(label)
+            System.Process().exit(1)
+        }
+    }
+    void picked(int64 index) {
+        changes = changes + 1
+        last = index
+    }
+    void check() {
+        require(drop.size() == 3, "size")
+        require(drop.selected() == 0, "initial selected")
+        require(drop.selectedText().equals("alpha"), "initial text")
+        require(drop.item(1).equals("beta"), "item")
+        drop.setSelected(2)
+        require(changes >= 1 && last == 2, "setSelected callback")
+        require(drop.selectedText().equals("gamma"), "selected text")
+        drop.clear()
+        require(drop.size() == 0, "cleared size")
+        require(drop.selected() == -1, "cleared selected")
+        drop.append("one")
+        drop.append("two")
+        drop.setSelected(1)
+        require(drop.selectedText().equals("two"), "append select")
+        drop.setChoices(["x", "y"])
+        require(drop.size() == 2 && drop.selected() == 0, "setChoices")
+        require(drop.selectedText().equals("x"), "setChoices text")
+        drop.setSelected(1)
+        drop.setChoices(["x", "y", "z"])
+        require(drop.selected() == 1 && drop.selectedText().equals("y"),
+            "setChoices keeps prior")
+        print("PASS dropdown")
+        Gtk.Application().quit()
+    }
+    void activate() {
+        window = Gtk.Window("DropDown bindings")
+        window.setDefaultSize(320, 120)
+        Gtk.Box root = Gtk.Box(Gtk.Box.VERTICAL, 8)
+        drop = Gtk.DropDown()
+        drop.setChoices(["alpha", "beta", "gamma"])
+        drop.onSelected(selectedAction)
+        root.append(drop)
+        window.setChild(root)
+        window.present()
+        Gtk.Application().schedule(100, checkAction)
+    }
+}
+start {
+    Gtk.Application app = Gtk.Application("org.cwhip.BindingDropDown")
+    UI ui = UI()
+    ui.selectedAction = ui.picked
+    ui.checkAction = ui.check
+    app.onActivate(ui.activate)
+    app.run()
+}
+"""
+
+TEXTVIEW = """
+import system
+class UI {
+    Gtk.Window window
+    Gtk.TextView view
+    Gtk.Frame frame
+    Gtk.Expander expander
+    Gtk.Separator separator
+    int64 changes
+    String last
+    void<String> changedAction
+    void<> checkAction
+    void require(bool condition, String label) {
+        if (!condition) {
+            System.StandardIO().writeErrorLine(label)
+            System.Process().exit(1)
+        }
+    }
+    void edited(String text) {
+        changes = changes + 1
+        last = text
+    }
+    void check() {
+        require(view.editable(), "default editable")
+        require(view.wrap(), "default wrap")
+        require(view.text().equals("hello"), "initial text")
+        view.setText("line one\\nline two")
+        require(changes >= 1 && last.equals("line one\\nline two"), "setText callback")
+        require(view.text().equals("line one\\nline two"), "getter")
+        view.setEditable(false)
+        require(!view.editable(), "editable off")
+        view.setWrap(false)
+        require(!view.wrap(), "wrap off")
+        require(frame.label().equals("Section"), "frame label")
+        frame.setLabel("Updated")
+        require(frame.label().equals("Updated"), "frame relabel")
+        require(!expander.expanded(), "expander default")
+        expander.setExpanded(true)
+        require(expander.expanded(), "expander open")
+        require(expander.label().equals("More"), "expander label")
+        print("PASS textview")
+        Gtk.Application().quit()
+    }
+    void activate() {
+        window = Gtk.Window("TextView bindings")
+        window.setDefaultSize(360, 220)
+        Gtk.Box root = Gtk.Box(Gtk.Box.VERTICAL, 8)
+        view = Gtk.TextView()
+        view.setText("hello")
+        view.onChanged(changedAction)
+        frame = Gtk.Frame("Section")
+        expander = Gtk.Expander("More")
+        expander.setChild(Gtk.Label("inside"))
+        frame.setChild(expander)
+        separator = Gtk.Separator(Gtk.Separator.HORIZONTAL)
+        root.append(view)
+        root.append(frame)
+        root.append(separator)
+        window.setChild(root)
+        window.present()
+        Gtk.Application().schedule(100, checkAction)
+    }
+}
+start {
+    Gtk.Application app = Gtk.Application("org.cwhip.BindingTextView")
+    UI ui = UI()
+    ui.changedAction = ui.edited
+    ui.checkAction = ui.check
+    app.onActivate(ui.activate)
+    app.run()
+}
+"""
+
 LIFETIME = """
 import system
 class Relay {
@@ -697,6 +893,9 @@ def main():
              ("drawing", DRAWING, "PASS drawing"),
              ("scale", SCALE, "PASS scale"),
              ("progress", PROGRESS, "PASS progress"),
+             ("spin", SPIN, "PASS spin"),
+             ("dropdown", DROPDOWN, "PASS dropdown"),
+             ("textview", TEXTVIEW, "PASS textview"),
              ("lifetime", LIFETIME, "PASS lifetime")]
     if args.sourceview:
         cases.append(("sourceview-editing", SHORTCUT_NATIVE + SOURCEVIEW_EDITING,

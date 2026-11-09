@@ -25,13 +25,20 @@ proof of concept and compiler-testing tool, not a production IDE/debugger.
 
 ## Implemented milestones
 
+### Unreleased: GTK DropDown, SpinButton, and dialog layout widgets
+
+`Gtk.DropDown` (string list picker: `clear` / `append` / `setChoices`,
+`selected` / `selectedText`, `onSelected`), `Gtk.SpinButton` (bounded numeric
+entry mirroring Scale configure/get/set/`onValueChanged`), plus `Frame`,
+`Expander`, `Separator`, and plain multiline `TextView` for denser dialogs.
+See `doc/GTK.md` and `examples/{dropdown,spin,textview}.cw`.
+
 ### Unreleased: GTK ProgressBar
 
 `Gtk.ProgressBar` for determinate fraction (0..1) and indeterminate `pulse`
 feedback: `setFraction` / `fraction`, optional `setText` / `setShowText`,
 `pulse` / `setPulseStep` / `pulseStep`, horizontal and vertical orientation.
-See `doc/GTK.md` and `examples/progress.cw`. `SpinButton` / `DropDown` remain
-deferred.
+See `doc/GTK.md` and `examples/progress.cw`.
 
 ### Unreleased: GTK Scale sliders
 

@@ -3,7 +3,8 @@
 The optional `gtk` package (`0.1.0`, `import gtk`, namespace `Gtk`) provides a
 compact GTK-aligned interface: `Application`, `Widget`, `Window`, `Box`, `Label`,
 `Button`, `Entry`, `CheckButton`, `ScrolledWindow`, `Notebook`, `MenuBar`,
-`ContextMenu`, `Scrollbar`, `Scale`, `ProgressBar`, `FileDialog`, `Paned`,
+`ContextMenu`, `Scrollbar`, `Scale`, `ProgressBar`, `SpinButton`, `DropDown`,
+`Frame`, `Expander`, `Separator`, `TextView`, `FileDialog`, `Paned`,
 `DrawingArea`, `Tree`, `DirectoryScan`, and `SignalConnection`, plus the optional
 `sourceview` package. It is not a complete GTK binding or a generic GUI
 framework.
@@ -115,6 +116,12 @@ The first-release additions are:
 | `Scrollbar` | `Scrollbar(int64 orientation)` with `HORIZONTAL` / `VERTICAL`, `configure(value, lower, upper, step, page, pageSize)`, `setValue` / `value` / `lower` / `upper` / `pageSize`, `onValueChanged(void<fp64>)` |
 | `Scale` | `Scale(int64 orientation)` with `HORIZONTAL` / `VERTICAL`, `configure(value, lower, upper, step)`, `setValue` / `value` / `lower` / `upper` / `step`, `onValueChanged(void<fp64>)` |
 | `ProgressBar` | `ProgressBar(int64 orientation)` with `HORIZONTAL` / `VERTICAL`, `setFraction` / `fraction` (0..1), `setText` / `text`, `setShowText` / `showText`, `pulse`, `setPulseStep` / `pulseStep` |
+| `SpinButton` | `SpinButton()`, `configure(value, lower, upper, step)`, `setValue` / `value` / `lower` / `upper` / `step`, `onValueChanged(void<fp64>)` |
+| `DropDown` | `DropDown()`, `clear`, `append(String)`, `setChoices(list)`, `setSelected` / `selected` / `selectedText` / `size` / `item`, `onSelected(void<int64>)` |
+| `Frame` | `Frame(String label)`, `setLabel` / `label`, `setChild` / `remove` |
+| `Expander` | `Expander(String label)`, `setLabel` / `label`, `setExpanded` / `expanded`, `setChild` / `remove` |
+| `Separator` | `Separator(int64 orientation)` with `HORIZONTAL` / `VERTICAL` |
+| `TextView` | `TextView()`, `setText` / `text`, `setEditable` / `editable`, `setWrap` / `wrap`, `onChanged(void<String>)` |
 | `Label` | `Label(String text)`, `setText(String)`, `String text()` |
 | `Button` | `Button(String label)`, `setLabel(String)`, `String label()`, `setIconName(String)`, `onClicked(void<>)` (focus-on-click off; non-focusable buttons activate on press) |
 | `Entry` | `Entry(String text)`, `setText(String)`, `String text()`, `focus()`, `setEditable(bool)`, `onChanged(void<String>)` |
@@ -393,8 +400,98 @@ unknown.pulse()
 
 See `examples/progress.cw`.
 
-**Deferred (not in this release):** dashed strokes, draw-text helpers,
-`SpinButton`, and `DropDown`.
+### SpinButton
+
+`SpinButton` is a `GtkSpinButton` for bounded integer or stepped numeric entry
+(counts, 0–100 percents, discrete ranges). Prefer it over free-text `Entry` when
+the value has hard bounds; prefer `Scale` when a continuous slider is the better
+control. Default range is `0..100` with step `1` until `configure` runs. Page
+increment is `step * 10`. Display digits track the step size (same heuristic as
+`Scale`).
+
+```text
+SpinButton()
+void configure(fp64 value, fp64 lower, fp64 upper, fp64 step)
+void setValue(fp64 value)
+fp64 value() / lower() / upper() / step()
+SignalConnection onValueChanged(void<fp64> action)
+```
+
+```cwhip
+Gtk.SpinButton hulls = Gtk.SpinButton()
+hulls.configure(1.0f64, 1.0f64, 12.0f64, 1.0f64)
+hulls.onValueChanged(hullsChanged)
+```
+
+See `examples/spin.cw`.
+
+### DropDown
+
+`DropDown` is a `GtkDropDown` over a `GtkStringList` for enum and id pickers.
+Build the model with `clear`/`append` or `setChoices(list)` (a list of
+`String`). `selected()` is the 0-based index, or `-1` when nothing is selected;
+`selectedText()` returns the choice string (or `""`). `setSelected(-1)` clears
+the selection. `onSelected` reports the new index (including `-1`).
+
+```text
+DropDown()
+void clear() / append(String) / setChoices(list)
+void setSelected(int64 index) / int64 selected()
+String selectedText() / int64 size() / String item(int64 index)
+SignalConnection onSelected(void<int64> action)
+```
+
+```cwhip
+Gtk.DropDown role = Gtk.DropDown()
+role.setChoices(["neutral", "conqueror", "pirate", "trader", "hermit"])
+role.setSelected(0)
+role.onSelected(rolePicked)
+```
+
+See `examples/dropdown.cw`.
+
+### Frame, Expander, Separator
+
+Layout helpers for denser dialogs:
+
+- `Frame(String label)` — decorative titled border around one child (`setChild`).
+- `Expander(String label)` — collapsible section (`setExpanded` / `expanded`,
+  `setChild`). Starts collapsed.
+- `Separator(int64 orientation)` — horizontal or vertical divider
+  (`HORIZONTAL` = 0, `VERTICAL` = 1).
+
+```cwhip
+Gtk.Frame group = Gtk.Frame("Budget")
+group.setChild(budgetBox)
+Gtk.Expander more = Gtk.Expander("Advanced")
+more.setExpanded(false)
+more.setChild(advancedBox)
+root.append(Gtk.Separator(Gtk.Separator.HORIZONTAL))
+```
+
+### TextView
+
+`TextView` is a plain multiline `GtkTextView` for compose/digest panes (not
+syntax-aware; use the `sourceview` package for editors). Defaults: editable,
+word wrap on. `onChanged` delivers the full buffer text.
+
+```text
+TextView()
+void setText(String) / String text()
+void setEditable(bool) / bool editable()
+void setWrap(bool) / bool wrap()
+SignalConnection onChanged(void<String> action)
+```
+
+```cwhip
+Gtk.TextView body = Gtk.TextView()
+body.setText("Hello\nworld")
+body.onChanged(bodyChanged)
+```
+
+See `examples/textview.cw`.
+
+**Deferred (not in this release):** dashed strokes and draw-text helpers.
 
 Expansion uses GTK's actual `hexpand`/`vexpand` layout properties. For an editor,
 expand the notebook, scrolled window and source widget vertically and horizontally
@@ -968,4 +1065,6 @@ property coverage are not implemented in this release. `DrawingArea` provides a
 custom-paint surface with click/drag/scroll coordinates, `Scrollbar` /
 `ScrolledWindow` view chrome, and DrawingArea `ContextMenu` hooks; `Scale`
 covers numeric sliders; `ProgressBar` covers determinate fraction and pulse
-feedback. Richer path/text paint APIs, `SpinButton`, and `DropDown` remain open.
+feedback; `SpinButton` / `DropDown` cover bounded numeric entry and string
+pickers; `Frame` / `Expander` / `Separator` / `TextView` cover denser dialog
+layout and plain multiline text. Richer path/text paint APIs remain open.
