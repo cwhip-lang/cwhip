@@ -37,7 +37,7 @@ endif()
 file(GLOB unit_case_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/test_*_cases.cpp")
 add_executable(cwhip_tests test_driver.cpp test_cases.cpp ${unit_case_sources})
-target_link_libraries(cwhip_tests PRIVATE cwhip_frontend)
+target_link_libraries(cwhip_tests PRIVATE cwhip_frontend cwhip_format)
 set_target_properties(cwhip_tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}"
 )
@@ -176,6 +176,9 @@ add_test(NAME cwhip-pkg_cli
 add_test(NAME cwhip_lsp
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_lsp.py"
         --server "$<TARGET_FILE:cwhip-lsp>")
+add_test(NAME cwhip-format_cli
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_cwhip-format.py"
+        --cwhip-format "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}/cwhip-format")
 add_test(NAME cwhip_cli_diagnostics
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_cli_diagnostics.py"
         --compiler "$<TARGET_FILE:cwhip>"

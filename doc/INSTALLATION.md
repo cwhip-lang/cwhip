@@ -99,7 +99,8 @@ it starts `bash -i` with `.project_env`, which:
 - exports `_PROJECT_NAME` (checkout basename), `_PROJECT_LOC` (checkout),
   `_BUILD_TYPE` (lowercase mode), and `CWHIP_BUILD_TYPE` (CMake's cached type);
 - puts the checkout's `bin/` (`cwhip` and `cwhip-pkg`)
-  and `scripts/` first on `PATH`;
+  and `scripts/` first on `PATH`
+  (`bin/cwhip-format` formats one `.cw` file);
 - unsets `CWHIP_HOME`, `CWHIP_RUNTIME_DIR`, `CWHIP_INCLUDE_DIR`,
   `CWHIP_BUILTIN_DIR`, and `CWHIP_STDLIB_MODULE_DIR`, so the staged compiler
   finds its own staged resources instead of an installed or stale tree

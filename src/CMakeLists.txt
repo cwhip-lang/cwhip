@@ -341,14 +341,47 @@ set_target_properties(cwhip PROPERTIES
 set_target_properties(cwhip-lsp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}"
 )
+add_library(cwhip_format STATIC
+    format/FormatLexer.cpp
+    format/UnwrappedLine.cpp
+    format/Style.cpp
+    format/Printer.cpp
+    format/Format.cpp)
+target_link_libraries(cwhip_format PUBLIC cwhip_frontend cwhip_runtime)
+target_compile_definitions(cwhip_format PRIVATE CWHIP_VERSION="${PROJECT_VERSION}")
+set_target_properties(cwhip_format PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CWHIP_LIBRARY_OUTPUT_DIRECTORY}"
+)
+
+# The driver is a Cwhip program. cwhip rejects a static archive, so the link
+# line passes the format objects plus the frontend objects they call.
+add_custom_command(
+    OUTPUT "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}/cwhip-format"
+    COMMAND $<TARGET_FILE:cwhip>
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/cwhip-format.cw"
+            $<TARGET_OBJECTS:cwhip_format>
+            $<TARGET_OBJECTS:cwhip_frontend>
+            -l stdc++
+            -o "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}/cwhip-format"
+    DEPENDS cwhip cwhip_format cwhip_frontend cwhip_resources
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tools/cwhip-format.cw"
+    COMMENT "Building cwhip-format"
+    COMMAND_EXPAND_LISTS
+    VERBATIM)
+add_custom_target(cwhip-format ALL
+    DEPENDS "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}/cwhip-format")
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(cwhip_frontend PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(cwhip PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(cwhip-lsp PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(cwhip_runtime PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(cwhip_format PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 install(TARGETS cwhip cwhip-lsp RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(PROGRAMS "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}/cwhip-format"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}")
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/cwhip-pkg-install"
     DESTINATION "${CMAKE_INSTALL_BINDIR}" RENAME cwhip-pkg)
 install(TARGETS cwhip_runtime
