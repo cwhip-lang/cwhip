@@ -230,10 +230,7 @@ private:
         return true;
     }
 
-    bool clauseStays(TokenType type) const {
-        return type == TokenType::Except || type == TokenType::Finally ||
-               type == TokenType::While;
-    }
+    bool clauseStays(TokenType type) const { return type == TokenType::While; }
 
     void planBraceNewlines(Breaks& breaks) const {
         for (std::size_t index = 0; index < tokens_.size(); ++index) {
@@ -251,10 +248,17 @@ private:
                 if (style_.newlineBeforeElse) breaks.before[next] = true;
                 continue;
             }
+            // except and finally are NewlineBeforeExcept, not NewlineAfterCloseBrace.
+            if (close && next < tokens_.size() &&
+                (tokens_[next].type == TokenType::Except ||
+                 tokens_[next].type == TokenType::Finally)) {
+                if (style_.newlineBeforeExcept) breaks.before[next] = true;
+                continue;
+            }
             if (open && !style_.newlineAfterOpenBrace) continue;
             if (close && !style_.newlineAfterCloseBrace) continue;
             if (next >= tokens_.size()) continue;
-            // except, finally, and do/while's while stay on the brace line.
+            // do/while's while stays on the brace line.
             if (close && clauseStays(tokens_[next].type)) continue;
             // AllowShort* still keeps a one-line block it was asked to keep.
             if (open && oneLineKeptShort(index)) continue;

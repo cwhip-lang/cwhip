@@ -64,13 +64,17 @@ struct Style {
     /// on the '{' line. This does not move '{' onto or off the header.
     bool newlineAfterOpenBrace = true;
     /// The token after '}' starts on the next line. False lets what follows
-    /// stay on the '}' line. except, finally, and do/while stay put. else is
-    /// NewlineBeforeElse.
+    /// stay on the '}' line. do/while stays put. else is NewlineBeforeElse.
+    /// except and finally are NewlineBeforeExcept.
     bool newlineAfterCloseBrace = true;
     /// When true, else that shares the '}' line starts on the next line.
     /// False leaves that else on the '}' line and does not delete a newline.
     /// Independent of NewlineAfterCloseBrace.
     bool newlineBeforeElse = true;
+    /// When true, except and finally that share the '}' line start on the
+    /// next line. False leaves them on the '}' line and does not delete a
+    /// newline. Independent of NewlineAfterCloseBrace and NewlineBeforeElse.
+    bool newlineBeforeExcept = true;
     bool reflowComments = true;
     bool blankLinesAroundLongControlStatement = true;
     int longControlStatementLines = 10;
