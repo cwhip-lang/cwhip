@@ -149,10 +149,12 @@ class FormatCommandTests(unittest.TestCase):
             first.write_text("start {\n    print(1)\n}\n", encoding="utf-8")
             second.write_text("start {\n    print(2)\n}\n", encoding="utf-8")
             before = (first.read_bytes(), second.read_bytes())
+            mtimes = (first.stat().st_mtime_ns, second.stat().st_mtime_ns)
             result = self.run_tool(str(first), str(second))
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, "start {\n    print(1)\n}\nstart {\n    print(2)\n}\n")
             self.assertEqual((first.read_bytes(), second.read_bytes()), before)
+            self.assertEqual((first.stat().st_mtime_ns, second.stat().st_mtime_ns), mtimes)
 
     def test_in_place_rewrites_once(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -163,6 +165,8 @@ class FormatCommandTests(unittest.TestCase):
             self.assertNotEqual(formatted.stdout, "start { print(1) }\n")
             rewritten = self.run_tool("-i", str(path))
             self.assertEqual(rewritten.returncode, 0, rewritten.stderr)
+            self.assertEqual(rewritten.stdout, "")
+            self.assertEqual(rewritten.stderr, "")
             self.assertEqual(path.read_text(encoding="utf-8"), formatted.stdout)
             previous = path.stat().st_mtime_ns
             os.utime(path, ns=(previous, previous))
@@ -171,6 +175,207 @@ class FormatCommandTests(unittest.TestCase):
             self.assertEqual(path.stat().st_mtime_ns, previous)
             self.assertEqual(path.read_text(encoding="utf-8"), formatted.stdout)
             self.assertFalse((Path(str(path) + ".cwhip-format-tmp")).exists())
+
+    def test_stdout_failure_keeps_the_original_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "bad.cw"
+            original = "start {\n    print(1) print(2)\n}\n"
+            path.write_text(original, encoding="utf-8")
+            before = path.stat().st_mtime_ns
+            result = self.run_tool(str(path))
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, original)
+            self.assertIn(str(path), result.stderr)
+            self.assertIn("expected newline after statement", result.stderr)
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            self.assertEqual(path.stat().st_mtime_ns, before)
+
+    def test_missing_and_unreadable_sources_write_nothing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing.cw"
+            absent = self.run_tool(str(missing))
+            self.assertEqual(absent.returncode, 1)
+            self.assertEqual(absent.stdout, "")
+            self.assertIn(str(missing), absent.stderr)
+            self.assertIn("cannot read file", absent.stderr)
+            secret = Path(directory) / "secret.cw"
+            secret.write_text("start { print(1) }\n", encoding="utf-8")
+            os.chmod(secret, 0)
+            try:
+                blocked = self.run_tool(str(secret))
+            finally:
+                os.chmod(secret, 0o644)
+            self.assertEqual(blocked.returncode, 1)
+            self.assertEqual(blocked.stdout, "")
+            self.assertIn(str(secret), blocked.stderr)
+            self.assertIn("cannot read file", blocked.stderr)
+            self.assertEqual(secret.read_text(encoding="utf-8"), "start { print(1) }\n")
+            folder = self.run_tool(directory)
+            self.assertEqual(folder.returncode, 0, folder.stderr)
+            self.assertEqual(folder.stdout, "")
+            self.assertEqual(folder.stderr, "")
+
+    def test_bad_config_reports_on_stderr_and_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / ".cwhip-format"
+            config.write_text("TabWidth: 4\n", encoding="utf-8")
+            path = Path(directory) / "sample.cw"
+            original = "start { print(1) }\n"
+            path.write_text(original, encoding="utf-8")
+            result = subprocess.run(
+                [str(self.args.cwhip_format), str(path)],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=directory,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "")
+            self.assertIn("unknown key: TabWidth", result.stderr)
+            self.assertIn(str(config), result.stderr)
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+
+    def test_a_failed_file_does_not_stop_the_list(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bad = Path(directory) / "bad.cw"
+            good = Path(directory) / "good.cw"
+            later = Path(directory) / "later.cw"
+            missing = Path(directory) / "missing.cw"
+            bad_text = "start {\n    print(1) print(2)\n}\n"
+            good_text = "start { print(1) }\n"
+            later_text = "start { print(2) }\n"
+            bad.write_text(bad_text, encoding="utf-8")
+            good.write_text(good_text, encoding="utf-8")
+            later.write_text(later_text, encoding="utf-8")
+            formatted_good = "start {\n    print(1)\n}\n"
+            formatted_later = "start {\n    print(2)\n}\n"
+            result = self.run_tool(str(bad), str(good), str(missing), str(later))
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, bad_text + formatted_good + formatted_later)
+            self.assertIn(str(bad), result.stderr)
+            self.assertIn(str(missing), result.stderr)
+            self.assertNotIn(str(good), result.stderr)
+            self.assertEqual(bad.read_text(encoding="utf-8"), bad_text)
+            self.assertEqual(good.read_text(encoding="utf-8"), good_text)
+            self.assertEqual(later.read_text(encoding="utf-8"), later_text)
+
+    def test_in_place_rewrites_every_file_and_keeps_going(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first = Path(directory) / "first.cw"
+            second = Path(directory) / "second.cw"
+            first.write_text("start { print(1) }\n", encoding="utf-8")
+            second.write_text("start { print(2) }\n", encoding="utf-8")
+            result = self.run_tool("-i", str(first), str(second))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout, "")
+            self.assertEqual(result.stderr, "")
+            self.assertEqual(first.read_text(encoding="utf-8"), "start {\n    print(1)\n}\n")
+            self.assertEqual(second.read_text(encoding="utf-8"), "start {\n    print(2)\n}\n")
+            self.assertFalse((Path(str(first) + ".cwhip-format-tmp")).exists())
+            self.assertFalse((Path(str(second) + ".cwhip-format-tmp")).exists())
+            bad = Path(directory) / "bad.cw"
+            bad_text = "start {\n    print(1) print(2)\n}\n"
+            bad.write_text(bad_text, encoding="utf-8")
+            third = Path(directory) / "third.cw"
+            third.write_text("start { print(3) }\n", encoding="utf-8")
+            mixed = self.run_tool("-i", str(bad), str(third))
+            self.assertEqual(mixed.returncode, 1)
+            self.assertEqual(mixed.stdout, "")
+            self.assertIn(str(bad), mixed.stderr)
+            self.assertEqual(bad.read_text(encoding="utf-8"), bad_text)
+            self.assertEqual(third.read_text(encoding="utf-8"), "start {\n    print(3)\n}\n")
+
+    def test_help_and_version_stop_before_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing.cw"
+            for flag in ("--help", "-h"):
+                result = subprocess.run(
+                    [str(self.args.cwhip_format), flag, str(missing)],
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                    cwd=directory,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertTrue(
+                    result.stdout.startswith("Usage: cwhip-format [options] <file...>"),
+                    result.stdout)
+                self.assertNotIn("cannot read file", result.stderr)
+                self.assertFalse(missing.exists())
+            version = self.compiler_version()
+            for flag in ("--version", "-V"):
+                result = subprocess.run(
+                    [str(self.args.cwhip_format), flag, str(missing)],
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                    cwd=directory,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, "cwhip-format: v" + version)
+                self.assertNotIn("cannot read file", result.stderr)
+
+    def test_double_dash_takes_a_path_that_starts_with_a_dash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "-sample.cw"
+            original = "start { print(1) }\n"
+            path.write_text(original, encoding="utf-8")
+            bare = subprocess.run(
+                [str(self.args.cwhip_format), "-sample.cw"],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=directory,
+            )
+            self.assertEqual(bare.returncode, 2)
+            self.assertIn("unknown option", bare.stderr)
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            dashed = subprocess.run(
+                [str(self.args.cwhip_format), "--", "-sample.cw"],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=directory,
+            )
+            self.assertEqual(dashed.returncode, 0, dashed.stderr)
+            self.assertEqual(dashed.stdout, "start {\n    print(1)\n}\n")
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+
+    def test_config_comes_from_the_current_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sub = root / "sub"
+            sub.mkdir()
+            (root / ".cwhip-format").write_text("ColumnLimit: 0\n", encoding="utf-8")
+            (sub / ".cwhip-format").write_text("ColumnLimit: 40\n", encoding="utf-8")
+            source = (
+                "start {\n"
+                "    print(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, "
+                "lambda, mu)\n"
+                "}\n"
+            )
+            path = sub / "sample.cw"
+            path.write_text(source, encoding="utf-8")
+            from_parent = subprocess.run(
+                [str(self.args.cwhip_format), str(path)],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=root,
+            )
+            self.assertEqual(from_parent.returncode, 0, from_parent.stderr)
+            self.assertEqual(from_parent.stdout, source)
+            from_file = subprocess.run(
+                [str(self.args.cwhip_format), "sample.cw"],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=sub,
+            )
+            self.assertEqual(from_file.returncode, 0, from_file.stderr)
+            self.assertNotEqual(from_file.stdout, source)
+            self.assertIn("\n            alpha,\n", from_file.stdout)
+            self.assertEqual(path.read_text(encoding="utf-8"), source)
 
     def test_in_place_keeps_a_file_the_walk_cannot_group(self):
         with tempfile.TemporaryDirectory() as directory:
