@@ -231,8 +231,8 @@ private:
     }
 
     bool clauseStays(TokenType type) const {
-        return type == TokenType::Else || type == TokenType::Except ||
-               type == TokenType::Finally || type == TokenType::While;
+        return type == TokenType::Except || type == TokenType::Finally ||
+               type == TokenType::While;
     }
 
     void planBraceNewlines(Breaks& breaks) const {
@@ -245,11 +245,16 @@ private:
                 codePrecedesOnThisLine(index)) {
                 breaks.before[index] = true;
             }
+            const auto next = nextCodeOnSameLine(index);
+            // else is NewlineBeforeElse, not NewlineAfterCloseBrace.
+            if (close && next < tokens_.size() && tokens_[next].type == TokenType::Else) {
+                if (style_.newlineBeforeElse) breaks.before[next] = true;
+                continue;
+            }
             if (open && !style_.newlineAfterOpenBrace) continue;
             if (close && !style_.newlineAfterCloseBrace) continue;
-            const auto next = nextCodeOnSameLine(index);
             if (next >= tokens_.size()) continue;
-            // BraceBinding owns else / except / finally, and do/while's while.
+            // except, finally, and do/while's while stay on the brace line.
             if (close && clauseStays(tokens_[next].type)) continue;
             // AllowShort* still keeps a one-line block it was asked to keep.
             if (open && oneLineKeptShort(index)) continue;
