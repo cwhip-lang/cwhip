@@ -54,7 +54,7 @@ class FormatCommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, "")
         lines = result.stdout.splitlines()
-        self.assertEqual(len(lines), 36)
+        self.assertEqual(len(lines), 38)
         self.assertTrue(result.stdout.endswith("\n"))
         for line in lines:
             self.assertRegex(line, r"^[A-Za-z]+: \S+$")
@@ -63,6 +63,8 @@ class FormatCommandTests(unittest.TestCase):
         self.assertIn("ColumnLimit: 80", lines)
         self.assertIn("UseTab: Never", lines)
         self.assertIn("PreserveBlockCommentNewlines: true", lines)
+        self.assertIn("NewlineAfterOpenBrace: true", lines)
+        self.assertIn("NewlineAfterCloseBrace: true", lines)
         for key in (
             "BreakBeforeBinaryOperators",
             "BraceBinding",

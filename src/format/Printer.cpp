@@ -170,6 +170,7 @@ private:
         breaks.wrap.assign(tokens_.size(), false);
         breaks.attach.assign(tokens_.size(), false);
         planShortBlocks(breaks);
+        planBraceNewlines(breaks);
         planBraces(breaks);
         planWraps(breaks);
     }
@@ -186,8 +187,59 @@ private:
                 if (tokens_[cursor].type == TokenType::Newline) split = true;
             }
             if (split) continue;
-            if (close > index + 1) breaks.before[index + 1] = true;
-            breaks.before[close] = true;
+            // The token after '{' is the body, or '}' when the block is empty.
+            if (style_.newlineAfterOpenBrace && close > index + 1) breaks.before[index + 1] = true;
+            if (close == index + 1) {
+                if (style_.newlineAfterOpenBrace) breaks.before[close] = true;
+            } else {
+                breaks.before[close] = true;
+            }
+        }
+    }
+
+    /// Next code token sharing this token's line, or size() when a newline
+    /// (or the end of the file) already separates them.
+    std::size_t nextCodeOnSameLine(std::size_t index) const {
+        for (std::size_t cursor = index + 1; cursor < tokens_.size(); ++cursor) {
+            const auto type = tokens_[cursor].type;
+            if (type == TokenType::Newline || type == TokenType::End) return tokens_.size();
+            return cursor;
+        }
+        return tokens_.size();
+    }
+
+    bool oneLineKeptShort(std::size_t open) const {
+        if (!note(open).isOpenBrace) return false;
+        if (expandBlock(note(open).blockKind, style_)) return false;
+        const auto close = matchingBrace(tokens_, open);
+        if (close >= tokens_.size()) return false;
+        if (tokens_[open].location.line != tokens_[close].location.line) return false;
+        for (std::size_t cursor = open + 1; cursor < close; ++cursor) {
+            if (tokens_[cursor].type == TokenType::Newline) return false;
+        }
+        return true;
+    }
+
+    bool clauseStays(TokenType type) const {
+        return type == TokenType::Else || type == TokenType::Except ||
+               type == TokenType::Finally || type == TokenType::While;
+    }
+
+    void planBraceNewlines(Breaks& breaks) const {
+        for (std::size_t index = 0; index < tokens_.size(); ++index) {
+            const auto type = tokens_[index].type;
+            const bool open = type == TokenType::LeftBrace;
+            const bool close = type == TokenType::RightBrace;
+            if (!open && !close) continue;
+            if (open && !style_.newlineAfterOpenBrace) continue;
+            if (close && !style_.newlineAfterCloseBrace) continue;
+            const auto next = nextCodeOnSameLine(index);
+            if (next >= tokens_.size()) continue;
+            // BraceBinding owns else / except / finally, and do/while's while.
+            if (close && clauseStays(tokens_[next].type)) continue;
+            // AllowShort* still keeps a one-line block it was asked to keep.
+            if (open && oneLineKeptShort(index)) continue;
+            breaks.before[next] = true;
         }
     }
 

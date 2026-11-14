@@ -102,6 +102,8 @@ const std::unordered_set<std::string>& knownKeys() {
         "AllowShortIfStatementsOnASingleLine",
         "AllowShortLoopsOnASingleLine",
         "AllowShortEnumsOnASingleLine",
+        "NewlineAfterOpenBrace",
+        "NewlineAfterCloseBrace",
         "WrapLongParenthesizedList",
         "BinPackParameters",
         "BinPackArguments",
@@ -140,6 +142,8 @@ bool isBoolKey(const std::string& key) {
         "BreakStringLiterals",
         "AllowShortLoopsOnASingleLine",
         "AllowShortEnumsOnASingleLine",
+        "NewlineAfterOpenBrace",
+        "NewlineAfterCloseBrace",
         "BinPackParameters",
         "BinPackArguments",
         "BlankLinesAroundLongControlStatement",
@@ -202,6 +206,8 @@ bool applyEntry(Style& style, const RawEntry& entry, const std::string& file,
         if (key == "BreakStringLiterals") style.breakStringLiterals = flag;
         else if (key == "AllowShortLoopsOnASingleLine") style.allowShortLoops = flag;
         else if (key == "AllowShortEnumsOnASingleLine") style.allowShortEnums = flag;
+        else if (key == "NewlineAfterOpenBrace") style.newlineAfterOpenBrace = flag;
+        else if (key == "NewlineAfterCloseBrace") style.newlineAfterCloseBrace = flag;
         else if (key == "BlankLinesAroundLongControlStatement")
             style.blankLinesAroundLongControlStatement = flag;
         else if (key == "ReflowComments") style.reflowComments = flag;
@@ -356,6 +362,8 @@ std::string builtinConfigText() {
     emit("AllowShortIfStatementsOnASingleLine", shortIfText(style.allowShortIf));
     emit("AllowShortLoopsOnASingleLine", boolText(style.allowShortLoops));
     emit("AllowShortEnumsOnASingleLine", boolText(style.allowShortEnums));
+    emit("NewlineAfterOpenBrace", boolText(style.newlineAfterOpenBrace));
+    emit("NewlineAfterCloseBrace", boolText(style.newlineAfterCloseBrace));
     emit("WrapLongParenthesizedList", "BreakAfterOpenParen");
     emit("BinPackParameters", "false");
     emit("BinPackArguments", "false");

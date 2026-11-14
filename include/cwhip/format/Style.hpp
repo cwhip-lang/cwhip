@@ -57,6 +57,12 @@ struct Style {
     AllowShortIf allowShortIf = AllowShortIf::Never;
     bool allowShortLoops = false;
     bool allowShortEnums = false;
+    /// The token after '{' starts on the next line. False lets the body stay
+    /// on the '{' line. This does not move '{' onto or off the header.
+    bool newlineAfterOpenBrace = true;
+    /// The token after '}' starts on the next line. False lets what follows
+    /// stay on the '}' line. else, except, finally, and do/while stay put.
+    bool newlineAfterCloseBrace = true;
     bool reflowComments = true;
     bool blankLinesAroundLongControlStatement = true;
     int longControlStatementLines = 10;
