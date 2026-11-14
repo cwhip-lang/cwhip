@@ -18,41 +18,83 @@ const char* const kLongCall =
     "}\n";
 
 const char* const kBuiltinConfig =
+    "# Language of the file. Cwhip is the only accepted value.\n"
     "Language: Cwhip\n"
+    "# Spaces for each indent level.\n"
     "IndentWidth: 4\n"
+    "# Inserted indent uses spaces.\n"
     "UseTab: Never\n"
+    "# Extra spaces past the block indent on a wrapped line.\n"
     "ContinuationIndentWidth: 8\n"
+    "# Do not line up an operand with the operator.\n"
     "AlignOperands: DontAlign\n"
+    "# Preferred line length. 0 means do not wrap.\n"
     "ColumnLimit: 80\n"
+    "# Do not split a string literal across lines.\n"
     "BreakStringLiterals: false\n"
+    "# Allow a function body on one line. None does not.\n"
     "AllowShortFunctionsOnASingleLine: None\n"
+    "# Allow a block on one line. Never does not.\n"
     "AllowShortBlocksOnASingleLine: Never\n"
+    "# Allow an if body on one line. Never does not.\n"
     "AllowShortIfStatementsOnASingleLine: Never\n"
+    "# Allow a loop body on one line.\n"
     "AllowShortLoopsOnASingleLine: false\n"
+    "# Allow an enum body on one line.\n"
     "AllowShortEnumsOnASingleLine: false\n"
+    "# Put { on the next line. False keeps the source break.\n"
+    "NewlineBeforeOpenBrace: false\n"
+    "# Put the token after { on the next line.\n"
+    "NewlineAfterOpenBrace: true\n"
+    "# Put the token after } on the next line.\n"
+    "NewlineAfterCloseBrace: true\n"
+    "# Break a long parenthesized list after the opening parenthesis.\n"
     "WrapLongParenthesizedList: BreakAfterOpenParen\n"
+    "# Pack wrapped parameters onto one line.\n"
     "BinPackParameters: false\n"
+    "# Pack wrapped arguments onto one line.\n"
     "BinPackArguments: false\n"
+    "# Insert a blank line around a long control statement.\n"
     "BlankLinesAroundLongControlStatement: true\n"
+    "# A control statement longer than this many lines is long.\n"
     "LongControlStatementLines: 10\n"
+    "# Reflow hash and slash comments to the column limit.\n"
     "ReflowComments: true\n"
+    "# A newline ends a statement.\n"
     "StatementTerminator: Newline\n"
+    "# Do not insert semicolons.\n"
     "InsertSemicolons: false\n"
+    "# Allow more than one statement on a line.\n"
     "AllowMultipleStatementsPerLine: false\n"
+    "# Wrap only inside parentheses and brackets.\n"
     "WrapOnlyInsideParensAndBrackets: true\n"
+    "# Keep else and its parenthesis on one line.\n"
     "KeepElseParenOnSameLine: true\n"
+    "# Do not write else if.\n"
     "ForbidElseIf: true\n"
+    "# Keep and, or, and not as written.\n"
     "PreserveLogicalSpelling: true\n"
+    "# Keep keyword capitalization as written.\n"
     "PreserveKeywordCase: true\n"
+    "# Keep int, strg, and other type spellings as written.\n"
     "PreserveTypeAliasSpelling: true\n"
+    "# Keep numeric spellings as written.\n"
     "PreserveNumericSpelling: true\n"
+    "# Copy string text without re-escaping.\n"
     "PreserveStringLexeme: true\n"
+    "# Keep parentheses that are in the source.\n"
     "PreserveParentheses: true\n"
+    "# Do not split the .. operator.\n"
     "SplitDotDot: false\n"
+    "# Do not split the >> operator.\n"
     "SplitShiftRight: false\n"
+    "# Do not expand include directives.\n"
     "ExpandIncludes: false\n"
+    "# Do not reorder include directives.\n"
     "ReorderIncludes: false\n"
+    "# Do not format an inline C body.\n"
     "FormatInlineC: false\n"
+    "# Keep newlines inside block comments.\n"
     "PreserveBlockCommentNewlines: true\n";
 
 const char* const kWrappedCall =
@@ -116,6 +158,9 @@ void requireBuiltin(const cwhip::Style& style) {
     require(style.spaceBeforeParens == builtin.spaceBeforeParens, "parens");
     require(style.commentPragmas == builtin.commentPragmas, "pragma");
     require(style.braceBinding == builtin.braceBinding, "brace");
+    require(style.newlineBeforeOpenBrace == builtin.newlineBeforeOpenBrace, "newline before {");
+    require(style.newlineAfterOpenBrace == builtin.newlineAfterOpenBrace, "newline after {");
+    require(style.newlineAfterCloseBrace == builtin.newlineAfterCloseBrace, "newline after }");
 }
 
 void writeFile(const std::filesystem::path& path, const std::string& text) {
@@ -160,6 +205,9 @@ const TestGroupRegistration registration{50, {
          require(style.reflowComments, "reflow");
          require(style.blankLinesAroundLongControlStatement, "long control blanks");
          require(style.longControlStatementLines == 10, "long control length");
+         require(!style.newlineBeforeOpenBrace, "newline before open brace");
+         require(style.newlineAfterOpenBrace, "newline after open brace");
+         require(style.newlineAfterCloseBrace, "newline after close brace");
      }},
     {"builtin config text parses back and omits the open keys", [] {
          const auto text = cwhip::builtinConfigText();
@@ -548,6 +596,206 @@ const TestGroupRegistration registration{50, {
              "    print(0)\n"
              "}\n";
          expectSame(shortIf);
+     }},
+    {"newline after open and close braces", [] {
+         const std::string kept =
+             "start { # note\n"
+             "    print(1)\n"
+             "} # done\n";
+         expectSame(kept);
+         const std::string partial = "start { print(1)\n}\n";
+         require(formatted(partial) == "start {\n    print(1)\n}\n", formatted(partial));
+         const std::string oneLine = "start { print(1) }\n";
+         require(formatted(oneLine) == "start {\n    print(1)\n}\n", "default open");
+         const std::string nested =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    } }\n";
+         const std::string nestedSplit =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(nested) == nestedSplit, formatted(nested));
+         const std::string commentedClose =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    } /* stay */ }\n";
+         const auto commented = formatted(commentedClose);
+         require(commented.find("/* stay */") != std::string::npos, commented);
+         require(commented.find("} /* stay */ }") == std::string::npos, commented);
+         const std::string attached =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    } else (other) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         expectSame(attached);
+         require(formatted("start {\n    do { print(1) } while (ready)\n}\n") ==
+                     "start {\n    do {\n        print(1)\n    } while (ready)\n}\n",
+                 "do/while stays on the close brace");
+         require(formatted("start {\n    try { print(1) } except(Exception) { print(2) }\n}\n") ==
+                     "start {\n"
+                     "    try {\n"
+                     "        print(1)\n"
+                     "    } except(Exception) {\n"
+                     "        print(2)\n"
+                     "    }\n"
+                     "}\n",
+                 "except stays on the close brace");
+         const std::string header =
+             "start {\n"
+             "    if (ready)\n"
+             "    {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         expectSame(header);
+         const std::string onHeader =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         expectSame(onHeader);
+
+         auto openOff = cwhip::builtinStyle();
+         openOff.newlineAfterOpenBrace = false;
+         expectSame(partial, openOff);
+         require(formatted(oneLine, openOff) == "start { print(1)\n}\n", formatted(oneLine, openOff));
+         require(formatted("start {}\n", openOff) == "start {}\n", "empty body stays");
+         const std::string noted = "start { print(1) # note\n}\n";
+         expectSame(noted, openOff);
+         require(formatted(noted).find("# note") != std::string::npos, "hash comment dropped");
+         expectSame(header, openOff);
+         expectSame(onHeader, openOff);
+         expectSame(attached, openOff);
+
+         auto closeOff = cwhip::builtinStyle();
+         closeOff.newlineAfterCloseBrace = false;
+         expectSame(nested, closeOff);
+         expectSame(commentedClose, closeOff);
+         expectSame(attached, closeOff);
+         expectSame(header, closeOff);
+         expectSame(onHeader, closeOff);
+         require(formatted(oneLine, closeOff) == "start {\n    print(1)\n}\n",
+                 "close false still expands a one-line body");
+
+         auto bothOn = cwhip::builtinStyle();
+         bothOn.newlineAfterOpenBrace = true;
+         bothOn.newlineAfterCloseBrace = true;
+         require(formatted(partial, bothOn) == formatted(partial), "explicit true matches default");
+         require(formatted(nested, bothOn) == nestedSplit, "explicit close true");
+
+         const auto commentedStyle = parseStyle(
+             "# NewlineAfterOpenBrace: true\n"
+             "NewlineAfterOpenBrace: false # body may stay\n"
+             "NewlineAfterCloseBrace: false\n");
+         require(commentedStyle.ok, commentedStyle.diagnostic);
+         require(!commentedStyle.style.newlineAfterOpenBrace, "open comment");
+         require(!commentedStyle.style.newlineAfterCloseBrace, "close comment");
+         expectSame(partial, commentedStyle.style);
+         expectSame(nested, commentedStyle.style);
+         const auto invalid = parseStyle("NewlineAfterOpenBrace: Never\n");
+         require(!invalid.ok, "Never is not a bool");
+         require(invalid.diagnostic.find("NewlineAfterOpenBrace") != std::string::npos,
+                 invalid.diagnostic);
+
+         auto custom = cwhip::builtinStyle();
+         custom.braceBinding = cwhip::BraceBinding::Custom;
+         custom.newlineAfterCloseBrace = false;
+         const std::string splitHeader =
+             "start {\n"
+             "    if (ready)\n"
+             "    {\n"
+             "        print(1)\n"
+             "    } else (other) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         const auto bound = formatted(splitHeader, custom);
+         require(bound.find("    if (ready) {\n") != std::string::npos, bound);
+         require(bound.find("    }\n    else (other) {\n") != std::string::npos, bound);
+     }},
+    {"newline before open brace leaves the source break", [] {
+         const std::string attached = "start {\n    if (ready) { print(1) }\n}\n";
+         const std::string expanded =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(attached) == expanded, formatted(attached));
+         auto off = cwhip::builtinStyle();
+         off.newlineBeforeOpenBrace = false;
+         require(formatted(attached, off) == expanded, "false keeps { on the header");
+         const std::string allman =
+             "start {\n"
+             "    if (ready) # note\n"
+             "    {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         expectSame(allman);
+         expectSame(allman, off);
+         auto on = cwhip::builtinStyle();
+         on.newlineBeforeOpenBrace = true;
+         const std::string allmanMoved =
+             "start\n"
+             "{\n"
+             "    if (ready) # note\n"
+             "    {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(allman, on) == allmanMoved, formatted(allman, on));
+         const std::string moved =
+             "start\n"
+             "{\n"
+             "    if (ready)\n"
+             "    {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(attached, on) == moved, formatted(attached, on));
+         const std::string noted = "start {\n    if (ready) { # note\n        print(1)\n    }\n}\n";
+         const auto withNote = formatted(noted, on);
+         require(withNote.find("# note") != std::string::npos, withNote);
+         require(withNote.find("    if (ready)\n") != std::string::npos, withNote);
+         const std::string klass =
+             "class Box {\n"
+             "    int64 value() { return(1) }\n"
+             "    destroy { return }\n"
+             "    enum { A, B }\n"
+             "}\n";
+         require(formatted(klass, on) == formatted(klass), formatted(klass, on));
+         require(formatted(klass, on).find("class Box {") != std::string::npos, "class brace moved");
+         require(formatted(klass, on).find("value() {") != std::string::npos, "method brace moved");
+         require(formatted(klass, on).find("destroy {") != std::string::npos, "destroy brace moved");
+         require(formatted(klass, on).find("enum {") != std::string::npos, "enum brace moved");
+         const std::string method = "int64 Box.value() { return(1) }\n";
+         require(formatted(method) == "int64 Box.value() {\n    return(1)\n}\n",
+                 formatted(method));
+         require(formatted(method, on) == "int64 Box.value()\n{\n    return(1)\n}\n",
+                 formatted(method, on));
+         const std::string space = "namespace Foo { class Bar { int64 value } }\n";
+         const auto names = formatted(space, on);
+         require(names.find("namespace Foo\n{\n") != std::string::npos, names);
+         require(names.find("class Bar {") != std::string::npos, names);
+         const auto commented = parseStyle(
+             "# NewlineBeforeOpenBrace: false\n"
+             "NewlineBeforeOpenBrace: true # next line\n");
+         require(commented.ok, commented.diagnostic);
+         require(commented.style.newlineBeforeOpenBrace, "hash comment hid the key");
+         const auto invalid = parseStyle("NewlineBeforeOpenBrace: Never\n");
+         require(!invalid.ok, "Never is not a bool");
+         require(invalid.diagnostic.find("NewlineBeforeOpenBrace") != std::string::npos,
+                 invalid.diagnostic);
      }},
 }};
 

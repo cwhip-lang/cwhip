@@ -57,6 +57,15 @@ struct Style {
     AllowShortIf allowShortIf = AllowShortIf::Never;
     bool allowShortLoops = false;
     bool allowShortEnums = false;
+    /// When true, '{' starts on the next line where that newline parses.
+    /// False leaves '{' where the source put it and does not delete a newline.
+    bool newlineBeforeOpenBrace = false;
+    /// The token after '{' starts on the next line. False lets the body stay
+    /// on the '{' line. This does not move '{' onto or off the header.
+    bool newlineAfterOpenBrace = true;
+    /// The token after '}' starts on the next line. False lets what follows
+    /// stay on the '}' line. else, except, finally, and do/while stay put.
+    bool newlineAfterCloseBrace = true;
     bool reflowComments = true;
     bool blankLinesAroundLongControlStatement = true;
     int longControlStatementLines = 10;
@@ -68,8 +77,9 @@ struct Style {
 
 Style builtinStyle();
 
-/// Key: Value text of the built-in defaults. The four open keys are omitted.
-/// Parsing the text yields builtinStyle().
+/// Key: Value text of the built-in defaults. Each key has a # comment on the
+/// line above it. The four open keys are omitted. Parsing the text yields
+/// builtinStyle().
 std::string builtinConfigText();
 
 struct StyleLoadResult {
