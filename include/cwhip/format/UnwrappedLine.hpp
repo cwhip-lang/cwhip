@@ -48,6 +48,9 @@ struct TokenAnnotation {
     bool isFinally = false;
     bool isOpenBrace = false;
     bool isCloseBrace = false;
+    /// A newline before this '{' parses. class, enum, destroy, and an
+    /// in-class method do not.
+    bool openBraceMayBreak = false;
 };
 
 struct UnwrappedLine {

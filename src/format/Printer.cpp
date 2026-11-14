@@ -197,6 +197,16 @@ private:
         }
     }
 
+    bool codePrecedesOnThisLine(std::size_t index) const {
+        while (index > 0) {
+            --index;
+            const auto type = tokens_[index].type;
+            if (type == TokenType::Newline || type == TokenType::End) return false;
+            return true;
+        }
+        return false;
+    }
+
     /// Next code token sharing this token's line, or size() when a newline
     /// (or the end of the file) already separates them.
     std::size_t nextCodeOnSameLine(std::size_t index) const {
@@ -231,6 +241,10 @@ private:
             const bool open = type == TokenType::LeftBrace;
             const bool close = type == TokenType::RightBrace;
             if (!open && !close) continue;
+            if (open && style_.newlineBeforeOpenBrace && note(index).openBraceMayBreak &&
+                codePrecedesOnThisLine(index)) {
+                breaks.before[index] = true;
+            }
             if (open && !style_.newlineAfterOpenBrace) continue;
             if (close && !style_.newlineAfterCloseBrace) continue;
             const auto next = nextCodeOnSameLine(index);

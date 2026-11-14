@@ -346,13 +346,14 @@ private:
         if (depth != 0) fail("cannot group statements");
     }
 
-    void parseBlock(BlockKind kind) {
+    void parseBlock(BlockKind kind, bool openBraceMayBreak = false) {
         if (!is(TokenType::LeftBrace)) {
             fail("expected '{'");
             return;
         }
         annotations_[index_].isOpenBrace = true;
         annotations_[index_].blockKind = kind;
+        annotations_[index_].openBraceMayBreak = openBraceMayBreak;
         advance();
         ++level_;
         const auto savedFloor = markFloor_;
@@ -406,7 +407,7 @@ private:
         consumeDelimited(false);
         if (failed_) return;
         skipFree();
-        parseBlock(kind);
+        parseBlock(kind, true);
     }
 
     void parseIf(int newlinesBefore) {
@@ -447,11 +448,11 @@ private:
                 consumeDelimited(false);
                 if (failed_) return;
                 skipFree();
-                parseBlock(BlockKind::If);
+                parseBlock(BlockKind::If, true);
                 continue;
             }
             if (is(TokenType::LeftBrace)) {
-                parseBlock(BlockKind::Generic);
+                parseBlock(BlockKind::Generic, true);
                 look = index_;
                 while (look < tokens_.size() && tokens_[look].type == TokenType::Newline) ++look;
                 if (look < tokens_.size() && tokens_[look].type == TokenType::Else) {
@@ -501,6 +502,7 @@ private:
         }
         annotations_[index_].isOpenBrace = true;
         annotations_[index_].blockKind = BlockKind::Generic;
+        annotations_[index_].openBraceMayBreak = true;
         advance();
         ++level_;
         while (!failed_ && !done() && !is(TokenType::RightBrace)) {
@@ -514,10 +516,10 @@ private:
                 consumeDelimited(true);
                 if (failed_) return;
                 skipFree();
-                parseBlock(BlockKind::Generic);
+                parseBlock(BlockKind::Generic, true);
             } else if (take(TokenType::Default)) {
                 skipFree();
-                parseBlock(BlockKind::Generic);
+                parseBlock(BlockKind::Generic, true);
             } else {
                 fail("expected case or default");
                 return;
@@ -541,7 +543,7 @@ private:
         annotations_[index_].reindent = true;
         advance();
         skipFree();
-        parseBlock(BlockKind::Loop);
+        parseBlock(BlockKind::Loop, true);
         if (failed_) return;
         skipFree();
         if (!take(TokenType::While)) {
@@ -560,7 +562,7 @@ private:
         annotations_[index_].reindent = true;
         advance();
         skipFree();
-        parseBlock(BlockKind::Generic);
+        parseBlock(BlockKind::Generic, true);
         if (failed_) return;
         bool handler = false;
         while (!failed_) {
@@ -592,7 +594,7 @@ private:
                     }
                 }
                 skipFree();
-                parseBlock(BlockKind::Generic);
+                parseBlock(BlockKind::Generic, true);
                 handler = true;
                 continue;
             }
@@ -600,7 +602,7 @@ private:
                 annotations_[index_].isFinally = true;
                 advance();
                 skipFree();
-                parseBlock(BlockKind::Generic);
+                parseBlock(BlockKind::Generic, true);
                 handler = true;
                 break;
             }
@@ -659,7 +661,7 @@ private:
             parseTry();
         } else if (is(TokenType::LeftBrace)) {
             annotations_[index_].reindent = true;
-            parseBlock(BlockKind::Generic);
+            parseBlock(BlockKind::Generic, true);
         } else if (is(TokenType::Return) || is(TokenType::Raise) || is(TokenType::Print) ||
                    is(TokenType::Break) || is(TokenType::Continue)) {
             annotations_[index_].reindent = true;
@@ -772,7 +774,7 @@ private:
             return;
         }
         if (is(TokenType::LeftBrace)) {
-            parseBlock(BlockKind::Function);
+            parseBlock(BlockKind::Function, true);
             return;
         }
         fail("expected a method body or from");
@@ -889,6 +891,7 @@ private:
         }
         annotations_[index_].isOpenBrace = true;
         annotations_[index_].blockKind = BlockKind::Generic;
+        annotations_[index_].openBraceMayBreak = true;
         advance();
         ++level_;
         while (!failed_ && !done() && !is(TokenType::RightBrace)) {
@@ -965,7 +968,7 @@ private:
             annotations_[index_].reindent = true;
             advance();
             skipFree();
-            parseBlock(BlockKind::Generic);
+            parseBlock(BlockKind::Generic, true);
             return;
         }
         if (looksLikeOutOfLine()) {

@@ -102,6 +102,7 @@ const std::unordered_set<std::string>& knownKeys() {
         "AllowShortIfStatementsOnASingleLine",
         "AllowShortLoopsOnASingleLine",
         "AllowShortEnumsOnASingleLine",
+        "NewlineBeforeOpenBrace",
         "NewlineAfterOpenBrace",
         "NewlineAfterCloseBrace",
         "WrapLongParenthesizedList",
@@ -142,6 +143,7 @@ bool isBoolKey(const std::string& key) {
         "BreakStringLiterals",
         "AllowShortLoopsOnASingleLine",
         "AllowShortEnumsOnASingleLine",
+        "NewlineBeforeOpenBrace",
         "NewlineAfterOpenBrace",
         "NewlineAfterCloseBrace",
         "BinPackParameters",
@@ -206,6 +208,7 @@ bool applyEntry(Style& style, const RawEntry& entry, const std::string& file,
         if (key == "BreakStringLiterals") style.breakStringLiterals = flag;
         else if (key == "AllowShortLoopsOnASingleLine") style.allowShortLoops = flag;
         else if (key == "AllowShortEnumsOnASingleLine") style.allowShortEnums = flag;
+        else if (key == "NewlineBeforeOpenBrace") style.newlineBeforeOpenBrace = flag;
         else if (key == "NewlineAfterOpenBrace") style.newlineAfterOpenBrace = flag;
         else if (key == "NewlineAfterCloseBrace") style.newlineAfterCloseBrace = flag;
         else if (key == "BlankLinesAroundLongControlStatement")
@@ -347,48 +350,65 @@ std::string shortIfText(AllowShortIf value) {
 std::string builtinConfigText() {
     const Style style = builtinStyle();
     std::ostringstream text;
-    auto emit = [&](const char* key, const std::string& value) {
+    auto emit = [&](const char* key, const std::string& value, const char* comment) {
+        text << "# " << comment << '\n';
         text << key << ": " << value << '\n';
     };
-    emit("Language", "Cwhip");
-    emit("IndentWidth", std::to_string(style.indentWidth));
-    emit("UseTab", "Never");
-    emit("ContinuationIndentWidth", std::to_string(style.continuationIndentWidth));
-    emit("AlignOperands", "DontAlign");
-    emit("ColumnLimit", std::to_string(style.columnLimit));
-    emit("BreakStringLiterals", boolText(style.breakStringLiterals));
-    emit("AllowShortFunctionsOnASingleLine", shortFunctionsText(style.allowShortFunctions));
-    emit("AllowShortBlocksOnASingleLine", shortBlocksText(style.allowShortBlocks));
-    emit("AllowShortIfStatementsOnASingleLine", shortIfText(style.allowShortIf));
-    emit("AllowShortLoopsOnASingleLine", boolText(style.allowShortLoops));
-    emit("AllowShortEnumsOnASingleLine", boolText(style.allowShortEnums));
-    emit("NewlineAfterOpenBrace", boolText(style.newlineAfterOpenBrace));
-    emit("NewlineAfterCloseBrace", boolText(style.newlineAfterCloseBrace));
-    emit("WrapLongParenthesizedList", "BreakAfterOpenParen");
-    emit("BinPackParameters", "false");
-    emit("BinPackArguments", "false");
+    emit("Language", "Cwhip", "Language of the file. Cwhip is the only accepted value.");
+    emit("IndentWidth", std::to_string(style.indentWidth), "Spaces for each indent level.");
+    emit("UseTab", "Never", "Inserted indent uses spaces.");
+    emit("ContinuationIndentWidth", std::to_string(style.continuationIndentWidth),
+         "Extra spaces past the block indent on a wrapped line.");
+    emit("AlignOperands", "DontAlign", "Do not line up an operand with the operator.");
+    emit("ColumnLimit", std::to_string(style.columnLimit),
+         "Preferred line length. 0 means do not wrap.");
+    emit("BreakStringLiterals", boolText(style.breakStringLiterals),
+         "Do not split a string literal across lines.");
+    emit("AllowShortFunctionsOnASingleLine", shortFunctionsText(style.allowShortFunctions),
+         "Allow a function body on one line. None does not.");
+    emit("AllowShortBlocksOnASingleLine", shortBlocksText(style.allowShortBlocks),
+         "Allow a block on one line. Never does not.");
+    emit("AllowShortIfStatementsOnASingleLine", shortIfText(style.allowShortIf),
+         "Allow an if body on one line. Never does not.");
+    emit("AllowShortLoopsOnASingleLine", boolText(style.allowShortLoops),
+         "Allow a loop body on one line.");
+    emit("AllowShortEnumsOnASingleLine", boolText(style.allowShortEnums),
+         "Allow an enum body on one line.");
+    emit("NewlineBeforeOpenBrace", boolText(style.newlineBeforeOpenBrace),
+         "Put { on the next line. False keeps the source break.");
+    emit("NewlineAfterOpenBrace", boolText(style.newlineAfterOpenBrace),
+         "Put the token after { on the next line.");
+    emit("NewlineAfterCloseBrace", boolText(style.newlineAfterCloseBrace),
+         "Put the token after } on the next line.");
+    emit("WrapLongParenthesizedList", "BreakAfterOpenParen",
+         "Break a long parenthesized list after the opening parenthesis.");
+    emit("BinPackParameters", "false", "Pack wrapped parameters onto one line.");
+    emit("BinPackArguments", "false", "Pack wrapped arguments onto one line.");
     emit("BlankLinesAroundLongControlStatement",
-         boolText(style.blankLinesAroundLongControlStatement));
-    emit("LongControlStatementLines", std::to_string(style.longControlStatementLines));
-    emit("ReflowComments", boolText(style.reflowComments));
-    emit("StatementTerminator", "Newline");
-    emit("InsertSemicolons", "false");
-    emit("AllowMultipleStatementsPerLine", "false");
-    emit("WrapOnlyInsideParensAndBrackets", "true");
-    emit("KeepElseParenOnSameLine", "true");
-    emit("ForbidElseIf", "true");
-    emit("PreserveLogicalSpelling", "true");
-    emit("PreserveKeywordCase", "true");
-    emit("PreserveTypeAliasSpelling", "true");
-    emit("PreserveNumericSpelling", "true");
-    emit("PreserveStringLexeme", "true");
-    emit("PreserveParentheses", "true");
-    emit("SplitDotDot", "false");
-    emit("SplitShiftRight", "false");
-    emit("ExpandIncludes", "false");
-    emit("ReorderIncludes", "false");
-    emit("FormatInlineC", "false");
-    emit("PreserveBlockCommentNewlines", "true");
+         boolText(style.blankLinesAroundLongControlStatement),
+         "Insert a blank line around a long control statement.");
+    emit("LongControlStatementLines", std::to_string(style.longControlStatementLines),
+         "A control statement longer than this many lines is long.");
+    emit("ReflowComments", boolText(style.reflowComments),
+         "Reflow hash and slash comments to the column limit.");
+    emit("StatementTerminator", "Newline", "A newline ends a statement.");
+    emit("InsertSemicolons", "false", "Do not insert semicolons.");
+    emit("AllowMultipleStatementsPerLine", "false", "Allow more than one statement on a line.");
+    emit("WrapOnlyInsideParensAndBrackets", "true", "Wrap only inside parentheses and brackets.");
+    emit("KeepElseParenOnSameLine", "true", "Keep else and its parenthesis on one line.");
+    emit("ForbidElseIf", "true", "Do not write else if.");
+    emit("PreserveLogicalSpelling", "true", "Keep and, or, and not as written.");
+    emit("PreserveKeywordCase", "true", "Keep keyword capitalization as written.");
+    emit("PreserveTypeAliasSpelling", "true", "Keep int, strg, and other type spellings as written.");
+    emit("PreserveNumericSpelling", "true", "Keep numeric spellings as written.");
+    emit("PreserveStringLexeme", "true", "Copy string text without re-escaping.");
+    emit("PreserveParentheses", "true", "Keep parentheses that are in the source.");
+    emit("SplitDotDot", "false", "Do not split the .. operator.");
+    emit("SplitShiftRight", "false", "Do not split the >> operator.");
+    emit("ExpandIncludes", "false", "Do not expand include directives.");
+    emit("ReorderIncludes", "false", "Do not reorder include directives.");
+    emit("FormatInlineC", "false", "Do not format an inline C body.");
+    emit("PreserveBlockCommentNewlines", "true", "Keep newlines inside block comments.");
     return text.str();
 }
 

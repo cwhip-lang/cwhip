@@ -54,17 +54,24 @@ class FormatCommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, "")
         lines = result.stdout.splitlines()
-        self.assertEqual(len(lines), 38)
+        self.assertEqual(len(lines), 78)
+        self.assertEqual(len(lines) % 2, 0)
         self.assertTrue(result.stdout.endswith("\n"))
-        for line in lines:
-            self.assertRegex(line, r"^[A-Za-z]+: \S+$")
-        self.assertIn("Language: Cwhip", lines)
-        self.assertIn("ContinuationIndentWidth: 8", lines)
-        self.assertIn("ColumnLimit: 80", lines)
-        self.assertIn("UseTab: Never", lines)
-        self.assertIn("PreserveBlockCommentNewlines: true", lines)
-        self.assertIn("NewlineAfterOpenBrace: true", lines)
-        self.assertIn("NewlineAfterCloseBrace: true", lines)
+        keys = []
+        for index in range(0, len(lines), 2):
+            comment, key = lines[index], lines[index + 1]
+            self.assertTrue(comment.startswith("# "), comment)
+            self.assertGreater(len(comment.strip()), 2, comment)
+            self.assertRegex(key, r"^[A-Za-z]+: \S+$", key)
+            keys.append(key)
+        self.assertIn("Language: Cwhip", keys)
+        self.assertIn("ContinuationIndentWidth: 8", keys)
+        self.assertIn("ColumnLimit: 80", keys)
+        self.assertIn("UseTab: Never", keys)
+        self.assertIn("PreserveBlockCommentNewlines: true", keys)
+        self.assertIn("NewlineBeforeOpenBrace: false", keys)
+        self.assertIn("NewlineAfterOpenBrace: true", keys)
+        self.assertIn("NewlineAfterCloseBrace: true", keys)
         for key in (
             "BreakBeforeBinaryOperators",
             "BraceBinding",
