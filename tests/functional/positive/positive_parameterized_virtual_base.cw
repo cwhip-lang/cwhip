@@ -1,5 +1,6 @@
 # Passes constructor arguments to one shared virtual base from the most-derived diamond class.
 class Root {
+    public:
     int64 value
 
     Root(int64 initial) {
@@ -9,18 +10,21 @@ class Root {
 }
 
 class Left : virtual Root {
+    public:
     Left() {
         print("Left+")
     }
 }
 
 class Right : virtual Root {
+    public:
     Right() {
         print("Right+")
     }
 }
 
 class Diamond : Left, Right {
+    public:
     Diamond(int64 initial) {
         virtual super Root(initial)
         super Left()

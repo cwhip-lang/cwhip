@@ -1,5 +1,6 @@
 namespace SQL {
     class Connection {
+        public:
         bool isOpen() {
             raise(Exception("SQL connection backend does not implement isOpen"))
         }
@@ -26,6 +27,7 @@ namespace SQL {
     }
 
     class Statement {
+        public:
         String error() {
             raise(Exception("SQL statement backend does not implement error"))
         }
@@ -60,6 +62,7 @@ namespace SQL {
     }
 
     class Transaction {
+        public:
         bool isActive() {
             raise(Exception("SQL transaction backend does not implement isActive"))
         }

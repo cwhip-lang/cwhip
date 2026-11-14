@@ -1,5 +1,6 @@
 # A const local accepts one value. A later store raises a catchable exception.
 class Box {
+    public:
     int64 value
 
     Box(int64 initial) {

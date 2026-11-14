@@ -1,4 +1,5 @@
 class NativeMath {
+    public:
     int64 answer()
 }
 

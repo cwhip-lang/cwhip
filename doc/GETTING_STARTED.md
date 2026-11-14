@@ -348,6 +348,7 @@ a method, a loop, and formatted output:
 ```cwhip
 // test: {"stdout": "total=6\n"}
 class Counter {
+    public:
     int64 value
 
     Counter() {

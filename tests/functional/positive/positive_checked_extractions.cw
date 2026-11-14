@@ -1,12 +1,15 @@
 class Base {
+    public:
     int64 value
     Base(int64 initial) { value = initial }
     int64 read() { return(value)}
 }
 class Derived : Base {
+    public:
     Derived(int64 initial) { super Base(initial) }
 }
 class Native {
+    public:
     handle saved
 }
 start {

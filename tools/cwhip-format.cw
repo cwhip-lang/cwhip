@@ -2,6 +2,7 @@ import cli as Cli
 import system as Sys
 
 class FormatTool {
+    public:
     String version()
     String builtinConfig()
     int64 formatFile(String path, String stylePath, bool inPlace)

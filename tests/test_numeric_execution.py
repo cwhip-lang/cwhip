@@ -147,13 +147,14 @@ def main():
             check(f"type([{left}(1)][0]) == {left}")
             check(f"([{left}(1)][0] as {left}) == 1")
 
-    native_class = "class Native {\n" + "".join(
+    native_class = "class Native {\npublic:\n" + "".join(
         f"{numeric} echo_{numeric}({numeric} value)\n" for numeric in types) + "}\n"
     native_class += "".join(
         f'{numeric} Native.echo_{numeric}({numeric} value) from "echo_{numeric}"\n'
         for numeric in types)
     native_class += """
 class NativeAliases {
+public:
 int echoInt(int value)
 uint echoUInt(uint value)
 float echoFloat(float value)
@@ -162,21 +163,25 @@ int NativeAliases.echoInt(int value) from "echo_native_int"
 uint NativeAliases.echoUInt(uint value) from "echo_native_uint"
 float NativeAliases.echoFloat(float value) from "echo_native_float"
 class AliasWorker {
+public:
 int echo(int value) { return(value + 1) }
 }
 """
-    source = "class Constants {\nenum {\n" + "".join(
+    source = "class Constants {\npublic:\nenum {\n" + "".join(
         f"C{index} = {expression}\n" for index, (expression, _) in enumerate(constants))
     source += "LAST = C0 + 1\n}\n}\n" + native_class
     source += """class Base {
+public:
 int8 echo(int8 value) { return(value) }
 }
 class Worker: Base {
+public:
 int8 echo(int8 value) { return(value) }
 fp32 real(fp32 value) { return(value) }
 uint8 bits
 }
 class Holder {
+public:
 Worker target
 int64 calls
 Holder() { target = Worker() }
@@ -184,7 +189,7 @@ Worker next() { calls += 1
 return(target) }
 }
 """
-    source += "class CallbackWorker {\n" + "".join(
+    source += "class CallbackWorker {\npublic:\n" + "".join(
         f"{numeric} echo_{numeric}({numeric} value) {{ return(value) }}\n"
         for numeric in types) + "}\nstart {\n"
     source += "".join(
@@ -345,7 +350,8 @@ print("{}\\n", aliasResult)
         ]
         invalid = work / "invalid.cw"
         for expression, diagnostic in invalid_constants:
-            invalid.write_text(f"class Invalid {{\nenum {{ VALUE = {expression} }}\n}}\nstart {{}}\n")
+            invalid.write_text(
+                f"class Invalid {{\npublic:\nenum {{ VALUE = {expression} }}\n}}\nstart {{}}\n")
             result = subprocess.run([args.compiler, "--check-only", str(invalid)],
                                     text=True, capture_output=True)
             assert result.returncode != 0 and diagnostic in result.stderr, (

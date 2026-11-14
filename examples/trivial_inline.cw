@@ -1,6 +1,7 @@
 
 class Foo {
 
+    public:
     int64 num
 
     void setup() {

@@ -1,5 +1,6 @@
 # Exercises byte buffers, opaque native handles, dynamic values, collections, and inline capture.
 class Native {
+    public:
     int64 marker
     handle saved
 

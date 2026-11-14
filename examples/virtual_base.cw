@@ -18,6 +18,7 @@
 
 class Payload {
 
+    public:
     Payload(int64 initial) {
         print(format("in Payload ctor ({})", initial))
         value = initial
@@ -36,6 +37,7 @@ class Payload {
 }
 
 class Root {
+    public:
     Payload item
 
     Root() {
@@ -56,6 +58,7 @@ class Root {
 }
 
 class Left : virtual Root {
+    public:
     Left() {
         print("Left ctor")
     }
@@ -66,6 +69,7 @@ class Left : virtual Root {
 }
 
 class Right : virtual Root {
+    public:
     Right() {
         print("Right ctor")
     }
@@ -76,6 +80,7 @@ class Right : virtual Root {
 }
 
 class Diamond : Left, Right {
+    public:
     Diamond() {
         super Left()
         super Right()
@@ -92,6 +97,7 @@ class Diamond : Left, Right {
 }
 
 class FailedRoot {
+    public:
     FailedRoot() {
         raise(Exception("virtual initialization failed"))
     }
@@ -102,12 +108,14 @@ class FailedRoot {
 }
 
 class FailedSide : virtual FailedRoot {
+    public:
     FailedSide() {
         print("wrong side constructor")
     }
 }
 
 class FailedDiamond : FailedSide {
+    public:
     FailedDiamond() {
         super FailedSide()
     }

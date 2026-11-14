@@ -1,7 +1,9 @@
 class Foo {
+ public:
  Foo() { raise(Exception("this is the string")) }
 }
 class Bar : Foo {
+ public:
  Bar() {
   try { super Foo() }
   except() { print("caught the first time")

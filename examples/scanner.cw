@@ -6,6 +6,7 @@ import system as Sys
 namespace scanner {
     class File {
 
+        public:
         enum {
             END_OF_INPUT = -2,
             END_OF_FILE,
@@ -74,6 +75,7 @@ namespace scanner {
 
     class FileStack {
 
+        public:
         list stack 
         int64 index
 

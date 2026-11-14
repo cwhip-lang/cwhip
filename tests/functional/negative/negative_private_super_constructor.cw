@@ -6,6 +6,7 @@ class Base {
 }
 
 class Child : public Base {
+    public:
     Child() {
         super Base()
     }

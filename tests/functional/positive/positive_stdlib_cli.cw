@@ -3,6 +3,7 @@
 import cli as Cli
 
 class Fixture {
+    public:
     Cli.CommandLine makeParser() {
         Cli.CommandLine commandLine = Cli.CommandLine("test", "test options", "1.2")
         Cli.Option alpha = Cli.Option()

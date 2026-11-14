@@ -4,6 +4,7 @@
 
 class ExceptionClass: Exception {
 
+    public:
     ExceptionClass(strg val) {
         super Exception(val)
     }
@@ -11,6 +12,7 @@ class ExceptionClass: Exception {
 
 class Thrower {
 
+    public:
     void throw(strg val) {
         raise(ExceptionClass(val))
     }

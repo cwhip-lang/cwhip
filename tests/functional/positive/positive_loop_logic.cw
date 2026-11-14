@@ -1,5 +1,6 @@
 # Verifies do-while, loop transfers, logical aliases, precedence, short-circuiting, and finally.
 class Probe {
+    public:
     int64 calls
     Probe() {
         calls = 0

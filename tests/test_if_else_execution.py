@@ -21,6 +21,7 @@ def main():
     args = parser.parse_args()
     source = r"""
 class Checks {
+    public:
     int64 evaluations
     bool condition(bool result) {
         evaluations += 1

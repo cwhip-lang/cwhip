@@ -1,16 +1,19 @@
 class Foo {
+    public:
     int64 value
     Foo(int64 initial) { value = initial }
     int64 read() { return(value)}
     int64 with(int64 extra) { return(value + extra)}
 }
 class Bar : Foo {
+    public:
     Bar(int64 initial) { super Foo(initial) }
     int64 read() { return(value + 100)}
 }
 class Other {}
-class First { int64 marker }
+class First { public: int64 marker }
 class Secondary : First, Foo {
+    public:
     Secondary() {
         super First()
         super Foo(23)
@@ -19,6 +22,7 @@ class Secondary : First, Foo {
 class Left : virtual Foo {}
 class Right : virtual Foo {}
 class Diamond : Left, Right {
+    public:
     Diamond() {
         super virtual Foo(31)
         super Left()
@@ -26,18 +30,22 @@ class Diamond : Left, Right {
     }
 }
 class NonvirtualLeft : Foo {
+    public:
     NonvirtualLeft() { super Foo(1) }
 }
 class NonvirtualRight : Foo {
+    public:
     NonvirtualRight() { super Foo(2) }
 }
 class Ambiguous : NonvirtualLeft, NonvirtualRight {
+    public:
     Ambiguous() {
         super NonvirtualLeft()
         super NonvirtualRight()
     }
 }
 class Factory {
+    public:
     int64 calls
     Foo make() {
         calls += 1
@@ -53,7 +61,7 @@ class Factory {
     }
 }
 namespace model {
-    class Named { int64 read() { return(47)} }
+    class Named { public: int64 read() { return(47)} }
 }
 start {
     list values = [Foo(7), Bar(11), null, Other(), 42, "text", [1], ["x": 1], buffer(1)]

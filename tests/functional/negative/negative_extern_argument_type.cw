@@ -1,5 +1,6 @@
 # Rejects passing a string to a native-bound method parameter declared as int.
 class Native {
+    public:
     int64 absolute(int64 value)
 }
 

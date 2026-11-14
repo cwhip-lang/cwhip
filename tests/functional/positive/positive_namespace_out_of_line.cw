@@ -1,6 +1,7 @@
 # Defines a declared method out of line within its owning namespace and invokes it.
 namespace Remote {
     class Method {
+        public:
         int64 value()
     }
 

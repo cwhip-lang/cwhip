@@ -1,4 +1,5 @@
 class OutOfLine {
+    public:
     OutOfLine(int64 value)
     OutOfLine(strg value)
 }

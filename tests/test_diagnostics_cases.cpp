@@ -195,7 +195,7 @@ const TestGroupRegistration registration{2, {
              expectDiagnostic("start {\n const int64 value\n value += 1\n}",
                               "variable 'value' may be uninitialized");
              expectValid(
-                 "class Box { Box() {} int64 value }\n"
+                 "class Box { public: Box() {} int64 value }\n"
                  "start {\n const int64 value\n value = 1\n print(value)\n"
                  " const Box item\n item = Box()\n}");
          }},
@@ -210,9 +210,9 @@ const TestGroupRegistration registration{2, {
          }},
         {"virtual-base initializer rejected outside constructors", [] {
              expectDiagnostic(
-                 "class Root { Root(int64 value) {} }\n"
+                 "class Root { public: Root(int64 value) {} }\n"
                  "class Leaf : virtual Root {\n"
-                 "  void method() { super virtual Root(1) }\n"
+                 "  public:\n  void method() { super virtual Root(1) }\n"
                  "}\n"
                  "start {}",
                  "super initializers must be direct leading constructor statements");

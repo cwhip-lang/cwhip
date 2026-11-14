@@ -1,5 +1,6 @@
 # All sixteen ordered scalar pairs, including identities.
 class Scalars {
+    public:
     bool flag() { return(true)}
     int64 signedValue() { return(-7)}
     uint64 unsignedValue() { return(12u)}

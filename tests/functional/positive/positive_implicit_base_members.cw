@@ -18,6 +18,7 @@ class SecondBase {
 }
 
 class Child: public FirstBase, private SecondBase {
+    public:
     Child() {
         super FirstBase()
         super SecondBase()
@@ -44,6 +45,7 @@ class Child: public FirstBase, private SecondBase {
 }
 
 class Root {
+    public:
     int64 value
     uint64 bits
     fp64 fraction
@@ -54,9 +56,10 @@ class Root {
     }
     int64 read() { return(value)}
 }
-class Left: Root { Left() { super Root() } }
-class Right: Root { Right() { super Root() } }
+class Left: Root { public: Left() { super Root() } }
+class Right: Root { public: Right() { super Root() } }
 class Diamond: Left, Right {
+    public:
     Diamond() {
         super Left()
         super Right()
@@ -77,6 +80,7 @@ class Diamond: Left, Right {
 class VirtualLeft: virtual Root {}
 class VirtualRight: virtual Root {}
 class Shared: VirtualLeft, VirtualRight {
+    public:
     void change() {
         VirtualLeft.Root.value += 6
         print(VirtualRight.Root.read())
@@ -84,20 +88,24 @@ class Shared: VirtualLeft, VirtualRight {
 }
 
 class DispatchBase {
+    public:
     int64 read() { return(11)}
 }
-class Padding { int64 unused }
+class Padding { public: int64 unused }
 class DispatchChild: Padding, DispatchBase {
+    public:
     int64 read() { return(99)}
     int64 qualified() { return(DispatchBase.read())}
 }
 
 class Object {
+    public:
     int64 foo
     Object() { foo = 88 }
     int64 method() { return(foo)}
 }
 class FieldCollision: FirstBase {
+    public:
     Object FirstBase
     FieldCollision() {
         super FirstBase()
@@ -109,6 +117,7 @@ class FieldCollision: FirstBase {
     }
 }
 class LocalCollision: FirstBase {
+    public:
     LocalCollision() { super FirstBase() }
     void check(Object FirstBase) {
         FirstBase.foo += 1
@@ -118,11 +127,13 @@ class LocalCollision: FirstBase {
 
 namespace N {
     class Base {
+        public:
         int64 value
         Base() { value = 17 }
         int64 read() { return(value)}
     }
     class Derived: Base {
+        public:
         Derived() { super Base() }
         void check() {
             Base.value += 1

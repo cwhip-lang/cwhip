@@ -1,4 +1,5 @@
 class Counter {
+    public:
     int64 value
 
     void step() {

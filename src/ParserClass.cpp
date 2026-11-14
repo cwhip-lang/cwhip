@@ -59,7 +59,9 @@ ClassDeclaration Parser::parseClass() {
         } while (match(TokenType::Comma));
     }
     consume(TokenType::LeftBrace, "'{' after class name");
-    AccessLevel memberAccess = AccessLevel::Public;
+    // Members before the first access section are private. A base specifier
+    // with no access keyword stays public; that initializer is above.
+    AccessLevel memberAccess = AccessLevel::Private;
     while (!check(TokenType::RightBrace) && !check(TokenType::End)) {
         skipNewlines();
         if (check(TokenType::RightBrace) || check(TokenType::End)) {

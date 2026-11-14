@@ -2,6 +2,7 @@
 class Base {}
 class Derived : Base {}
 class Native {
+    public:
     int64 marker
     handle saved
 
@@ -18,6 +19,7 @@ namespace ns {
 }
 
 class TypeHolder {
+    public:
     type value
 }
 

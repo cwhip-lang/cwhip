@@ -129,7 +129,7 @@ const TestGroupRegistration registration{1, {
         {"import is rejected in declaration and function bodies", [] {
              expectDiagnostic("namespace Hidden { import network as Net }\nstart {}",
                               "'import' is only allowed at top level");
-             expectDiagnostic("class Hidden { import network as Net }\nstart {}",
+             expectDiagnostic("class Hidden { public: import network as Net }\nstart {}",
                               "'import' is only allowed at top level");
              expectDiagnostic("start { import network as Net }",
                               "'import' is only allowed at top level");
@@ -142,8 +142,8 @@ const TestGroupRegistration registration{1, {
                      "create should be lexed as an identifier");
          }},
         {"strg is the primitive string type and string remains an identifier", [] {
-             expectValid("class string { string() {} }\n"
-                         "class Text { strg echo(strg value) { return(value) } }\n"
+             expectValid("class string { public: string() {} }\n"
+                         "class Text { public: strg echo(strg value) { return(value) } }\n"
                          "start {\n strg text = Text().echo(\"value\")\n"
                          " int64 string = 1\n string custom = string()\n print(string)\n}");
              expectDiagnostic("start {\n string text = \"value\"\n}",
@@ -151,7 +151,7 @@ const TestGroupRegistration registration{1, {
          }},
         {"class-name constructor syntax", [] {
              const auto program = parse(
-                 "class Box { Box() {} }\nstart { Box box = Box() }");
+                 "class Box { public: Box() {} }\nstart { Box box = Box() }");
              std::ostringstream output;
              cwhip::dumpAst(program, output);
              require(output.str().find("ConstructorCall [Box]") != std::string::npos,
@@ -161,7 +161,7 @@ const TestGroupRegistration registration{1, {
              const auto program = parse(
                  "namespace Model { class Item {} }\n"
                  "class Worker {\n"
-                 " int64 echo(int32 value) { return(value) }\n"
+                 " public:\n int64 echo(int32 value) { return(value) }\n"
                  " range<int64> same(range<int64> value) { return(value) }\n"
                  " Model.Item echoItem(Model.Item value) { return(value) }\n"
                  " int64<int64<int64>> nested(int64<int64<int64>> value)\n"
@@ -170,7 +170,7 @@ const TestGroupRegistration registration{1, {
                  " return(value)\n"
                  "}\n"
                  "class CallableFields {\n"
-                 " int64<int32,int8> multi\n"
+                 " public:\n int64<int32,int8> multi\n"
                  " int64<> empty\n"
                  " int64<int64><String> nestedReturn\n"
                  " int64<range<int64>> rangeArgument\n"
@@ -202,7 +202,7 @@ const TestGroupRegistration registration{1, {
                  require(fields->fields[index].type == expected[index],
                  "callable source type did not normalize to its canonical signature");
              }
-             expectDiagnostic("class Invalid { int64<void> invalid }\nstart {}",
+             expectDiagnostic("class Invalid { public: int64<void> invalid }\nstart {}",
                       "expected type name");
              expectDiagnostic("start {\n int64 left = 1\n int64 right = 2\n"
                                   " left < right\n}\n",
@@ -211,7 +211,7 @@ const TestGroupRegistration registration{1, {
          {"class-scoped anonymous enum members parse and resolve as signed integers", [] {
               const auto program = parse(
                   "class Values {\n"
-                  " enum { FIRST = 40 + 2, NEXT, TWICE = FIRST * 2, }\n"
+                  " public:\n enum { FIRST = 40 + 2, NEXT, TWICE = FIRST * 2, }\n"
                   " enum { ZERO, MIN = -0x8000000000000000, MAX = 0x7fffffffffffffff }\n"
                   " int64 read() { return(FIRST) }\n"
                   "}\nstart {}");
@@ -232,7 +232,7 @@ const TestGroupRegistration registration{1, {
           }},
         {"enum constants add no fields to generated object layout", [] {
               const auto program = parse(
-                  "class Values { enum { FIRST = 3 } }\n"
+                  "class Values { public: enum { FIRST = 3 } }\n"
                   "start { Values value = Values()\n print(value.FIRST) }");
               const auto ir =
                   cwhip::CodeGenerator("x86_64-unknown-linux-gnu").generate(program);
@@ -242,7 +242,7 @@ const TestGroupRegistration registration{1, {
          {"enum constants obey access, inheritance, and immutability rules", [] {
               expectValid(
                   "class Base { public: enum { VALUE = 7 } }\n"
-                  "class Child : Base { int64 read() { return(VALUE) } }\n"
+                  "class Child : Base { public: int64 read() { return(VALUE) } }\n"
                   "start { Child child = Child()\n print(child.VALUE)\n"
                   " print(child.Base.VALUE) }\n");
               expectDiagnostic(
@@ -254,64 +254,64 @@ const TestGroupRegistration registration{1, {
                   "start { print(Box.VALUE) }",
                   "not accessible");
               expectDiagnostic(
-                  "class Base { enum { VALUE = 7 } }\n"
+                  "class Base { public: enum { VALUE = 7 } }\n"
                   "class Hidden : private Base {}\n"
                   "start { Hidden hidden = Hidden()\n print(hidden.VALUE) }",
                   "not accessible through this inheritance path");
               expectDiagnostic(
-                  "class Box { enum { VALUE = 7 } }\n"
+                  "class Box { public: enum { VALUE = 7 } }\n"
                   "start { Box.VALUE = 8 }",
                   "enum constants are immutable");
               expectDiagnostic(
-                  "class Box { enum { VALUE = 7 } }\n"
+                  "class Box { public: enum { VALUE = 7 } }\n"
                   "start { Box box = Box()\n box.VALUE += 1 }",
                   "enum constants are immutable");
               expectDiagnostic(
-                  "class Box { enum { VALUE = 7 }\n"
+                  "class Box { public: enum { VALUE = 7 }\n"
                   " void update() { inline (int64 VALUE) {} } }\nstart {}",
                   "enum constants are immutable");
               expectDiagnostic(
-                  "class Left { enum { VALUE = 1 } }\n"
-                  "class Right { enum { VALUE = 2 } }\n"
+                  "class Left { public: enum { VALUE = 1 } }\n"
+                  "class Right { public: enum { VALUE = 2 } }\n"
                   "class Both : Left, Right {}\n"
                   "start { Both both = Both()\n print(both.VALUE) }",
                   "ambiguous inherited member");
           }},
          {"enum constants reject collisions and invalid values", [] {
-              expectDiagnostic("class Box { enum { VALUE, VALUE } }\nstart {}",
+              expectDiagnostic("class Box { public: enum { VALUE, VALUE } }\nstart {}",
                                "duplicate enum member");
-              expectDiagnostic("class Box { int64 VALUE\nenum { VALUE } }\nstart {}",
+              expectDiagnostic("class Box { public: int64 VALUE\nenum { VALUE } }\nstart {}",
                                "collides with another class member");
-              expectDiagnostic("class Box { void VALUE() {}\nenum { VALUE } }\nstart {}",
+              expectDiagnostic("class Box { public: void VALUE() {}\nenum { VALUE } }\nstart {}",
                                "collides with another class member");
               expectDiagnostic(
-                  "class Base { enum { VALUE } }\nclass Derived : Base { int64 VALUE }\nstart {}",
+                  "class Base { public: enum { VALUE } }\nclass Derived : Base { public: int64 VALUE }\nstart {}",
                   "collides with an inherited enum member");
               expectDiagnostic(
-                  "class Base { enum { VALUE } }\n"
-                  "class Derived : Base { int64 VALUE() { return(1) } }\nstart {}",
+                  "class Base { public: enum { VALUE } }\n"
+                  "class Derived : Base { public: int64 VALUE() { return(1) } }\nstart {}",
                   "collides with an inherited enum member");
-              expectDiagnostic("class Box { enum { FIRST = LATER, LATER = 3 } }\nstart {}",
+              expectDiagnostic("class Box { public: enum { FIRST = LATER, LATER = 3 } }\nstart {}",
                                "cannot reference a later or cyclic");
               expectDiagnostic(
-                  "class First { enum { VALUE = Second.NEXT } }\n"
-                  "class Second { enum { NEXT = First.VALUE } }\nstart {}",
+                  "class First { public: enum { VALUE = Second.NEXT } }\n"
+                  "class Second { public: enum { NEXT = First.VALUE } }\nstart {}",
                   "cyclic enum constant reference");
-              expectDiagnostic("class Box { enum { VALUE = call() } }\nstart {}",
+              expectDiagnostic("class Box { public: enum { VALUE = call() } }\nstart {}",
                                "compile-time integer expression");
-              expectDiagnostic("class Box { enum { VALUE = 1 / 0 } }\nstart {}",
+              expectDiagnostic("class Box { public: enum { VALUE = 1 / 0 } }\nstart {}",
                                "division by zero");
               expectDiagnostic(
-                  "class Box { enum { VALUE = 0x7fffffffffffffff, NEXT } }\nstart {}",
+                  "class Box { public: enum { VALUE = 0x7fffffffffffffff, NEXT } }\nstart {}",
                   "implicit enum value overflows");
               expectDiagnostic(
-                  "class Box { enum { VALUE = 0x7fffffffffffffff + 1 } }\nstart {}",
+                  "class Box { public: enum { VALUE = 0x7fffffffffffffff + 1 } }\nstart {}",
                   "overflows signed 64-bit range");
           }},
         {"direct constructor declarations reuse constructor-call analysis", [] {
              const auto program = parse(
                  "class Box {\n"
-                 "  Box() {}\n"
+                 "  public:\n  Box() {}\n"
                  "  Box(int64 value) {}\n"
                  "}\n"
                  "start {\n"
@@ -335,10 +335,10 @@ const TestGroupRegistration registration{1, {
          }},
         {"direct constructor declarations reject invalid construction", [] {
              expectDiagnostic(
-                 "class Box { Box(int64 value) {} }\nstart { Box item() }",
+                 "class Box { public: Box(int64 value) {} }\nstart { Box item() }",
                  "constructor argument count does not match class 'Box'");
              expectDiagnostic(
-                 "class Box { Box(int64 value) {} }\nstart { Box item(\"wrong\") }",
+                 "class Box { public: Box(int64 value) {} }\nstart { Box item(\"wrong\") }",
                  "constructor argument type does not match parameter 'value'");
              expectDiagnostic(
                  "class Secret { private: Secret() {} }\nstart { Secret item() }",
@@ -350,8 +350,8 @@ const TestGroupRegistration registration{1, {
          }},
         {"single inheritance and base constructor syntax", [] {
              const auto program = parse(
-                 "class Base { Base(int64 value) {} }\n"
-                 "class Child : Base { Child(int64 value) { super Base(value) } }\n"
+                 "class Base { public: Base(int64 value) {} }\n"
+                 "class Child : Base { public: Child(int64 value) { super Base(value) } }\n"
                  "start { Child child = Child(1) }");
              std::ostringstream output;
              cwhip::dumpAst(program, output);
@@ -362,9 +362,9 @@ const TestGroupRegistration registration{1, {
          }},
         {"virtual base initializer syntax", [] {
              const auto program = parse(
-                 "class Root { Root(int64 value) {} }\n"
+                 "class Root { public: Root(int64 value) {} }\n"
                  "class Leaf : virtual Root {\n"
-                 "  Leaf(int64 value) { virtual super Root(value) }\n"
+                 "  public:\n  Leaf(int64 value) { virtual super Root(value) }\n"
                  "}\n"
                  "start { Leaf leaf = Leaf(1) }");
              std::ostringstream output;
@@ -375,12 +375,12 @@ const TestGroupRegistration registration{1, {
          }},
         {"dotless base initializer modifier orders", [] {
              const auto program = parse(
-                 "class Root { Root(int64 value) {} }\n"
+                 "class Root { public: Root(int64 value) {} }\n"
                  "class First : virtual Root {\n"
-                 "  First(int64 value) { super virtual Root(value) }\n"
+                 "  public:\n  First(int64 value) { super virtual Root(value) }\n"
                  "}\n"
                  "class Second : virtual Root {\n"
-                 "  Second(int64 value) { virtual super Root(value) }\n"
+                 "  public:\n  Second(int64 value) { virtual super Root(value) }\n"
                  "}\n"
                  "start { First first = First(1)\n Second second = Second(2) }");
              std::ostringstream output;
@@ -395,19 +395,19 @@ const TestGroupRegistration registration{1, {
         {"dotted base initializer syntax is rejected", [] {
              expectDiagnostic(
                  "class Base {}\n"
-                 "class Child : Base { Child() { super.Base() } }\n"
+                 "class Child : Base { public: Child() { super.Base() } }\n"
                  "start {}",
                  "base class name after super");
              expectDiagnostic(
                  "class Root {}\n"
-                 "class Leaf : virtual Root { Leaf() { super.virtual Root() } }\n"
+                 "class Leaf : virtual Root { public: Leaf() { super.virtual Root() } }\n"
                  "start {}",
                  "base class name after super");
          }},
         {"malformed virtual base initializer modifier order is rejected", [] {
              expectDiagnostic(
                  "class Root {}\n"
-                 "class Leaf : virtual Root { Leaf() { virtual Root() } }\n"
+                 "class Leaf : virtual Root { public: Leaf() { virtual Root() } }\n"
                  "start {}",
                  "'super' after virtual");
          }},
@@ -485,7 +485,7 @@ const TestGroupRegistration registration{1, {
         {"raise, catch-all, and finally syntax", [] {
              const auto program = parse(
                  "class Failure : Exception {\n"
-                 "  Failure(strg text) { super Exception(text) }\n"
+                 "  public:\n  Failure(strg text) { super Exception(text) }\n"
                  "}\n"
                  "start {\n"
                  "  try { raise(Failure(\"failure\")) } except() { print(\"caught\") } "
@@ -510,8 +510,8 @@ const TestGroupRegistration registration{1, {
          }},
         {"try supports ordered typed exception clauses", [] {
              const auto program = parse(
-                 "class Parent : Exception { Parent(strg text) { super Exception(text) } }\n"
-                 "class Child : Parent { Child(strg text) { super Parent(text) } }\n"
+                 "class Parent : Exception { public: Parent(strg text) { super Exception(text) } }\n"
+                 "class Child : Parent { public: Child(strg text) { super Parent(text) } }\n"
                  "start {\n"
                  " try { raise(Child(\"message\")) }\n"
                  " except(Parent) as parent { print(parent.message) }\n"
@@ -539,8 +539,8 @@ const TestGroupRegistration registration{1, {
          }},
         {"subclass exception clause after base is unreachable", [] {
              expectDiagnostic(
-                 "class Parent : Exception { Parent(strg text) { super Exception(text) } }\n"
-                 "class Child : Parent { Child(strg text) { super Parent(text) } }\n"
+                 "class Parent : Exception { public: Parent(strg text) { super Exception(text) } }\n"
+                 "class Child : Parent { public: Child(strg text) { super Parent(text) } }\n"
                  "start {\n try { print(1) }\n"
                  " except(Parent) { print(2) }\n"
                  " except(Child) { print(3) }\n}",
@@ -572,7 +572,7 @@ const TestGroupRegistration registration{1, {
         {"except accepts qualified class paths", [] {
              const auto program = parse(
                  "namespace errors {\n"
-                 " class Failure : Exception { Failure(strg text) { super Exception(text) } }\n"
+                 " class Failure : Exception { public: Failure(strg text) { super Exception(text) } }\n"
                  "}\n"
                  "start { try { raise(errors.Failure(\"message\")) } "
                  "except(errors.Failure) as caught { print(caught.message) } }\n");
@@ -595,13 +595,13 @@ const TestGroupRegistration registration{1, {
         {"newline statement boundaries", [] {
              const auto program = parse(
                  "class Base {\n"
-                 "  int64 value\n"
+                 "  public:\n  int64 value\n"
                  "  Base(int64 initial) {\n"
                  "    value = initial\n"
                  "  }\n"
                  "}\n"
                  "class Child : Base {\n"
-                 "  Child(int64 initial) {\n"
+                 "  public:\n  Child(int64 initial) {\n"
                  "    super Base(initial)\n"
                  "  }\n"
                  "  int64 read() {\n"
@@ -623,7 +623,7 @@ const TestGroupRegistration registration{1, {
         {"const prefixes a local declaration", [] {
              const auto program = parse(
                  "class Box {\n"
-                 " Box(int64 initial) {\n"
+                 " public:\n Box(int64 initial) {\n"
                  "  const int64 seed = initial\n"
                  " }\n"
                  " int64 read() {\n"

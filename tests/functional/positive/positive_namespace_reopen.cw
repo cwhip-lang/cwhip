@@ -1,6 +1,7 @@
 # Reopens a namespace to add classes and verifies declarations share one namespace.
 namespace Shared {
     class First {
+        public:
         int64 value() {
             return(20)
         }
@@ -9,12 +10,14 @@ namespace Shared {
 
 namespace Shared {
     class Second {
+        public:
         int64 value() {
             return(22)
         }
     }
 
     class Factory {
+        public:
         First create() {
             return(First())
         }

@@ -1,6 +1,7 @@
 import greeting as Parent
 
 class Derived: Parent {
+    public:
     Derived() {
         super Parent()
         print(Parent.answer())

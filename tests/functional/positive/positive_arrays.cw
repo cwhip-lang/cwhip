@@ -1,5 +1,6 @@
 # Exercises heterogeneous list values, mutation, slicing, list aliases, typed extraction, retained references, and bounds exceptions.
 class Node {
+    public:
     int64 value
     Node(int64 initial) {
         value = initial
@@ -7,6 +8,7 @@ class Node {
 }
 
 class Holder {
+    public:
     list nodes
     Holder(list initial) {
         nodes = initial

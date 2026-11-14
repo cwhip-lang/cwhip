@@ -4,6 +4,7 @@
 
 class OtherException: Exception {
 
+    public:
     OtherException(strg msg) {
         super Exception(msg)
     }
@@ -11,6 +12,7 @@ class OtherException: Exception {
 
 class SomeClass {
 
+    public:
     SomeClass() {
         raise(Exception("This would be the error message"))
     }

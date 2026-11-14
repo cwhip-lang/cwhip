@@ -1,4 +1,5 @@
 class OnlyOne {
+    public:
     OnlyOne(int64 value) {}
 }
 

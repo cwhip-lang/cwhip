@@ -1,9 +1,11 @@
 class Bar {
+    public:
     int64 val
     Bar(int64 v) { val = v }
     void show() { print(format("class Bar {}", val)) }
 }
 class Foo {
+    public:
     list flarp
     Foo() {
         flarp = []

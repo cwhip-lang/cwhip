@@ -1,5 +1,6 @@
 # Raises a runtime error when the same object is explicitly destroyed twice.
 class Resource {
+    public:
     destroy {
     }
 }

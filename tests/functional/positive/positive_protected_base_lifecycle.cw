@@ -1,10 +1,13 @@
 class Failure : Exception {
+    public:
     Failure(strg text) { super Exception(text) }
 }
 class Other : Exception {
+    public:
     Other(strg text) { super Exception(text) }
 }
 class Record {
+    public:
     Exception original
     Record() { original = null }
     int64 same(Exception left, Exception right)
@@ -12,18 +15,22 @@ class Record {
 int64 Record.same(Exception left, Exception right) from "cwhip_method_demo_exception_identity"
 
 class First {
+    public:
     First() { print("first initialized") }
     destroy { print("INVALID first destructor") }
 }
 class Fails {
+    public:
     Fails() { raise(Failure("base failure")) }
     destroy { print("INVALID failed base destructor") }
 }
 class Last {
+    public:
     Last() { print("INVALID last initialized") }
     destroy { print("INVALID last destructor") }
 }
 class Rethrows : First, Fails, Last {
+    public:
     Rethrows(Record record, bool replace) {
         try {
             super First()
@@ -50,6 +57,7 @@ class Rethrows : First, Fails, Last {
     destroy { print("INVALID derived destructor") }
 }
 class Unmatched : Fails {
+    public:
     Unmatched() {
         try { super Fails() }
         except(Other) { raise() }
@@ -57,21 +65,25 @@ class Unmatched : Fails {
     }
 }
 class CleanupOnly : Fails {
+    public:
     CleanupOnly() {
         try { super Fails() }
         finally { print("cleanup without handler") }
     }
 }
 class Good {
+    public:
     Good(int64 value) { print(value) }
 }
 class Direct : Good {
+    public:
     Direct() {
         super Good(10)
         print("direct constructed")
     }
 }
 class Guarded : Good {
+    public:
     Guarded() {
         try { super Good(20) }
         except() { raise(Exception("unexpected failure")) }
@@ -80,9 +92,11 @@ class Guarded : Good {
     }
 }
 class More {
+    public:
     More() { print("second initialized") }
 }
 class MultiGood : Good, More {
+    public:
     MultiGood() {
         try { super Good(30)
               super More() }
@@ -91,9 +105,11 @@ class MultiGood : Good, More {
     }
 }
 class Argument {
+    public:
     int64 fail() { raise(Failure("argument failure")) }
 }
 class ArgumentFailure : Good {
+    public:
     ArgumentFailure(Argument argument) {
         try { super Good(argument.fail()) }
         except(Failure) { print("argument caught")
@@ -101,6 +117,7 @@ class ArgumentFailure : Good {
     }
 }
 class Driver {
+    public:
     void run() {
         Record record()
         try { Rethrows item(record, false) }

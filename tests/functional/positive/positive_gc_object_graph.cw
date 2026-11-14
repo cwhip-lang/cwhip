@@ -1,5 +1,6 @@
 # Keeps a linked object graph and nested object reference alive while allocation triggers collection.
 class Node {
+    public:
     int64 value
     Node next
 
@@ -13,6 +14,7 @@ class Node {
 }
 
 class Pair {
+    public:
     Node child
 
     Pair(Node value) {

@@ -1,4 +1,5 @@
 class Values {
+    public:
     enum {
         FIRST = 123,
         NEXT,
@@ -20,6 +21,7 @@ class Values {
 class Child : Values {}
 
 class Probe {
+    public:
     Values value
     int64 calls
 
@@ -36,6 +38,7 @@ class Probe {
 
 namespace Named {
     class Item {
+        public:
         enum { VALUE = 50 }
     }
 }

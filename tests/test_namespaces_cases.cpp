@@ -43,7 +43,7 @@ const TestGroupRegistration registration{5, {
          {"out-of-line methods resolve within their namespace", [] {
               expectValid(
                   "namespace Remote {\n"
-                  "  class Method { int64 value() }\n"
+                  "  class Method { public: int64 value() }\n"
                   "  int64 Method.value() { return(42) }\n"
                   "}\n"
                   "start { print(Remote.Method().value()) }");
@@ -54,7 +54,7 @@ const TestGroupRegistration registration{5, {
                   "  class Common {}\n"
                   "  namespace Inner {\n"
                   "    class Consumer {\n"
-                  "      Common dependency\n"
+                  "      public:\n      Common dependency\n"
                   "      Common create() { return(Common()) }\n"
                   "    }\n"
                   "  }\n"
@@ -74,7 +74,7 @@ const TestGroupRegistration registration{5, {
          }},
          {"qualified construction lowers to a constructor AST node", [] {
               const auto program = parse(
-                  "namespace Foo { class Bar { int64 method() { return(42) } } }\n"
+                  "namespace Foo { class Bar { public: int64 method() { return(42) } } }\n"
                   "start { print(Foo.Bar().method()) }");
               std::ostringstream output;
               cwhip::dumpAst(program, output);
@@ -85,7 +85,7 @@ const TestGroupRegistration registration{5, {
               const auto program = parse(
                   "namespace Foo {\n"
                   "  class Bar {\n"
-                  "    int64 value\n"
+                  "    public:\n    int64 value\n"
                   "    Bar(int64 initial) { value = initial }\n"
                   "  }\n"
                   "}\n"

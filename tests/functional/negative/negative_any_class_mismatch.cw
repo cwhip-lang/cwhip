@@ -1,5 +1,6 @@
 # Rejects extracting an list-held Cat into Dog because the runtime object has a different exact class.
 class Cat {
+    public:
     int64 lives
     Cat(int64 initial) {
         lives = initial
@@ -7,6 +8,7 @@ class Cat {
 }
 
 class Dog {
+    public:
     int64 loyalty
     Dog(int64 initial) {
         loyalty = initial

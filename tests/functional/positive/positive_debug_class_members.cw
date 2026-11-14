@@ -1,5 +1,6 @@
 # Class member DWARF for locals and watches in cdbg.
 class Point {
+    public:
     int64 x
     int64 y
     Point(int64 nx, int64 ny) {
@@ -9,10 +10,12 @@ class Point {
 }
 
 class Base {
+    public:
     int64 b
 }
 
 class Derived : Base {
+    public:
     int64 d
     Derived(int64 nb, int64 nd) {
         b = nb

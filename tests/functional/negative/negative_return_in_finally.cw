@@ -1,4 +1,5 @@
 class InvalidReturn {
+    public:
     int64 value() {
         try {
             return(1)

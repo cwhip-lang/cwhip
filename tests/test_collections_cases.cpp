@@ -16,7 +16,7 @@ using namespace cwhip_test;
 const TestGroupRegistration registration{4, {
         {"list literals accept mixed int64, string, and class values", [] {
              expectValid(
-                 "class Widget {\n  int64 id\n  Widget(int64 initial) { id = initial }\n}\n"
+                 "class Widget {\n  public:\n  int64 id\n  Widget(int64 initial) { id = initial }\n}\n"
                  "start {\n"
                  "  list bag = [1, \"two\", Widget(3), null]\n"
                  "  print(bag.length)\n"
@@ -69,7 +69,7 @@ const TestGroupRegistration registration{4, {
          }},
         {"legacy 'Class[]' list syntax is rejected", [] {
              expectDiagnostic(
-                 "class Widget {\n  int64 id\n  Widget(int64 initial) { id = initial }\n}\n"
+                 "class Widget {\n  public:\n  int64 id\n  Widget(int64 initial) { id = initial }\n}\n"
                  "start {\n  Widget[] values = [Widget(1)]\n}",
                  "expected expression");
          }},
@@ -83,7 +83,7 @@ const TestGroupRegistration registration{4, {
                               "'any' values cannot be used for member access");
          }},
         {"internal dynamic values cannot receive method calls", [] {
-              expectDiagnostic("class Widget {\n  int64 value\n  int64 get() { return(value) }\n}\n"
+              expectDiagnostic("class Widget {\n  public:\n  int64 value\n  int64 get() { return(value) }\n}\n"
                                "start {\n  list bag = [Widget()]\n"
                                "  int64 value = bag[0].get()\n}",
                                "'any' values cannot be used for method calls");
@@ -130,7 +130,7 @@ const TestGroupRegistration registration{4, {
          }},
         {"internal dynamic values support the approved typed contexts", [] {
              expectValid("class Reader {\n"
-                         "  int64 value\n"
+                         "  public:\n  int64 value\n"
                          "  void set(int64 input) { value = input }\n"
                          "  int64 get() { return(value) }\n"
                          "  int64 read(list values) { return(values[0]) }\n"

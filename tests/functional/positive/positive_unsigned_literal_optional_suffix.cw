@@ -1,6 +1,7 @@
 # Exercises the optional 'u' suffix: an unsuffixed integer literal is a
 # valid unsigned literal wherever the context already expects `unsigned`.
 class Counter {
+    public:
     uint64 value
 
     Counter(uint64 initial) {

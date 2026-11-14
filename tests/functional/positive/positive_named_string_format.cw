@@ -1,5 +1,6 @@
 # Checks named formatting, escaped braces, supported values, and single evaluation.
 class Counter {
+    public:
     int64 calls
     Counter() {
         calls = 0
@@ -11,6 +12,7 @@ class Counter {
 }
 
 class Mutator {
+    public:
     strg text
     Mutator(strg initial) {
         text = initial

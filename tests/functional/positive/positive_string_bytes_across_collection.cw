@@ -1,6 +1,7 @@
 # A finalizer rewrites a live string during a range copy, trim, and split.
 # Each result must be the bytes observed at the start of that call.
 class Box {
+    public:
     strg text
     Box(strg value) {
         text = value
@@ -8,6 +9,7 @@ class Box {
 }
 
 class Mutator {
+    public:
     Box box
     Mutator(Box target) {
         box = target
@@ -23,6 +25,7 @@ class Mutator {
 }
 
 class Maker {
+    public:
     void abandon(Box box) {
         Mutator gone = Mutator(box)
     }

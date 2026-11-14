@@ -89,7 +89,7 @@ const TestGroupRegistration registration{9, {
                                  std::to_string(assignmentWarnings));
 
                      const auto callAndReturn =
-                         "class Converter {\n" + std::string(targetType) +
+                         "class Converter {\npublic:\n" + std::string(targetType) +
                          " fromSource(" + sourceType +
                          " value) { return(value) }\n" + targetType +
                          " fromArgument(" + targetType +
@@ -230,10 +230,10 @@ const TestGroupRegistration registration{9, {
                  expectDiagnostic("class Holder { " + std::string(name) +
                                       " field }\nstart {}\n",
                                   "removed numeric type name");
-                 expectDiagnostic("class Holder { void " + std::string(name) +
+                 expectDiagnostic("class Holder { public: void " + std::string(name) +
                                       "() {} }\nstart {}\n",
                                   "removed numeric type name");
-                 expectDiagnostic("class Holder { void use(" + std::string(name) +
+                 expectDiagnostic("class Holder { public: void use(" + std::string(name) +
                                       " value) {} }\nstart {}\n",
                                   "removed numeric type name");
              }
@@ -252,7 +252,7 @@ const TestGroupRegistration registration{9, {
              (void)cwhip::CodeGenerator("x86_64-unknown-linux-gnu").generate(numericResult);
 
              auto externalNumeric = parse(
-                 "class Native {\n int8 read()\n}\n"
+                 "class Native {\n public:\n int8 read()\n}\n"
                  "int8 Native.read() from \"native_read\"\nstart {}\n",
                  "external-numeric.cw");
              const auto externalIr =

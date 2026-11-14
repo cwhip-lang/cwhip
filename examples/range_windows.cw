@@ -1,4 +1,5 @@
 class Window {
+    public:
     range<int64> reversed(int64 first, int64 last) {
         return(last..first)
     }

@@ -84,6 +84,7 @@ void collections() {
 
 void returnsAndRaises() {
     expectValid(R"(class Values {
+    public:
     int32 get() { return(1 + 2) }
     void empty() { return() }
     void bare() { return }
@@ -92,9 +93,9 @@ start {
     Values value()
     print(value.get())
 })");
-    expectDiagnostic("class X { int32 get() { return 1 } }\nstart {}",
+    expectDiagnostic("class X { public: int32 get() { return 1 } }\nstart {}",
                      "return value must be parenthesized: return(expr)");
-    expectDiagnostic("class X { int32 get() { return(1) + 2 } }\nstart {}",
+    expectDiagnostic("class X { public: int32 get() { return(1) + 2 } }\nstart {}",
                      "return value must be parenthesized: return(expr)");
     expectDiagnostic("start { raise 1 }",
                      "raise arguments must be parenthesized: raise(expr)");

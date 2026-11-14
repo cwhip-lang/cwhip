@@ -1,5 +1,6 @@
 # A caught exception must not print an uncaught stack trace.
 class Worker {
+  public:
   void inner(Worker self) {
     raise(Exception("caught sentinel"))
   }

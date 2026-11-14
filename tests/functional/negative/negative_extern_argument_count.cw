@@ -1,5 +1,6 @@
 # Rejects a native-bound method call with more arguments than its declaration.
 class Native {
+    public:
     int64 absolute(int64 value)
 }
 

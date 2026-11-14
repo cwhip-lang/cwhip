@@ -4,6 +4,7 @@
 # member access on a null reference raises an exception; every other use
 # of a null scalar decays to that type's zero value.
 class Holder {
+    public:
     int64 value
 
     Holder(int64 initialValue) {

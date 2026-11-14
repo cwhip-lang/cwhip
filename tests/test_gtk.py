@@ -16,6 +16,7 @@ from gtk_support import headless
 NATIVE = """
 import gtk
 class F {
+    public:
     handle button()
     handle entry()
     handle window()
@@ -70,12 +71,14 @@ void F.trackPublic() from "fixture_gtk_public_track"
 int64 F.finalized() from "fixture_gtk_finalized"
 String F.badUtf8() from "fixture_gtk_bad_utf8"
 class Thread {
+    public:
     handle launch()
     void join(handle thread)
 }
 handle Thread.launch() from "cwhip_thread_start"
 void Thread.join(handle thread) from "cwhip_thread_join"
 class Sem {
+    public:
     handle create(int64 n)
     void wait(handle sem)
     void release(handle sem)
@@ -88,14 +91,17 @@ void Sem.release(handle sem) from "cwhip_semaphore_release"
 SUBCLASS_FIXTURE = """
 namespace Gtk {
     class FixturePair : Button, Entry {
+        public:
         FixturePair() { super Button("left")
             super Entry("right") }
     }
     class FixtureMarker {
+        public:
         int64 value
         FixtureMarker() { value = 7 }
     }
     class FixtureDerived : FixtureMarker, Button {
+        public:
         FixtureDerived() { super FixtureMarker()
             super Button("derived") }
     }
@@ -105,6 +111,7 @@ namespace Gtk {
 CASES = [
     ("public_widgets", """
 class UI {
+    public:
     Gtk.Window window
     Gtk.Box box
     Gtk.Button button
@@ -219,6 +226,7 @@ class UI {
     }
 }
 class Setup {
+    public:
     void install() {
         UI ui = UI()
         ui.clickAction = ui.clicked
@@ -241,6 +249,7 @@ start {
 """, "trueorg.cwhip.PublicReadyClickEnabledfirstfirstfirstfirstlaterfirsttruetrueclicktrueclickfalsetruepreventfalsetrueallowtruetruefalsefalsefalse", None),
     ("public_parenting", """
 class UI {
+    public:
     Gtk.Window window
     Gtk.Button orphan
     Gtk.Button child
@@ -285,6 +294,7 @@ start {
 """, "truetruetruefalsefalsestill alivetrue", None),
     ("public_dispose_handler", """
 class UI {
+    public:
     Gtk.Window window
     Gtk.Button button
     Gtk.SignalConnection connection
@@ -313,6 +323,7 @@ start {
 """, "falsetrue", None),
     ("signals", """
 class Handler {
+    public:
     handle button
     handle entry
     int64 clicked
@@ -371,6 +382,7 @@ start {
 """, "truetruefalseclicktruetruetrueclickfalse", None),
     ("destroy_during_signal", """
 class Handler {
+    public:
     handle button
     int64 token
     Handler(handle b) { button = b }
@@ -381,6 +393,7 @@ class Handler {
     }
 }
 class Setup {
+    public:
     int64 install(handle button) {
         Handler handler = Handler(button)
         return(F().clicked(button, handler.click))
@@ -399,6 +412,7 @@ start {
 """, "alivefalse", None),
     ("root_and_cancellation", """
 class Payload {
+    public:
     void note()
     destroy { note() }
     void work() { F().owner()
@@ -410,6 +424,7 @@ class Payload {
 }
 void Payload.note() from "fixture_gtk_destroyed"
 class Setup {
+    public:
     int64 submit() { return(Gtk.Application().post(Payload().work)) }
     int64 connect(handle button) { return(F().clicked(button, Payload().work)) }
 }
@@ -440,6 +455,7 @@ start {
 """, "0truefalse112retained4", None),
     ("worker_progress", """
 class Payload {
+    public:
     int64 value
     Payload(int64 n) { value = n }
     void done() {
@@ -450,6 +466,7 @@ class Payload {
     }
 }
 class Worker : Thread {
+    public:
     handle gate
     Worker(handle sem) { gate = sem }
     void submit(int64 n) { Gtk.Application().post(Payload(n).done) }
@@ -476,6 +493,7 @@ start {
 """, "10000", None),
     ("shutdown_in_handler", """
 class Handler {
+    public:
     handle button
     Handler(handle b) { button = b }
     void click() { Gtk.Application().shutdown()
@@ -502,6 +520,7 @@ start {
 """, "shutdownfalse", None),
     ("wrong_thread", """
 class Worker : Thread {
+    public:
     void run() { Gtk.Application().quit() }
 }
 start {
@@ -516,18 +535,18 @@ start { Gtk.Application().initialize()
     F().foreign() }
 """, "", "operation requires the GUI owner thread"),
     ("post_after_shutdown", """
-class Handler { void run() {} }
+class Handler { public: void run() {} }
 start { Gtk.Application().initialize()
     Gtk.Application().shutdown()
     Gtk.Application().post(Handler().run) }
 """, "", "post requires a live application"),
     ("unlocked_post", """
-class Handler { void run() {} }
+class Handler { public: void run() {} }
 start { Gtk.Application().initialize()
     F().unlocked(Handler().run) }
 """, "", "operation requires the managed runtime lock"),
     ("exception_boundary", """
-class Handler { void run() { raise(Exception("gtk boundary")) } }
+class Handler { public: void run() { raise(Exception("gtk boundary")) } }
 start { Gtk.Application().initialize()
     Gtk.Application().post(Handler().run)
     Gtk.Application().run() }
@@ -538,6 +557,7 @@ start { Gtk.Application().initialize()
 def misuse(name, action, diagnostic):
     return (name, """
 class UI {
+    public:
     void noop() {}
     void activate() {
         Gtk.Window window = Gtk.Window("Misuse")
@@ -592,11 +612,13 @@ start { Gtk.Application app = Gtk.Application("org.cwhip.Early")
      "", "null text"),
     ("wrong_widget_thread", """
 class Worker : Thread {
+    public:
     Gtk.Entry entry
     Worker(Gtk.Entry value) { entry = value }
     void run() { entry.setText("worker") }
 }
 class UI {
+    public:
     void activate() {
         Gtk.Entry entry = Gtk.Entry("")
         Worker worker = Worker(entry)
@@ -612,6 +634,7 @@ start {
 """, "", "operation requires the GUI owner thread"),
     ("public_shutdown_handler", """
 class UI {
+    public:
     Gtk.Window window
     Gtk.Button button
     Gtk.SignalConnection connection
@@ -641,7 +664,7 @@ start {
 }
 """, "truefalse", None),
     ("null_signal_source", """
-class Handler { void run() {} }
+class Handler { public: void run() {} }
 start {
     Gtk.Application app = Gtk.Application("org.cwhip.Null")
     Gtk.Button button = null
@@ -649,7 +672,7 @@ start {
 }
 """, "", "null signal source"),
     ("wrong_native_type", """
-class Handler { void run() {} }
+class Handler { public: void run() {} }
 start {
     Gtk.Application().initialize()
     F().clicked(F().entry(), Handler().run)
@@ -657,6 +680,7 @@ start {
 """, "", "clicked requires GtkButton"),
     ("public_entry_dispose", """
 class Handler {
+    public:
     Gtk.Entry entry
     Gtk.SignalConnection connection
     Handler(Gtk.Entry source) { entry = source }
@@ -669,6 +693,7 @@ class Handler {
     }
 }
 class UI {
+    public:
     void activate() {
         Gtk.Window window = Gtk.Window("Entry")
         Gtk.Entry entry = Gtk.Entry("")
@@ -690,6 +715,7 @@ start {
 """, "temporarytruefalse", None),
     ("public_close_dispose", """
 class Handler {
+    public:
     Gtk.Window window
     Handler(Gtk.Window source) { window = source }
     bool close() { window.dispose()
@@ -697,6 +723,7 @@ class Handler {
         return(true) }
 }
 class UI {
+    public:
     void activate() {
         Gtk.Window window = Gtk.Window("Close")
         window.onCloseRequest(Handler(window).close)
@@ -715,6 +742,7 @@ start {
 """, "true", None),
     ("public_native_finalization", """
 class UI {
+    public:
     void activate() {
         Gtk.Window window = Gtk.Window("References")
         Gtk.Box box = Gtk.Box(Gtk.Box.VERTICAL, 0)
@@ -737,6 +765,7 @@ start {
 """, "3truetrue", None),
     ("public_worker_post", """
 class Payload {
+    public:
     Gtk.Window window
     Gtk.Label label
     Payload(Gtk.Window w, Gtk.Label l) { window = w
@@ -750,6 +779,7 @@ class Payload {
     }
 }
 class Worker : Thread {
+    public:
     Gtk.Window window
     Gtk.Label label
     handle gate
@@ -763,6 +793,7 @@ class Worker : Thread {
     }
 }
 class UI {
+    public:
     Worker worker
     handle thread
     handle gate
@@ -795,8 +826,9 @@ start {
 }
 """, "trueworkertrue", None),
     ("close_exception_boundary", """
-class Handler { bool close() { raise(Exception("close boundary")) } }
+class Handler { public: bool close() { raise(Exception("close boundary")) } }
 class UI {
+    public:
     void activate() {
         Gtk.Window window = Gtk.Window("Exception")
         window.onCloseRequest(Handler().close)
@@ -812,6 +844,7 @@ start {
 """, "", "Cwhip native callback error: uncaught Cwhip exception: close boundary"),
     ("public_toggle_dispose", """
 class Handler {
+    public:
     Gtk.CheckButton check
     Gtk.SignalConnection connection
     Handler(Gtk.CheckButton source) { check = source }
@@ -825,6 +858,7 @@ class Handler {
     }
 }
 class UI {
+    public:
     void activate() {
         Gtk.Window window = Gtk.Window("Toggle")
         Gtk.CheckButton check = Gtk.CheckButton("")
@@ -850,7 +884,7 @@ start {
 }
 """, "", "quit requires a running application"),
     ("rerun", """
-class Handler { void activate() { Gtk.Application().quit() } }
+class Handler { public: void activate() { Gtk.Application().quit() } }
 start {
     Gtk.Application app = Gtk.Application("org.cwhip.Rerun")
     app.onActivate(Handler().activate)
@@ -859,7 +893,7 @@ start {
 }
 """, "", "application has shut down"),
     ("multiple_widget_bases", """
-class UI { void activate() { Gtk.FixturePair pair = Gtk.FixturePair() } }
+class UI { public: void activate() { Gtk.FixturePair pair = Gtk.FixturePair() } }
 start {
     Gtk.Application app = Gtk.Application("org.cwhip.Multiple")
     app.onActivate(UI().activate)
@@ -867,9 +901,10 @@ start {
 }
 """, "", "multiple Widget bases in one managed object are not supported"),
     ("widget_secondary_base", """
-class Handler { void click() { F().collect()
+class Handler { public: void click() { F().collect()
     print("clicked") } }
 class UI {
+    public:
     void activate() {
         Gtk.Window window = Gtk.Window("Mixin")
         Gtk.FixtureDerived derived = Gtk.FixtureDerived()
@@ -896,7 +931,7 @@ start {
 
 COMPILE_CASES = [
     ("wrong_callback", """
-class Handler { void click(int64 n) {} }
+class Handler { public: void click(int64 n) {} }
 start { Gtk.Button button = null
     button.onClicked(Handler().click) }
 """, "callback"),
@@ -985,6 +1020,7 @@ def main():
             source.write_text("""import gtk
 import system
 class UI {
+    public:
     int64 count
     Gtk.Window window
     void activate() {
@@ -1035,6 +1071,7 @@ start {
                 source = work / "installed.cw"
                 source.write_text("""import gtk
 class Handler {
+    public:
     void run() { print("installed")
         Gtk.Application().quit() }
 }

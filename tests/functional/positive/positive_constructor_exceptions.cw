@@ -1,15 +1,18 @@
 # Exercises exceptions raised from direct constructors, typed handlers, base constructors, and failed partial objects.
 class OtherException : Exception {
+  public:
   OtherException(strg msg) {
     super Exception(msg)
   }
 }
 class TypedFailure : Exception {
+  public:
   TypedFailure(strg msg) {
     super Exception(msg)
   }
 }
 class GenericFailure {
+  public:
   GenericFailure() {
     raise(Exception("generic constructor failure"))
   }
@@ -18,6 +21,7 @@ class GenericFailure {
   }
 }
 class TypedThrower {
+  public:
   TypedThrower(int64 value) {
     raise(TypedFailure("typed constructor failure"))
   }
@@ -26,6 +30,7 @@ class TypedThrower {
   }
 }
 class FailingBase {
+  public:
   FailingBase() {
     raise(OtherException("base constructor failure"))
   }
@@ -34,6 +39,7 @@ class FailingBase {
   }
 }
 class DerivedFromFailingBase : FailingBase {
+  public:
   DerivedFromFailingBase() {
     super FailingBase()
     print("invalid derived constructor continuation")

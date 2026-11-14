@@ -4,6 +4,7 @@ import system
 // Demonstrates Gtk.TextView: multiline set/get text, wrap/editable, and
 // onChanged for compose-style panes.
 class Demo {
+    public:
     Gtk.Window window
     Gtk.Label readout
     Gtk.TextView body

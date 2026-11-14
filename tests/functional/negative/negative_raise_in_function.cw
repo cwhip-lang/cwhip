@@ -1,4 +1,5 @@
 class Worker {
+  public:
   void fail() {
     raise()
   }

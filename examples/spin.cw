@@ -4,6 +4,7 @@ import system
 // Demonstrates Gtk.SpinButton: range/step configure, get/set value, and
 // value-changed callbacks for bounded numeric entry.
 class Demo {
+    public:
     Gtk.Window window
     Gtk.Label readout
     Gtk.SpinButton spin

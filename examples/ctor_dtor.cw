@@ -4,6 +4,7 @@
 
 class FirstBase {
 
+    public:
     int64 bar
     int64 foo
 
@@ -35,6 +36,7 @@ class FirstBase {
 
 class SecondBase {
 
+    public:
     int64 foo
     SecondBase() {
         print("in the SecondBase constructor")
@@ -48,6 +50,7 @@ class SecondBase {
 
 class Child: public FirstBase, private SecondBase {
 
+    public:
     Child() {
         super FirstBase()
         super SecondBase()

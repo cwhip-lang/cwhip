@@ -4,6 +4,7 @@ import system
 // Demonstrates Gtk.ProgressBar: determinate fraction with overlay text,
 // and indeterminate pulse mode for unknown ETA.
 class Demo {
+    public:
     Gtk.Window window
     Gtk.Label readout
     Gtk.ProgressBar determinate

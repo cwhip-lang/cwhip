@@ -1,5 +1,6 @@
 # Verifies a diamond shares one virtual base and cleans up correctly when virtual-base construction fails.
 class Payload {
+    public:
     int64 value
 
     Payload(int64 initial) {
@@ -8,6 +9,7 @@ class Payload {
 }
 
 class Root {
+    public:
     Payload item
     int64 value
 
@@ -26,6 +28,7 @@ class Root {
 }
 
 class Left : virtual Root {
+    public:
     Left() {
         print("Left+")
     }
@@ -36,6 +39,7 @@ class Left : virtual Root {
 }
 
 class Right : virtual Root {
+    public:
     Right() {
         print("Right+")
     }
@@ -46,6 +50,7 @@ class Right : virtual Root {
 }
 
 class Diamond : Left, Right {
+    public:
     Diamond() {
         super Left()
         super Right()
@@ -62,6 +67,7 @@ class Diamond : Left, Right {
 }
 
 class FailedRoot {
+    public:
     FailedRoot() {
         raise(Exception("virtual initialization failed"))
     }
@@ -72,12 +78,14 @@ class FailedRoot {
 }
 
 class FailedSide : virtual FailedRoot {
+    public:
     FailedSide() {
         print("wrong side constructor")
     }
 }
 
 class FailedDiamond : FailedSide {
+    public:
     FailedDiamond() {
         super FailedSide()
     }

@@ -1,4 +1,5 @@
 class Conversions {
+    public:
     uint64 toUnsigned(int64 value) { return(uint64(value))}
     int64 toInt(uint64 value) { return(int64(value))}
     int64 floatToInt(fp64 value) { return(int64(value))}

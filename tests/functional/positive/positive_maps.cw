@@ -1,5 +1,6 @@
 # Covers heterogeneous maps, aliases, string keys, nested collections, typed extraction, and retained references.
 class Node {
+    public:
     int64 value
     Node(int64 initial) {
         value = initial
@@ -10,6 +11,7 @@ class Node {
 }
 
 class Catalog {
+    public:
     dict content
     Catalog(dict initial) {
         content = initial

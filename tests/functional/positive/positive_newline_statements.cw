@@ -1,5 +1,6 @@
 # Checks newline-delimited statements work without semicolons and comments preserve statement boundaries.
 class Base {
+    public:
     int64 value
     Base(int64 initial) {
         value = initial
@@ -7,6 +8,7 @@ class Base {
 }
 
 class Child : Base {
+    public:
     Child(int64 initial) {
         super Base(initial)
     }

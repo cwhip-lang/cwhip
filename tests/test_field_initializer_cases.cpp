@@ -12,6 +12,7 @@ const TestGroupRegistration registration{18, {
     {"field initializers retain and fold compile-time values", [] {
         auto program = parse(R"(
 class Values {
+    public:
     enum { ANSWER = 42 }
     int64 number = ANSWER + 2 * 3
     uint64 maximum = 18446744073709551615u
@@ -53,6 +54,7 @@ class Base {
     enum { VALUE = 7 }
 }
 class Derived: Base {
+    public:
     int64 inherited = VALUE * 2
     int64 qualified = Base.VALUE + 1
     enum { LOCAL = 3 }
@@ -60,12 +62,12 @@ class Derived: Base {
     type owner = Derived
 }
 }
-class External { int64 number = Settings.Derived.LOCAL }
+class External { public: int64 number = Settings.Derived.LOCAL }
 start { Settings.Derived value() }
 )");
         expectDiagnostic(R"(
 class Base { private: enum { SECRET = 1 } }
-class Derived: Base { int64 number = Base.SECRET }
+class Derived: Base { public: int64 number = Base.SECRET }
 start {}
 )", "not accessible");
     }},
@@ -74,24 +76,24 @@ start {}
                  "other", "get()", "Factory()", "Factory().VALUE",
                  "[get()]", "[\"value\": get()]", "\"value={other}\""}) {
             expectDiagnostic(
-                "class Factory { enum { VALUE = 1 } }\n"
-                "class Invalid { int64 other\n int64 get() { return(1) }\n"
+                "class Factory { public: enum { VALUE = 1 } }\n"
+                "class Invalid { public: int64 other\n int64 get() { return(1) }\n"
                 "int64 field = " + std::string(initializer) + "\n}\nstart {}",
                 "field initializer must be a compile-time constant");
         }
-        expectDiagnostic("class C { int64 value = missing }\nstart {}",
+        expectDiagnostic("class C { public: int64 value = missing }\nstart {}",
                          "compile-time constant");
         for (const auto* field : {
                  "list value = [get()]", "dict value = [\"key\": get()]",
                  "buffer value = buffer[get()]", "type value = type(get())"}) {
             expectDiagnostic(
-                "class C { int64 get() { return(1) }\n" +
+                "class C { public: int64 get() { return(1) }\n" +
                     std::string(field) + "\n}\nstart {}",
                 "runtime expressions are not allowed");
         }
-        expectDiagnostic("class C { int64 value = \"text\" }\nstart {}",
+        expectDiagnostic("class C { public: int64 value = \"text\" }\nstart {}",
                          "cannot initialize int64 field with String");
-        expectDiagnostic("class C { int64 value = 1.0f64 / 0.0f64 }\nstart {}",
+        expectDiagnostic("class C { public: int64 value = 1.0f64 / 0.0f64 }\nstart {}",
                          "invalid numeric conversion");
     }},
     {"field constant arithmetic rejects domain errors", [] {
@@ -106,7 +108,7 @@ start {}
                  std::pair{"int64 value = 1 << -1", "invalid shift count"},
                  std::pair{"int64 value = int64(1) << 64", "invalid shift count"},
                  std::pair{"int64 value = int8(128.0f64)", "invalid numeric conversion"}}) {
-            expectDiagnostic("class Invalid { " + std::string(item.first) +
+            expectDiagnostic("class Invalid { public: " + std::string(item.first) +
                                  "\n}\nstart {}",
                              item.second);
         }
@@ -114,10 +116,12 @@ start {}
     {"field initialization lowering precedes constructor calls", [] {
         auto program = parse(R"(
 class Base {
+    public:
     int64 number = 37
     Base() { number += 1 }
 }
 class Derived: Base {
+    public:
     int64 own = 41
     Derived() { super Base() }
 }

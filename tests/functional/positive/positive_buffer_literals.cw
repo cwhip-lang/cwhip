@@ -1,5 +1,6 @@
 # Explicit buffer literals evaluate their integer elements once from left to right.
 class Builder {
+    public:
     int64 calls
 
     Builder() {

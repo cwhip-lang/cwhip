@@ -1,4 +1,5 @@
 class NativeCtor {
+    public:
     NativeCtor(int64 value)
 }
 

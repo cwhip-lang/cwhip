@@ -28,7 +28,7 @@ const TestGroupRegistration registration{16, {
         require(keywords[0].type == T::Switch && keywords[1].type == T::Case &&
                     keywords[2].type == T::Default && keywords[3].type == T::Identifier,
                 "switch keywords should be case insensitive");
-        expectValid("class C { enum { NEXT = 1 }\n int64 next() { return(NEXT) } }\n"
+        expectValid("class C { public: enum { NEXT = 1 }\n int64 next() { return(NEXT) } }\n"
                     "start { C c = C()\n int64 next = c.next()\n next += 1\n"
                     "switch (next) { case (2) { NeXt } default {} } }");
     }},
@@ -67,10 +67,10 @@ start {
         }
         expectDiagnostic("start { int64 value = 1\n"
                          "switch (value) { case (value) {} } }", "compile-time");
-        expectDiagnostic("class C { int64 get() { return(1) } }\n"
+        expectDiagnostic("class C { public: int64 get() { return(1) } }\n"
                          "start { C c = C()\n switch (1) { case (c.get()) {} } }",
                          "compile-time");
-        expectDiagnostic("class C { enum { VALUE = 1 }\n C get() { return(C()) } }\n"
+        expectDiagnostic("class C { public: enum { VALUE = 1 }\n C get() { return(C()) } }\n"
                          "start { C c = C()\n switch (1) { case (c.get().VALUE) {} } }",
                          "not an instance expression");
     }},
@@ -181,8 +181,8 @@ start {
             expectValid("start { switch (int64(1)) { case(" + std::string(labels) +
                         ") {} } }");
         }
-        auto program = parse("class A { enum { FIRST = -3 } }\n"
-                             "class B { enum { LAST = 8 } }\n"
+        auto program = parse("class A { public: enum { FIRST = -3 } }\n"
+                             "class B { public: enum { LAST = 8 } }\n"
                              "start {\n switch (int64(1)) {\n"
                              " case(B.LAST..A.FIRST) {}\n }\n}", "endpoints.cw");
         const auto& label = program.statements.front().switchBranches.front().labels.front();
@@ -192,13 +192,13 @@ start {
                     label.lower->location.line == 5 && label.lower->location.column == 9 &&
                     label.upper->location.line == 5 && label.upper->location.column == 17,
                 "source endpoints or locations were swapped");
-        expectDiagnostic("class A { enum { FIRST = -3 } }\n"
-                         "class B { enum { LAST = 8 } }\n"
+        expectDiagnostic("class A { public: enum { FIRST = -3 } }\n"
+                         "class B { public: enum { LAST = 8 } }\n"
                          "start { switch (int64(1)) {"
                          "case(B.LAST..A.FIRST) {} case (-3) {} } }", "overlapping");
     }},
     {"switch constant expressions preserve numeric semantics", [] {
-        expectValid("class C { enum { ONE = 1, THREE = ONE + 2 }\n"
+        expectValid("class C { public: enum { ONE = 1, THREE = ONE + 2 }\n"
                     "int64 f(int64 x) { switch (x) { case (ONE + 1) { return(2) }"
                     " case (C.THREE) { next } default { return(3) } } } }\n"
                     "start { switch (uint8(0)) {"
@@ -212,7 +212,7 @@ start {
     }},
     {"switch branch scopes initialization and return reachability", [] {
         expectValid("namespace N { class C {} class D {"
-                    "int64 run(int64 x) { switch (x) {"
+                    "public: int64 run(int64 x) { switch (x) {"
                     " case (1) { C local = C()\n next }"
                     " case (2) { C local = C()\n return(2) }"
                     " default { return(3) } } } } }\nstart {}");
@@ -223,19 +223,19 @@ start {
         expectDiagnostic("start { switch (1) {"
                          " case (1) { int64 x = 1\n next } default { print(x) } } }",
                          "undefined variable");
-        expectDiagnostic("class C { int64 f(int64 x) { switch (x) {"
+        expectDiagnostic("class C { public: int64 f(int64 x) { switch (x) {"
                          " case (1) { return(1) } } } }\nstart {}", "return");
-        expectDiagnostic("class C { int64 f(int64 x) { switch (x) {"
+        expectDiagnostic("class C { public: int64 f(int64 x) { switch (x) {"
                          " case (1) { next } default {} } } }\nstart {}", "return");
-        expectValid("class C { C() { switch (1) { default { return } } } }\nstart {}");
-        expectDiagnostic("class B { B() {} }\n class C: B { C() {"
+        expectValid("class C { public: C() { switch (1) { default { return } } } }\nstart {}");
+        expectDiagnostic("class B { public: B() {} }\n class C: B { public: C() {"
                          " try { super B() } except() {"
                          " switch (1) { default { return } } raise() } } }\nstart {}",
                          "base initialization handler");
-        expectDiagnostic("class B { B() {} }\n class C: B { C() {"
+        expectDiagnostic("class B { public: B() {} }\n class C: B { public: C() {"
                          " super B()\n switch (1) { default { super B() } } } }\nstart {}",
                          "direct leading constructor");
-        expectDiagnostic("class C { int64 f() { try {} finally {"
+        expectDiagnostic("class C { public: int64 f() { try {} finally {"
                          " switch (1) { default { return(1) } } } return(2) } }\nstart {}",
                          "return is not allowed inside finally");
     }},

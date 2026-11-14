@@ -1,5 +1,6 @@
 # Rejects providing two out-of-line native definitions for the same declared method.
 class Native {
+    public:
     int64 absolute(int64 value)
 }
 

@@ -1,6 +1,7 @@
 import system as sys
 
 class Box {
+    public:
     String value
 
     Box(String text) { value = text }
@@ -15,16 +16,19 @@ class Box {
 }
 
 class Pair {
+    public:
     Box inner
 
     Pair(Box box) { inner = box }
 }
 
 class Derived : Box {
+    public:
     Derived() { super Box(sys.FileSystem().basename("/d/derived.txt")) }
 }
 
 class AliasError : Exception {
+    public:
     AliasError() { super Exception(sys.FileSystem().basename("/e/base.txt")) }
 }
 

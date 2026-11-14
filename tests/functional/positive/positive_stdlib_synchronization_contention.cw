@@ -1,6 +1,7 @@
 import synchronization as Sync
 
 class Thread {
+    public:
     handle launch()
     void join(handle worker)
 }
@@ -9,6 +10,7 @@ handle Thread.launch() from "cwhip_thread_start"
 void Thread.join(handle worker) from "cwhip_thread_join"
 
 class Counter {
+    public:
     Sync.Mutex mutex
     int64 value
 
@@ -19,6 +21,7 @@ class Counter {
 }
 
 class CounterWorker : Thread {
+    public:
     Counter counter
 
     CounterWorker(Counter shared) {
@@ -38,6 +41,7 @@ class CounterWorker : Thread {
 }
 
 class PingPong {
+    public:
     Sync.Mutex mutex
     Sync.Condition turnChanged
     int64 turn
@@ -52,6 +56,7 @@ class PingPong {
 }
 
 class PingPongWorker : Thread {
+    public:
     PingPong shared
     int64 mine
     int64 theirs
@@ -79,6 +84,7 @@ class PingPongWorker : Thread {
 }
 
 class HoldWorker : Thread {
+    public:
     Sync.Mutex mutex
     Sync.Semaphore holding
     Sync.Semaphore proceed

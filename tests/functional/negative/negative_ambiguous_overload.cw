@@ -2,14 +2,17 @@
 # type, so a bare null argument matches both class-typed overloads and the
 # call cannot be resolved.
 class Left {
+    public:
     Left() {}
 }
 
 class Right {
+    public:
     Right() {}
 }
 
 class Chooser {
+    public:
     Chooser() {}
 
     int64 pick(Left value) {

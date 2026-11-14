@@ -5,6 +5,7 @@
 # inheriting its siblings, and may add a new overload of its own -- and that
 # all of them dispatch correctly through a base-typed reference.
 class Formatter {
+    public:
     Formatter() {}
 
     int64 describe() {
@@ -29,6 +30,7 @@ class Formatter {
 }
 
 class LoudFormatter : Formatter {
+    public:
     LoudFormatter() {
         super Formatter()
     }

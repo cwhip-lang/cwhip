@@ -1,5 +1,6 @@
 # Exercises dict lookup and membership, key/value iteration, list iteration, and collection-held object references.
 class Node {
+    public:
     int64 value
     Node(int64 initial) {
         value = initial

@@ -1,4 +1,5 @@
 class IntBox {
+    public:
     int64 value
 
     IntBox(int64 initial) {
@@ -15,6 +16,7 @@ class IntBox {
 }
 
 class Native {
+    public:
     int64 marker
 
     Native(int64 initialMarker) {

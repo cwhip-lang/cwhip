@@ -1,5 +1,6 @@
 namespace Random {
     class SecureRandom {
+        public:
         buffer bytes(int64 size)
         bool fill(buffer target)
     }

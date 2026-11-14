@@ -1,5 +1,6 @@
 # Checks explicit destruction and garbage-collector finalization of unreachable objects.
 class Resource {
+    public:
     int64 code
     Resource(int64 value) {
         code = value
@@ -10,6 +11,7 @@ class Resource {
 }
 
 class Maker {
+    public:
     void makeExplicit() {
         Resource item = Resource(2)
         item.destroy()

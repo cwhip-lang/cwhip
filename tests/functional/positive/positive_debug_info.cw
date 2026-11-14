@@ -1,4 +1,5 @@
 class Number {
+    public:
     int64 double(int64 value) {
         int64 doubled = value * 2
         return(doubled)

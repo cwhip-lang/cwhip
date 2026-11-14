@@ -32,14 +32,16 @@ def main():
     source = r"""
 import enum_values as Values
 namespace N {
-    class Labels { enum { LOW = -3, HIGH = LOW + 2, SINGLE = 30 } }
-    class OtherLabels { enum { HIGH = 3 } }
+    class Labels { public: enum { LOW = -3, HIGH = LOW + 2, SINGLE = 30 } }
+    class OtherLabels { public: enum { HIGH = 3 } }
     class Payload {
+        public:
         int64 value
         Payload(int64 n) { value = n }
         destroy { print("destroyed/") }
     }
     class Worker {
+        public:
         int64 evaluations
         int64 selector(int64 n) { evaluations += 1
             return(n) }

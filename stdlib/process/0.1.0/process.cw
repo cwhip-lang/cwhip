@@ -1,5 +1,6 @@
 namespace Process {
     class Runtime {
+        public:
         handle spawn(String executable, list arguments)
         bool wait(handle process)
         int64 exitCode(handle process)

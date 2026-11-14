@@ -1,4 +1,5 @@
 class Choice {
+    public:
     int64 selected
 
     Choice() {
@@ -19,6 +20,7 @@ class Choice {
 }
 
 class Ticker {
+    public:
     int64 count
 
     int64 next() {
@@ -32,6 +34,7 @@ class Ticker {
 }
 
 class Pair {
+    public:
     int64 value
 
     Pair(int64 first, int64 second) {
@@ -44,6 +47,7 @@ class Pair {
 }
 
 class Maker {
+    public:
     Choice make() {
         Choice local(8)
         return(local)
@@ -60,6 +64,7 @@ class Maker {
 
 namespace Geometry {
     class Point {
+        public:
         int64 x
 
         Point(int64 initial) {
@@ -71,6 +76,7 @@ namespace Geometry {
 class Base {}
 
 class Derived : Base {
+    public:
     Derived() {
         super Base()
     }

@@ -7,6 +7,7 @@ import math as MathLib
 import system as Sys
 
 class Dataset {
+    public:
     list rows
 
     Dataset() {
@@ -78,6 +79,7 @@ class Dataset {
 }
 
 class Network {
+    public:
     MathLib.Math math
     int64 inputCount
     int64 hiddenCount

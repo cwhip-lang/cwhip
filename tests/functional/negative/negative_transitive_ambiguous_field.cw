@@ -1,5 +1,6 @@
 # Rejects field lookup when virtual and non-virtual paths produce ambiguous ancestor subobjects.
 class Ancestor {
+    public:
     int64 value
 }
 

@@ -1,5 +1,6 @@
 // Class enums make compile-time case endpoints readable.
 class Delivery {
+    public:
     enum { FIRST = 1, LAST = 3 }
     void describe(int64 day) {
         switch (day) {

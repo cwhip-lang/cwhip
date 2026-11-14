@@ -1,5 +1,6 @@
 # Verifies inherited fields and overridden methods through a three-level class hierarchy.
 class Node {
+    public:
     int64 value
 
     Node(int64 initial) {
@@ -8,6 +9,7 @@ class Node {
 }
 
 class Base {
+    public:
     Node item
 
     Base(Node initial) {
@@ -20,6 +22,7 @@ class Base {
 }
 
 class Child : Base {
+    public:
     int64 extra
 
     Child(Node initial, int64 amount) {
@@ -37,6 +40,7 @@ class Child : Base {
 }
 
 class Grandchild : Child {
+    public:
     int64 last
 
     Grandchild(Node initial, int64 amount, int64 finalAmount) {

@@ -1,4 +1,5 @@
 class Duplicate {
+    public:
     Duplicate(int64 value) {}
     Duplicate(int64 other) {}
 }

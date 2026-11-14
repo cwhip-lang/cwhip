@@ -1,5 +1,6 @@
 # Covers construction and conversion through secondary bases, qualified subobjects, dispatch, and destructor failures.
 class Payload {
+    public:
     int64 value
 
     Payload(int64 initial) {
@@ -8,6 +9,7 @@ class Payload {
 }
 
 class Root {
+    public:
     int64 value
 
     Root(int64 initial) {
@@ -28,6 +30,7 @@ class Root {
 }
 
 class Left : Root {
+    public:
     Left(int64 initial) {
         super Root(initial)
     }
@@ -38,6 +41,7 @@ class Left : Root {
 }
 
 class Right : Root {
+    public:
     Payload payload
 
     Right(int64 initial) {
@@ -52,6 +56,7 @@ class Right : Root {
 }
 
 class Diamond : Left, Right {
+    public:
     Diamond(int64 left, int64 right) {
         super Left(left)
         super Right(right)
@@ -71,18 +76,21 @@ class Diamond : Left, Right {
 }
 
 class Reader {
+    public:
     int64 readRoot(Root root) {
         return(root.read())
     }
 }
 
 class Factory {
+    public:
     Root fromRight(Right right) {
         return(right)
     }
 }
 
 class FailingSide {
+    public:
     FailingSide() {
         raise(Exception("secondary constructor failure"))
     }
@@ -93,6 +101,7 @@ class FailingSide {
 }
 
 class Failing : Root, FailingSide {
+    public:
     Failing() {
         super Root(0)
         super FailingSide()

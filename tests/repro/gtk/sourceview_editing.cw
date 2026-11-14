@@ -1,5 +1,6 @@
 import system
 class UI {
+    public:
     void require(bool condition, String label) {
         if (!condition) {
             System.StandardIO().writeErrorLine(label)

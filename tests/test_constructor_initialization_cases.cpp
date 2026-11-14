@@ -6,26 +6,26 @@ namespace {
 using namespace cwhip_test;
 
 const std::string bases =
-    "class A { A() {} }\nclass B { B() {} }\n";
+    "class A { public: A() {} }\nclass B { public: B() {} }\n";
 
 void rejectBody(const std::string& body, const std::string& diagnostic) {
-    expectDiagnostic(bases + "class C: A, B { C() { " + body + " } }\nstart {}",
+    expectDiagnostic(bases + "class C: A, B { public: C() { " + body + " } }\nstart {}",
                      diagnostic);
 }
 
 const TestGroupRegistration registration{3, {
     {"protected base initialization accepts exceptional handlers", [] {
         expectValid(bases +
-            "class C: A, B { C(bool flag) {\n"
+            "class C: A, B { public: C(bool flag) {\n"
             "try { super A()\n super B() }\n"
             "except(Exception) { if(flag) { raise() } else { "
             "raise(Exception(\"replacement\")) } }\n"
             "finally { print(\"cleanup\") }\n print(\"constructed\") } }\nstart { C c(true) }");
         expectValid(bases +
-            "class C: A, B { C() { try { super A()\n super B() } "
+            "class C: A, B { public: C() { try { super A()\n super B() } "
             "finally { print(\"cleanup\") } } }\nstart { C c() }");
         expectValid(bases +
-            "class C: A, B { C() { try { super A()\n super B() } "
+            "class C: A, B { public: C() { try { super A()\n super B() } "
             "except() { try { raise() } except() { raise() } } } }\nstart {}");
     }},
     {"protected base initialization rejects recovery and returns", [] {
@@ -72,31 +72,31 @@ const TestGroupRegistration registration{3, {
     }},
     {"protected virtual initialization preserves ownership and ordering", [] {
         const std::string virtualBases =
-            "class V { V(int64 n) {} }\nclass W { W(int64 n) {} }\n"
-            "class L: virtual V, virtual W { L() {} }\n";
+            "class V { public: V(int64 n) {} }\nclass W { public: W(int64 n) {} }\n"
+            "class L: virtual V, virtual W { public: L() {} }\n";
         expectValid(virtualBases +
-            "class C: L { C() { try { super virtual V(1)\n super virtual W(2)\n"
+            "class C: L { public: C() { try { super virtual V(1)\n super virtual W(2)\n"
             "super L() } except() { raise() } } }\nstart { C c() }");
         expectValid(virtualBases +
-            "class C: L { C() { try { super virtual V(1)\n super virtual W(2)\n"
-            "super L() } except() { raise() } } }\nclass D: C { D() { super C() } }\nstart {}");
+            "class C: L { public: C() { try { super virtual V(1)\n super virtual W(2)\n"
+            "super L() } except() { raise() } } }\nclass D: C { public: D() { super C() } }\nstart {}");
         expectDiagnostic(virtualBases +
-            "class C: L { C() { try { super virtual V(1)\n super virtual V(2)\n"
+            "class C: L { public: C() { try { super virtual V(1)\n super virtual V(2)\n"
             "super L() } except() { raise() } } }\nstart {}",
             "initialized more than once");
         expectDiagnostic(virtualBases +
-            "class C: L { C() { try { super virtual W(1)\n super virtual V(2)\n"
+            "class C: L { public: C() { try { super virtual W(1)\n super virtual V(2)\n"
             "super L() } except() { raise() } } }\nstart {}",
             "must follow virtual-base construction order");
         expectDiagnostic(virtualBases +
-            "class C: L { C() { try { super L()\n super virtual V(1) } "
+            "class C: L { public: C() { try { super L()\n super virtual V(1) } "
             "except() { raise() } } }\nstart {}",
             "must precede direct base");
         expectDiagnostic(virtualBases +
-            "class C: L { C() { try { super L() } except() { raise() } } }\nstart { C c() }",
+            "class C: L { public: C() { try { super L() } except() { raise() } } }\nstart { C c() }",
             "must initialize virtual base 'V'");
         expectValid(virtualBases +
-            "class C: L { C() }\n"
+            "class C: L { public: C() }\n"
             "C C.C() { try { super virtual V(1)\n super virtual W(2)\n super L() } "
             "except() { raise() } }\nstart { C c() }");
     }},
