@@ -266,6 +266,44 @@ start {
 
 This writes `340`; `print` does not add line breaks.
 
+A local declaration may start with `const`: `const type name`,
+`const type name = expression`, or `const ClassName name(arguments)`.
+`const` is a case-insensitive reserved word, so it cannot be used as a name.
+It applies to locals in `start`, methods, constructors, and destructors.
+Fields, parameters, and enum constants do not use it. A field is not declared
+`const`, a parameter already has a value, and assigning to an enum constant
+remains a compile-time error.
+
+A `const` local accepts one value. An initializer, including a direct
+constructor call, is that value. A declaration with no initializer has no
+value yet, and the zero or null fill stored for the slot does not count.
+The first later assignment stores the value. Another assignment to that
+variable, including a compound assignment, raises a catchable exception.
+The check is dynamic: a store in one branch makes a later store fail only
+when that branch ran. Reading the variable before any store is still the
+compile-time error `variable '…' may be uninitialized`.
+
+`const` tracks stores to the variable itself. Indexing a `const` list, dict,
+or buffer, and calling a method that updates a `const` object's fields,
+changes the referent. Reseating the variable does not. An `inline` C capture
+of a `const` local is rejected, because the capture would expose the slot to
+stores that bypass the check.
+
+```cwhip
+// Complete program: a const local keeps its first value.
+// test: {"stdout": "1kept1"}
+start {
+    const int64 value = 1
+    print(value)
+    try {
+        value = 2
+    } except() as error {
+        print("kept")
+    }
+    print(value)
+}
+```
+
 ## Expressions and operators
 
 Expressions include literals, names, parentheses, list, dict, and buffer

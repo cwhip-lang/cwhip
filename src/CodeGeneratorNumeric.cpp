@@ -32,6 +32,14 @@ std::string CodeGenerator::abiParameterType(const std::string& type) const {
     return llvmType(type) + (extension.empty() ? "" : " " + extension);
 }
 
+void CodeGenerator::emitConstWriteGuard(const Binding& binding, const std::string& name,
+                                       const SourceLocation& location) {
+    if (binding.constFlagAddress.empty()) return;
+    const auto written = newTemporary();
+    instructions_ += "  " + written + " = load i1, ptr " + binding.constFlagAddress + "\n";
+    emitNumericFailureIf(written, "assignment to const variable '" + name + "'", location);
+}
+
 void CodeGenerator::emitNumericFailureIf(const std::string& condition,
                                          const std::string& message,
                                          const SourceLocation& location) {

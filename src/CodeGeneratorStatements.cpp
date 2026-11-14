@@ -203,18 +203,26 @@ void CodeGenerator::emitStatement(const Statement& statement) {
     case StatementKind::Declaration: {
         const auto pointer = "%v" + std::to_string(nextVariable_++);
         std::string flagPointer;
+        std::string constFlagPointer;
         const bool nullableScalar = isNullableScalarType(statement.declaredType);
         if (nullableScalar) {
             flagPointer = "%v" + std::to_string(nextVariable_++) + ".isnull";
         }
+        if (statement.constant) {
+            constFlagPointer = "%v" + std::to_string(nextVariable_++) + ".const";
+        }
         scopes_.back().emplace(statement.name,
                                Binding{statement.declaredType, pointer, {}, false, false,
-                                      flagPointer});
+                                      flagPointer, constFlagPointer});
         entryAllocas_ += "  " + pointer + " = alloca " + llvmType(statement.declaredType) + "\n";
         if (nullableScalar) entryAllocas_ += "  " + flagPointer + " = alloca i1\n";
+        if (statement.constant) entryAllocas_ += "  " + constFlagPointer + " = alloca i1\n";
         registerRootSlot(pointer, statement.declaredType);
         instructions_ += debugDeclaration(statement.name, statement.declaredType, pointer,
                                           statement.location);
+        if (statement.constant) {
+            instructions_ += "  store i1 0, ptr " + constFlagPointer + "\n";
+        }
         if (!statement.expressions.empty()) {
             auto value = emitExpression(*statement.expressions.front(), statement.declaredType);
             auto converted = convertObjectValue(value, statement.declaredType,
@@ -227,6 +235,9 @@ void CodeGenerator::emitStatement(const Statement& statement) {
                 instructions_ += "  store i1 " +
                                  (converted.nullFlag.empty() ? "0" : converted.nullFlag) +
                                  ", ptr " + flagPointer + "\n";
+            }
+            if (statement.constant) {
+                instructions_ += "  store i1 1, ptr " + constFlagPointer + "\n";
             }
         } else {
             instructions_ += "  store " + llvmType(statement.declaredType) +
@@ -351,12 +362,18 @@ void CodeGenerator::emitStatement(const Statement& statement) {
                                             statement.expressions.front()->location);
         converted = copyBufferValue(std::move(converted),
                                     statement.expressions.front()->location);
+        if (statement.target->kind == ExpressionKind::Identifier) {
+            emitConstWriteGuard(binding, statement.target->value, statement.location);
+        }
         instructions_ += "  store " + llvmType(binding.type) + " " + converted.operand +
                          ", ptr " + address + "\n";
         if (!binding.nullFlagAddress.empty()) {
             instructions_ += "  store i1 " +
                              (converted.nullFlag.empty() ? "0" : converted.nullFlag) +
                              ", ptr " + binding.nullFlagAddress + "\n";
+        }
+        if (!binding.constFlagAddress.empty()) {
+            instructions_ += "  store i1 1, ptr " + binding.constFlagAddress + "\n";
         }
         return;
     }

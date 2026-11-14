@@ -48,6 +48,11 @@ const TestGroupRegistration registration{1, {
         expectDiagnostic("start { inline (int64 .value) {} }",
                          "instance field inline capture requires an instance context");
         expectDiagnostic("start { inline (int64 value) {} }", "undefined inline capture");
+        expectDiagnostic("start {\n const int64 value = 1\n inline (int64 value) {}\n}",
+                         "const variable 'value' cannot be captured by inline C");
+        expectDiagnostic("start {\n const int64 value inline {}\n}",
+                         "const variable 'value' cannot be captured by inline C");
+        expectValid("start {\n int64 value = 1\n inline (int64 value) { *value = 2; }\n}");
         expectDiagnostic(
             "class Box { int64 value }\nstart { Box box = Box()\n"
             " inline (int64 box.value) {} }",

@@ -135,7 +135,8 @@ void dumpStatement(const Statement& statement, std::ostream& output, int depth) 
     indent(output, depth);
     switch (statement.kind) {
     case StatementKind::Declaration:
-        output << "Declaration [" << statement.declaredType << " " << statement.name << "]\n";
+        output << "Declaration [" << (statement.constant ? "const " : "")
+               << statement.declaredType << " " << statement.name << "]\n";
         break;
     case StatementKind::Assignment:
         output << "Assignment";

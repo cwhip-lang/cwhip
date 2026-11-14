@@ -1168,7 +1168,8 @@ void SemanticAnalyzer::dumpSymbolTable(std::ostream& output) const {
     output << "Symbols:\n";
     for (const auto& symbol : symbols_) {
         output << "  " << symbol.type << " " << symbol.name << " ("
-               << (symbol.initialized ? "initialized" : "uninitialized") << ") at "
+               << (symbol.initialized ? "initialized" : "uninitialized")
+               << (symbol.constant ? ", const" : "") << ") at "
                << symbol.location.line << ":" << symbol.location.column << '\n';
     }
 }

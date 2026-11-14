@@ -26,6 +26,8 @@ struct SymbolInfo {
     bool initialized = false;
     SourceLocation location;
     bool readOnly = false;
+    // Write-once local. Distinct from readOnly, which rejects every store.
+    bool constant = false;
 };
 
 struct SemanticWarning {

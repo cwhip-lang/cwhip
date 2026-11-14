@@ -85,6 +85,17 @@ const TestGroupRegistration registration{0, {
          }},
         {"reserved keywords", [] {
              expectDiagnostic("start {\n bool While = false\n}", "keywords are reserved");
+             expectDiagnostic("start {\n int64 const = 1\n}", "keywords are reserved");
+             expectDiagnostic("start {\n int64 CONST = 1\n}", "keywords are reserved");
+         }},
+        {"const is a case-insensitive keyword", [] {
+             cwhip::Lexer lexer("start { CONST value = 1 const other = 2 }", "const.cw");
+             const auto tokens = lexer.tokenize();
+             int consts = 0;
+             for (const auto& token : tokens) {
+                 if (token.type == cwhip::TokenType::Const) ++consts;
+             }
+             require(consts == 2, "CONST and const were not both keywords");
          }},
         {"callback is an ordinary identifier", [] {
              cwhip::Lexer lexer("class callback {}\nstart { callback value = callback() }",

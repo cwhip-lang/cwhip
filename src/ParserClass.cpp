@@ -266,6 +266,9 @@ std::string Parser::parseType(bool allowVoid) {
         ++current_;
         type = "void";
     }
+    else if (check(TokenType::Const)) {
+        error(current(), "'const' applies only to local variables");
+    }
     else if (check(TokenType::Identifier)) {
         type = tokens_[current_++].text;
         while (match(TokenType::Dot)) {

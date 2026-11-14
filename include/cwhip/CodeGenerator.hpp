@@ -39,6 +39,12 @@ private:
         // other binding (fields, parameters, non-scalar locals), meaning
         // "not tracked" / statically non-null.
         std::string nullFlagAddress{};
+        // Non-empty only for a const local: the address of a companion i1
+        // alloca that is true after the variable has received a value. A
+        // later store of that local raises. Empty for every other binding.
+        // The zero fill of a const local with no initializer leaves this
+        // flag clear, so that fill is not a value.
+        std::string constFlagAddress{};
     };
     struct Value {
         std::string type;
@@ -116,6 +122,8 @@ private:
                                 const SourceLocation& location);
     void emitNumericFailureIf(const std::string& condition, const std::string& message,
                               const SourceLocation& location);
+    void emitConstWriteGuard(const Binding& binding, const std::string& name,
+                             const SourceLocation& location);
     Value emitArithmeticOperation(const std::string& operation,
                                   const SourceLocation& location,
                                   const Value& left, const Value& right);

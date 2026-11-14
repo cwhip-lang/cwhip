@@ -137,7 +137,8 @@ void SemanticAnalyzer::analyzeStatement(Statement& statement) {
                                   "variable '" + statement.name + "' is already declared in this scope");
         }
         const auto index = symbols_.size();
-        symbols_.push_back({statement.name, statement.declaredType, false, statement.location});
+        symbols_.push_back({statement.name, statement.declaredType, false, statement.location,
+                            false, statement.constant});
         scope.emplace(statement.name, index);
         if (!statement.expressions.empty()) {
             const auto initializerType =
@@ -687,6 +688,12 @@ void SemanticAnalyzer::analyzeStatement(Statement& statement) {
                   countEnumMembers(*currentClass_, capture.name) == 0))) {
                 throw DiagnosticError(capture.location,
                                       "undefined inline capture '" + capture.name + "'");
+            }
+            if (capture.target->kind == ExpressionKind::Identifier &&
+                index != symbols_.size() && symbols_[index].constant) {
+                throw DiagnosticError(capture.location,
+                                      "const variable '" + capture.name +
+                                          "' cannot be captured by inline C");
             }
             if (capture.target->kind == ExpressionKind::Member) {
                 if (currentClass_ == nullptr) {

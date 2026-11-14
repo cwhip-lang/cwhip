@@ -99,6 +99,13 @@ The language is intended to have full object-oriented programming support. Broad
   as unsigned decimal values. Formatted print placeholders accept these scalar
   types too.
 - Using a local before it has been initialized is a warning.
+- A local may be prefixed with `const`. The first value, from an initializer
+  or a later assignment, is kept. A further assignment to that variable
+  raises a catchable exception. The variable may be declared with no
+  initializer; a read before any store is still diagnosed as uninitialized.
+  `const` does not apply to fields or parameters, and it does not stop
+  updates to an object or collection the variable already refers to.
+  Assigning to an enum constant remains a compile-time error.
 - **Nullability model (confirmed): null is a universal value, treated like
   any other value of any type, with no flow-sensitive null analysis at all.**
   `null` may be assigned to a variable of *any* type, including the scalar
@@ -664,7 +671,8 @@ non-virtual bases also have no explicit constructors.
 Keywords are case-insensitive and reserved under every capitalization. For
 example, `while`, `While`, and `wHiLe` are the same keyword, so `int While = 0`
 is a syntax error. The import words `import` and `as`, collection loop words
-`for` and `in`, and logical words `and`, `or`, and `not` are reserved too.
+`for` and `in`, logical words `and`, `or`, and `not`, and `const` are reserved
+too.
 
 In the current prototype subset, simple statements are terminated by a
 newline or a closing block brace. Newlines inside parentheses and list

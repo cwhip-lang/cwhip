@@ -620,6 +620,56 @@ const TestGroupRegistration registration{1, {
              expectDiagnostic("start {\n int64 first = 1 int64 second = 2\n}",
                               "expected newline after statement");
          }},
+        {"const prefixes a local declaration", [] {
+             const auto program = parse(
+                 "class Box {\n"
+                 " Box(int64 initial) {\n"
+                 "  const int64 seed = initial\n"
+                 " }\n"
+                 " int64 read() {\n"
+                 "  const int64 amount\n"
+                 "  amount = 1\n"
+                 "  return(amount)\n"
+                 " }\n"
+                 "}\n"
+                 "start {\n"
+                 " const int64 fixed = 1\n"
+                 " const int64 later\n"
+                 " const Box item(2)\n"
+                 " Box plain(3)\n"
+                 "}");
+             require(program.statements.size() == 4, "start declarations missing");
+             require(program.statements[0].constant &&
+                         program.statements[0].declaredType == "int64" &&
+                         program.statements[0].name == "fixed" &&
+                         program.statements[0].expressions.size() == 1,
+                     "initialized const local missing");
+             require(program.statements[1].constant &&
+                         program.statements[1].expressions.empty() &&
+                         program.statements[1].name == "later",
+                     "bare const local missing");
+             require(program.statements[2].constant &&
+                         program.statements[2].name == "item" &&
+                         program.statements[2].expressions.size() == 1 &&
+                         program.statements[2].expressions.front()->kind ==
+                             cwhip::ExpressionKind::ConstructorCall,
+                     "const constructor declaration missing");
+             require(!program.statements[3].constant && program.statements[3].name == "plain",
+                     "ordinary local was marked const");
+             const auto box = std::find_if(program.classes.begin(), program.classes.end(),
+                 [](const auto& declaration) { return declaration.name == "Box"; });
+             require(box != program.classes.end(), "Box class missing");
+             const auto& methods = box->methods;
+             require(methods.size() == 2 && methods[0].constructor &&
+                         methods[0].body.front().constant &&
+                         methods[1].body.front().constant &&
+                         methods[1].body.front().expressions.empty(),
+                     "const locals missing from constructor or method");
+             std::ostringstream output;
+             cwhip::dumpAst(program, output);
+             require(output.str().find("Declaration [const int64 fixed]") != std::string::npos,
+                     "const flag missing from AST dump");
+         }},
         {"parser trace", [] {
              cwhip::Lexer lexer("start {}", "trace.cw");
              std::ostringstream trace;

@@ -187,6 +187,17 @@ const TestGroupRegistration registration{2, {
         {"semantic definite initialization", [] {
              expectDiagnostic("start {\n int64 value\n print(value)\n}",
                               "variable 'value' may be uninitialized");
+             expectDiagnostic("start {\n const int64 value\n print(value)\n}",
+                              "variable 'value' may be uninitialized");
+             expectDiagnostic(
+                 "start {\n const int64 value\n if (true) { value = 1 }\n print(value)\n}",
+                 "variable 'value' may be uninitialized");
+             expectDiagnostic("start {\n const int64 value\n value += 1\n}",
+                              "variable 'value' may be uninitialized");
+             expectValid(
+                 "class Box { Box() {} int64 value }\n"
+                 "start {\n const int64 value\n value = 1\n print(value)\n"
+                 " const Box item\n item = Box()\n}");
          }},
         {"semantic branch initialization", [] {
              expectDiagnostic("start {\n int64 value\n if (true) { value = 1 }\n print(value)\n}",

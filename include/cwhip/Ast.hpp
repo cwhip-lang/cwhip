@@ -108,6 +108,9 @@ struct Statement {
     std::string assignmentOperator = "=";
     SourceLocation assignmentOperatorLocation;
     std::string declaredType;
+    // Local declarations only. A const local accepts one store; a later store
+    // raises at runtime. Fields, parameters, and enum constants do not use it.
+    bool constant = false;
     std::string inlineSource;
     std::vector<InlineCapture> inlineCaptures;
     std::unique_ptr<Expression> target;
