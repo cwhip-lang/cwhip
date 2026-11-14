@@ -2102,6 +2102,10 @@ const TestGroupRegistration registration{50, {
          require(!align.ok &&
                      align.diagnostic.find("invalid value for AlignOperands") != std::string::npos,
                  align.diagnostic);
+         const auto alignFalse = parseStyle("AlignOperands: false\n");
+         require(alignFalse.ok, alignFalse.diagnostic);
+         require(formatted(kLongCall, alignFalse.style) == kWrappedCall,
+                 formatted(kLongCall, alignFalse.style));
          const auto wrap = parseStyle("WrapLongParenthesizedList: BinPack\n");
          require(!wrap.ok && wrap.diagnostic.find("invalid value for WrapLongParenthesizedList") !=
                                  std::string::npos,
