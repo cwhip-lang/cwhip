@@ -234,6 +234,7 @@ Pointer callbacks use widget-local coordinates:
 Minimal demo (panel child + clear + circle + click mark):
 
 ```cwhip
+// test: {"stdout": "", "requires": "gtk"}
 import gtk
 
 class Demo {
@@ -246,9 +247,9 @@ class Demo {
 
     void paint(int64 width, int64 height) {
         area.setColor(0.12f64, 0.14f64, 0.20f64, 1.0f64)
-        area.fillRect(0.0f64, 0.0f64, width, height)
+        area.fillRect(0.0f64, 0.0f64, fp64(width), fp64(height))
         area.setColor(0.25f64, 0.75f64, 0.40f64, 1.0f64)
-        area.fillCircle(width / 2, height / 2, 48.0f64)
+        area.fillCircle(fp64(width / 2), fp64(height / 2), 48.0f64)
         area.setColor(0.95f64, 0.55f64, 0.20f64, 1.0f64)
         area.fillCircle(markX, markY, 6.0f64)
     }
@@ -261,7 +262,9 @@ class Demo {
         }
     }
 
-    void quit() { Gtk.Application().quit() }
+    void quit() {
+        Gtk.Application().quit()
+    }
 
     void activate() {
         Gtk.Window window = Gtk.Window("DrawingArea demo")
