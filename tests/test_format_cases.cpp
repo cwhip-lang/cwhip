@@ -48,6 +48,8 @@ const char* const kBuiltinConfig =
     "NewlineAfterOpenBrace: true\n"
     "# Put the token after } on the next line.\n"
     "NewlineAfterCloseBrace: true\n"
+    "# Put else on the line after }. False leaves it on the } line.\n"
+    "NewlineBeforeElse: true\n"
     "# Break a long parenthesized list after the opening parenthesis.\n"
     "WrapLongParenthesizedList: BreakAfterOpenParen\n"
     "# Pack wrapped parameters onto one line.\n"
@@ -161,6 +163,7 @@ void requireBuiltin(const cwhip::Style& style) {
     require(style.newlineBeforeOpenBrace == builtin.newlineBeforeOpenBrace, "newline before {");
     require(style.newlineAfterOpenBrace == builtin.newlineAfterOpenBrace, "newline after {");
     require(style.newlineAfterCloseBrace == builtin.newlineAfterCloseBrace, "newline after }");
+    require(style.newlineBeforeElse == builtin.newlineBeforeElse, "newline before else");
 }
 
 void writeFile(const std::filesystem::path& path, const std::string& text) {
@@ -208,6 +211,7 @@ const TestGroupRegistration registration{50, {
          require(!style.newlineBeforeOpenBrace, "newline before open brace");
          require(style.newlineAfterOpenBrace, "newline after open brace");
          require(style.newlineAfterCloseBrace, "newline after close brace");
+         require(style.newlineBeforeElse, "newline before else");
      }},
     {"builtin config text parses back and omits the open keys", [] {
          const auto text = cwhip::builtinConfigText();
@@ -512,11 +516,27 @@ const TestGroupRegistration registration{50, {
              "        print(2)\n"
              "    }\n"
              "}\n";
-         expectSame(braces);
+         const std::string bracesElseSplit =
+             "start {\n"
+             "    if (ready)\n"
+             "    {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    else (other) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(braces) == bracesElseSplit, formatted(braces));
          auto preserve = cwhip::builtinStyle();
          preserve.braceBinding = cwhip::BraceBinding::PreserveWhereLegal;
-         expectSame(braces, preserve);
-         auto custom = cwhip::builtinStyle();
+         require(formatted(braces, preserve) == bracesElseSplit, formatted(braces, preserve));
+         auto held = cwhip::builtinStyle();
+         held.newlineBeforeElse = false;
+         expectSame(braces, held);
+         auto preserveHeld = held;
+         preserveHeld.braceBinding = cwhip::BraceBinding::PreserveWhereLegal;
+         expectSame(braces, preserveHeld);
+         auto custom = held;
          custom.braceBinding = cwhip::BraceBinding::Custom;
          const auto bound = formatted(braces, custom);
          require(bound.find("    if (ready) {\n") != std::string::npos, bound);
@@ -635,7 +655,16 @@ const TestGroupRegistration registration{50, {
              "        print(2)\n"
              "    }\n"
              "}\n";
-         expectSame(attached);
+         const std::string attachedSplit =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    else (other) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(attached) == attachedSplit, formatted(attached));
          require(formatted("start {\n    do { print(1) } while (ready)\n}\n") ==
                      "start {\n    do {\n        print(1)\n    } while (ready)\n}\n",
                  "do/while stays on the close brace");
@@ -674,13 +703,13 @@ const TestGroupRegistration registration{50, {
          require(formatted(noted).find("# note") != std::string::npos, "hash comment dropped");
          expectSame(header, openOff);
          expectSame(onHeader, openOff);
-         expectSame(attached, openOff);
+         require(formatted(attached, openOff) == attachedSplit, formatted(attached, openOff));
 
          auto closeOff = cwhip::builtinStyle();
          closeOff.newlineAfterCloseBrace = false;
          expectSame(nested, closeOff);
          expectSame(commentedClose, closeOff);
-         expectSame(attached, closeOff);
+         require(formatted(attached, closeOff) == attachedSplit, formatted(attached, closeOff));
          expectSame(header, closeOff);
          expectSame(onHeader, closeOff);
          require(formatted(oneLine, closeOff) == "start {\n    print(1)\n}\n",
@@ -709,6 +738,7 @@ const TestGroupRegistration registration{50, {
          auto custom = cwhip::builtinStyle();
          custom.braceBinding = cwhip::BraceBinding::Custom;
          custom.newlineAfterCloseBrace = false;
+         custom.newlineBeforeElse = false;
          const std::string splitHeader =
              "start {\n"
              "    if (ready)\n"
@@ -796,6 +826,91 @@ const TestGroupRegistration registration{50, {
          require(!invalid.ok, "Never is not a bool");
          require(invalid.diagnostic.find("NewlineBeforeOpenBrace") != std::string::npos,
                  invalid.diagnostic);
+     }},
+    {"newline before else follows its own key", [] {
+         const std::string chain =
+             "start {\n"
+             "    if (ready) { print(1) } else (other) { print(2) } else { print(3) }\n"
+             "}\n";
+         const std::string split =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    else (other) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "    else {\n"
+             "        print(3)\n"
+             "    }\n"
+             "}\n";
+         const std::string joined =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    } else (other) {\n"
+             "        print(2)\n"
+             "    } else {\n"
+             "        print(3)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(chain) == split, formatted(chain));
+         expectSame(split);
+         auto off = cwhip::builtinStyle();
+         off.newlineBeforeElse = false;
+         require(formatted(chain, off) == joined, formatted(chain, off));
+         expectSame(split, off);
+         expectSame(joined, off);
+
+         auto closeOff = cwhip::builtinStyle();
+         closeOff.newlineAfterCloseBrace = false;
+         require(formatted(chain, closeOff) == split, "else breaks with close brace newlines off");
+         auto bothOff = closeOff;
+         bothOff.newlineBeforeElse = false;
+         require(formatted(chain, bothOff) == joined, formatted(chain, bothOff));
+         auto closeOn = off;
+         closeOn.newlineAfterCloseBrace = true;
+         require(formatted(chain, closeOn) == joined, "false keeps else on the brace line");
+
+         const std::string doWhile = "start {\n    do { print(1) } while (ready)\n}\n";
+         const std::string doWhileOut =
+             "start {\n    do {\n        print(1)\n    } while (ready)\n}\n";
+         const std::string handler =
+             "start {\n    try { print(1) } except(Exception) { print(2) } finally { print(3) }\n}\n";
+         const std::string handlerOut =
+             "start {\n"
+             "    try {\n"
+             "        print(1)\n"
+             "    } except(Exception) {\n"
+             "        print(2)\n"
+             "    } finally {\n"
+             "        print(3)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(doWhile) == doWhileOut, formatted(doWhile));
+         require(formatted(doWhile, off) == doWhileOut, "do/while changed with else off");
+         require(formatted(handler) == handlerOut, formatted(handler));
+         require(formatted(handler, off) == handlerOut, "except or finally changed");
+
+         const auto commented = parseStyle(
+             "# NewlineBeforeElse: false\n"
+             "NewlineBeforeElse: true # next line\n");
+         require(commented.ok, commented.diagnostic);
+         require(commented.style.newlineBeforeElse, "hash comment hid the key");
+         const auto disabled = parseStyle("NewlineBeforeElse: false\n");
+         require(disabled.ok, disabled.diagnostic);
+         require(!disabled.style.newlineBeforeElse, "false did not parse");
+         const auto invalid = parseStyle("NewlineBeforeElse: Never\n");
+         require(!invalid.ok, "Never is not a bool");
+         require(invalid.diagnostic.find("NewlineBeforeElse") != std::string::npos,
+                 invalid.diagnostic);
+         const auto dumped = parseStyle(cwhip::builtinConfigText());
+         require(dumped.ok, dumped.diagnostic);
+         require(dumped.style.newlineBeforeElse, "dumped default is not true");
+         require(cwhip::builtinConfigText().find(
+                     "# Put else on the line after }. False leaves it on the } line.\n"
+                     "NewlineBeforeElse: true\n") != std::string::npos,
+                 "dump comment");
      }},
 }};
 
