@@ -3,10 +3,12 @@ import system as Sys
 
 class FormatTool {
     String version()
+    String builtinConfig()
     int64 formatFile(String path, String stylePath, bool inPlace)
 }
 
 String FormatTool.version() from "cwhip_format_version"
+String FormatTool.builtinConfig() from "cwhip_format_builtin_config"
 int64 FormatTool.formatFile(String path, String stylePath, bool inPlace) from "cwhip_format_file"
 
 start {
@@ -36,6 +38,13 @@ start {
     inPlace.description = "Rewrite each file in place"
     command.addOption(inPlace)
 
+    Cli.Option dumpConfig = Cli.Option()
+    dumpConfig.longName = "dump-config"
+    dumpConfig.name = "dump-config"
+    dumpConfig.description = "Write the built-in default configuration"
+    dumpConfig.action = Cli.Action().DUMP_CONFIG
+    command.addOption(dumpConfig)
+
     Cli.Positional file = Cli.Positional()
     file.name = "file"
     file.description = "Cwhip source file"
@@ -58,6 +67,10 @@ start {
     }
     if (command.currentAction() == Cli.Action().VERSION) {
         Sys.System().io().write(command.versionText())
+        Sys.System().exit(0)
+    }
+    if (command.currentAction() == Cli.Action().DUMP_CONFIG) {
+        Sys.System().io().write(tool.builtinConfig())
         Sys.System().exit(0)
     }
 

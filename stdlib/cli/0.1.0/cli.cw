@@ -15,6 +15,10 @@ namespace Cli {
         int64 NONE = 0
         int64 HELP = 1
         int64 VERSION = 2
+        # Help and version stop parsing. Any other action keeps parsing so
+        # later flags are still checked, and required arguments are not
+        # enforced once an action is set.
+        int64 DUMP_CONFIG = 3
     }
 
     class Option {
@@ -249,6 +253,7 @@ namespace Cli {
                 index = index + 1
             }
 
+            # An action does not require the remaining arguments.
             if (action != Action().NONE) {
                 return
             }
@@ -568,13 +573,22 @@ namespace Cli {
         # consumed, or 1 if the next argv entry was taken as the option value.
         int64 applyOption(Option option, bool hasAttached, String attached,
                           list arguments, int64 index) {
-            if (option.action != Action().NONE) {
+            if ((option.action == Action().HELP) or (option.action == Action().VERSION)) {
                 if (hasAttached) {
                     raise(Exception(format("option {} does not accept an argument",
                                            displayName(option))))
                 }
                 action = option.action
                 return(-1)
+            }
+            if (option.action != Action().NONE) {
+                if (hasAttached) {
+                    raise(Exception(format("option {} does not accept an argument",
+                                           displayName(option))))
+                }
+                action = option.action
+                provided[option.name] = true
+                return(0)
             }
             if (option.valueType == ValueType().FLAG) {
                 if (hasAttached) {

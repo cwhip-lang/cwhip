@@ -320,6 +320,70 @@ std::string stripComment(const std::string& line) {
 
 Style builtinStyle() { return Style{}; }
 
+namespace {
+
+const char* boolText(bool value) { return value ? "true" : "false"; }
+
+std::string shortFunctionsText(AllowShortFunctions value) {
+    return value == AllowShortFunctions::None ? "None" : "All";
+}
+
+std::string shortBlocksText(AllowShortBlocks value) {
+    return value == AllowShortBlocks::Never ? "Never" : "Always";
+}
+
+std::string shortIfText(AllowShortIf value) {
+    return value == AllowShortIf::Never ? "Never" : "Always";
+}
+
+} // namespace
+
+std::string builtinConfigText() {
+    const Style style = builtinStyle();
+    std::ostringstream text;
+    auto emit = [&](const char* key, const std::string& value) {
+        text << key << ": " << value << '\n';
+    };
+    emit("Language", "Cwhip");
+    emit("IndentWidth", std::to_string(style.indentWidth));
+    emit("UseTab", "Never");
+    emit("ContinuationIndentWidth", std::to_string(style.continuationIndentWidth));
+    emit("AlignOperands", "DontAlign");
+    emit("ColumnLimit", std::to_string(style.columnLimit));
+    emit("BreakStringLiterals", boolText(style.breakStringLiterals));
+    emit("AllowShortFunctionsOnASingleLine", shortFunctionsText(style.allowShortFunctions));
+    emit("AllowShortBlocksOnASingleLine", shortBlocksText(style.allowShortBlocks));
+    emit("AllowShortIfStatementsOnASingleLine", shortIfText(style.allowShortIf));
+    emit("AllowShortLoopsOnASingleLine", boolText(style.allowShortLoops));
+    emit("AllowShortEnumsOnASingleLine", boolText(style.allowShortEnums));
+    emit("WrapLongParenthesizedList", "BreakAfterOpenParen");
+    emit("BinPackParameters", "false");
+    emit("BinPackArguments", "false");
+    emit("BlankLinesAroundLongControlStatement",
+         boolText(style.blankLinesAroundLongControlStatement));
+    emit("LongControlStatementLines", std::to_string(style.longControlStatementLines));
+    emit("ReflowComments", boolText(style.reflowComments));
+    emit("StatementTerminator", "Newline");
+    emit("InsertSemicolons", "false");
+    emit("AllowMultipleStatementsPerLine", "false");
+    emit("WrapOnlyInsideParensAndBrackets", "true");
+    emit("KeepElseParenOnSameLine", "true");
+    emit("ForbidElseIf", "true");
+    emit("PreserveLogicalSpelling", "true");
+    emit("PreserveKeywordCase", "true");
+    emit("PreserveTypeAliasSpelling", "true");
+    emit("PreserveNumericSpelling", "true");
+    emit("PreserveStringLexeme", "true");
+    emit("PreserveParentheses", "true");
+    emit("SplitDotDot", "false");
+    emit("SplitShiftRight", "false");
+    emit("ExpandIncludes", "false");
+    emit("ReorderIncludes", "false");
+    emit("FormatInlineC", "false");
+    emit("PreserveBlockCommentNewlines", "true");
+    return text.str();
+}
+
 StyleLoadResult parseStyleText(const std::string& text, const std::string& fileName) {
     StyleLoadResult result;
     result.found = true;

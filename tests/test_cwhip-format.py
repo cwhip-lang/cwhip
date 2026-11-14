@@ -36,6 +36,9 @@ class FormatCommandTests(unittest.TestCase):
                 result.stdout.startswith("Usage: cwhip-format [options] <file...>"),
                 result.stdout)
             self.assertIn("-i, --in-place", result.stdout)
+            self.assertIn("      --dump-config\tWrite the built-in default configuration",
+                          result.stdout)
+            self.assertNotIn("-d, --dump-config", result.stdout)
             self.assertIn("file", result.stdout)
             self.assertIn("Cwhip source file", result.stdout)
 
@@ -45,6 +48,69 @@ class FormatCommandTests(unittest.TestCase):
             result = self.run_tool(flag)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, "cwhip-format: v" + version)
+
+    def test_dump_config(self):
+        result = self.run_tool("--dump-config")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, "")
+        lines = result.stdout.splitlines()
+        self.assertEqual(len(lines), 36)
+        self.assertTrue(result.stdout.endswith("\n"))
+        for line in lines:
+            self.assertRegex(line, r"^[A-Za-z]+: \S+$")
+        self.assertIn("Language: Cwhip", lines)
+        self.assertIn("ContinuationIndentWidth: 8", lines)
+        self.assertIn("ColumnLimit: 80", lines)
+        self.assertIn("UseTab: Never", lines)
+        self.assertIn("PreserveBlockCommentNewlines: true", lines)
+        for key in (
+            "BreakBeforeBinaryOperators",
+            "BraceBinding",
+            "CommentPragmas",
+            "SpaceBeforeParens",
+        ):
+            self.assertNotIn(key, result.stdout)
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / ".cwhip-format"
+            config.write_text("ColumnLimit: 0\nLanguage: Cwhip\n", encoding="utf-8")
+            path = Path(directory) / "sample.cw"
+            original = "start { print(1) }\n"
+            path.write_text(original, encoding="utf-8")
+            before = path.stat().st_mtime_ns
+            dumped = subprocess.run(
+                [str(self.args.cwhip_format), "-i", str(path), "--dump-config"],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=directory,
+            )
+            self.assertEqual(dumped.returncode, 0, dumped.stderr)
+            self.assertEqual(dumped.stderr, "")
+            self.assertEqual(dumped.stdout, result.stdout)
+            self.assertIn("ColumnLimit: 80", dumped.stdout.splitlines())
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            self.assertEqual(path.stat().st_mtime_ns, before)
+            missing = Path(directory) / "missing.cw"
+            absent = subprocess.run(
+                [str(self.args.cwhip_format), "--dump-config", str(missing)],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=directory,
+            )
+            self.assertEqual(absent.returncode, 0, absent.stderr)
+            self.assertEqual(absent.stdout, result.stdout)
+            self.assertFalse(missing.exists())
+            unknown = subprocess.run(
+                [str(self.args.cwhip_format), "--dump-config", "--not-an-option"],
+                text=True,
+                capture_output=True,
+                check=False,
+                cwd=directory,
+            )
+            self.assertEqual(unknown.returncode, 2)
+            self.assertIn("unknown option: --not-an-option", unknown.stderr)
 
     def test_no_files(self):
         result = self.run_tool()
