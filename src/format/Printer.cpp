@@ -33,6 +33,19 @@ struct Breaks {
     std::vector<bool> attach;
 };
 
+struct BlockCursor {
+    bool active = false;
+    std::size_t endToken = 0;
+    std::size_t endTrivia = 0;
+};
+
+struct BlockRange {
+    std::string text;
+    std::size_t endToken = 0;
+    std::size_t endTrivia = 0;
+    bool closed = false;
+};
+
 bool expandBlock(BlockKind kind, const Style& style) {
     const bool blocks = style.allowShortBlocks == AllowShortBlocks::Never;
     switch (kind) {
@@ -64,6 +77,96 @@ std::size_t columns(std::string_view text) {
         if ((value & 0xc0) != 0x80) ++count;
     }
     return count;
+}
+
+std::vector<std::string> blockCommentWords(const std::string& body) {
+    std::vector<std::string> words;
+    std::string line;
+    auto flush = [&](const std::string& raw) {
+        std::size_t index = 0;
+        while (index < raw.size() && (raw[index] == ' ' || raw[index] == '\t')) ++index;
+        if (index < raw.size() && raw[index] == '*') {
+            const auto next = index + 1;
+            if (next >= raw.size() || raw[next] == ' ' || raw[next] == '\t') {
+                index = next;
+                if (index < raw.size() && (raw[index] == ' ' || raw[index] == '\t')) ++index;
+            }
+        }
+        std::string word;
+        for (; index < raw.size(); ++index) {
+            const char value = raw[index];
+            if (value == ' ' || value == '\t' || value == '\r' || value == '\v' || value == '\f') {
+                if (!word.empty()) {
+                    words.push_back(std::move(word));
+                    word.clear();
+                }
+            } else {
+                word.push_back(value);
+            }
+        }
+        if (!word.empty()) words.push_back(std::move(word));
+    };
+    for (char value : body) {
+        if (value == '\n') {
+            flush(line);
+            line.clear();
+        } else {
+            line.push_back(value);
+        }
+    }
+    flush(line);
+    return words;
+}
+
+std::string wrapBlockComment(const std::vector<std::string>& words, std::size_t startColumn,
+                             std::size_t limit) {
+    const std::string continuation(startColumn, ' ');
+    const std::string next = continuation + " * ";
+    std::string line = "/* ";
+    std::string built;
+    bool opening = true;
+    auto measure = [](bool openingLine, std::size_t column, const std::string& text) {
+        return (openingLine ? column : 0) + columns(text);
+    };
+    auto commit = [&]() {
+        if (!built.empty()) built.push_back('\n');
+        built += line;
+    };
+    for (std::size_t index = 0; index < words.size(); ++index) {
+        const auto& word = words[index];
+        const bool last = index + 1 == words.size();
+        const std::size_t tail = last ? std::size_t{3} : std::size_t{0};
+        const bool emptyLine = opening ? line.size() == 3 : line.size() == next.size();
+        if (emptyLine) {
+            line += word;
+            if (!last) continue;
+            if (measure(opening, startColumn, line) + 3 <= limit) {
+                line += " */";
+                continue;
+            }
+            commit();
+            opening = false;
+            line = next + "*/";
+            continue;
+        }
+        if (measure(opening, startColumn, line) + 1 + columns(word) + tail <= limit) {
+            line.push_back(' ');
+            line += word;
+            if (last) line += " */";
+            continue;
+        }
+        commit();
+        opening = false;
+        line = next + word;
+        if (!last) continue;
+        if (measure(false, startColumn, line) + 3 <= limit) line += " */";
+        else {
+            commit();
+            line = next + "*/";
+        }
+    }
+    commit();
+    return built;
 }
 
 bool whitespaceOnly(std::string_view text) {
@@ -508,6 +611,7 @@ private:
         bool atLineStart = true;
         bool sourceLineStart = true;
         std::size_t lineByte = 0;
+        BlockCursor cursor;
         auto finish = [&](bool terminated) {
             OutLine line;
             line.text = std::move(current);
@@ -520,10 +624,14 @@ private:
             last = kNone;
             atLineStart = true;
         };
+        auto releaseCursor = [&](std::size_t index) {
+            if (cursor.active && index == cursor.endToken) cursor.active = false;
+        };
         for (std::size_t index = 0; index < tokens_.size(); ++index) {
+            if (cursor.active && index < cursor.endToken) continue;
             const auto& token = tokens_[index];
             if (token.type == TokenType::End) {
-                appendTrivia(current, index, false, false, breaks);
+                appendTrivia(current, index, false, false, breaks, cursor);
                 break;
             }
             if (attachedNewline(index, breaks)) continue;
@@ -550,18 +658,23 @@ private:
                 sourceLineStart = false;
             }
             if (token.type == TokenType::Newline) {
-                appendTrivia(current, index, atLineStart, false, breaks);
+                appendTrivia(current, index, atLineStart, false, breaks, cursor);
+                if (cursor.active && index < cursor.endToken) {
+                    sourceLineStart = false;
+                    continue;
+                }
                 if (first == kNone) first = index;
                 last = index;
                 finish(true);
                 lineByte = token.end;
                 sourceLineStart = true;
+                releaseCursor(index);
                 continue;
             }
             if (first == kNone) first = index;
             last = index;
             const bool wrapping = breaks.wrap[index];
-            appendTrivia(current, index, atLineStart, wrapping, breaks);
+            appendTrivia(current, index, atLineStart, wrapping, breaks, cursor);
             if (token.type == TokenType::InlineBody) {
                 current.push_back('{');
                 current += token.lexeme;
@@ -571,6 +684,7 @@ private:
             }
             atLineStart = false;
             sourceLineStart = false;
+            releaseCursor(index);
         }
         if (!current.empty() || lines.empty()) finish(false);
         return lines;
@@ -607,8 +721,55 @@ private:
         return TokenType::End;
     }
 
+    BlockRange collectBlock(std::size_t tokenIndex, std::size_t triviaIndex) const {
+        BlockRange range;
+        for (std::size_t token = tokenIndex; token < tokens_.size() && !range.closed; ++token) {
+            const auto& leading = tokens_[token].leading;
+            const std::size_t begin = token == tokenIndex ? triviaIndex : 0;
+            for (std::size_t trivia = begin; trivia < leading.size() && !range.closed; ++trivia) {
+                const auto& piece = leading[trivia];
+                if (piece.kind != FormatTriviaKind::BlockComment &&
+                    piece.kind != FormatTriviaKind::Newline) {
+                    if (!range.text.empty()) return range;
+                    continue;
+                }
+                if (piece.kind == FormatTriviaKind::Newline) {
+                    range.text.push_back('\n');
+                    continue;
+                }
+                range.text += piece.text;
+                range.endToken = token;
+                range.endTrivia = trivia;
+                if (range.text.find("*/", 2) != std::string::npos) range.closed = true;
+            }
+            if (!range.closed && tokens_[token].splitsBlockComment) range.text.push_back('\n');
+        }
+        return range;
+    }
+
+    bool blockSafe(std::size_t endToken) const {
+        const auto type = tokens_[endToken].type;
+        if (type == TokenType::Newline || type == TokenType::End) return true;
+        return note(endToken).parenDepthBefore > 0;
+    }
+
+    bool reflowBlock(std::string& current, const std::string& comment) const {
+        if (comment.rfind("/*", 0) != 0) return false;
+        const auto close = comment.find("*/", 2);
+        if (close == std::string::npos) return false;
+        const bool multi = comment.find('\n') != std::string::npos;
+        const auto startColumn = columns(current);
+        const auto limit = static_cast<std::size_t>(style_.columnLimit);
+        if (!multi && startColumn + columns(comment) <= limit) return false;
+        const auto words = blockCommentWords(comment.substr(2, close - 2));
+        if (words.empty()) return false;
+        if (startColumn + 3 >= limit) return false;
+        current += wrapBlockComment(words, startColumn, limit);
+        return true;
+    }
+
     void appendTrivia(std::string& current, std::size_t index, bool atLineStart, bool wrap,
-                      const Breaks& breaks) const {
+                      const Breaks& breaks, BlockCursor& cursor) const {
         const auto& token = tokens_[index];
         const auto& annotation = note(index);
         const bool attach = breaks.attach[index];
@@ -645,6 +806,10 @@ private:
         }
 
         for (; triviaIndex < token.leading.size(); ++triviaIndex) {
+            if (cursor.active && index < cursor.endToken) continue;
+            if (cursor.active && index == cursor.endToken && triviaIndex <= cursor.endTrivia) {
+                continue;
+            }
             const auto& trivia = token.leading[triviaIndex];
             if (paren != ParenSpace::Keep && horizontal(trivia.kind)) continue;
             if (trivia.kind == FormatTriviaKind::LineComment && !pragmaMatches(trivia.text) &&
@@ -652,6 +817,16 @@ private:
                 const auto used = columns(current) + columns(trivia.text);
                 if (used > static_cast<std::size_t>(style_.columnLimit)) {
                     reflow(current, trivia.text, atLineStart);
+                    continue;
+                }
+            }
+            if (trivia.kind == FormatTriviaKind::BlockComment && style_.reflowBlockComments &&
+                style_.columnLimit > 0 && trivia.text.rfind("/*", 0) == 0) {
+                const auto range = collectBlock(index, triviaIndex);
+                if (range.closed && blockSafe(range.endToken) && reflowBlock(current, range.text)) {
+                    cursor.active = true;
+                    cursor.endToken = range.endToken;
+                    cursor.endTrivia = range.endTrivia;
                     continue;
                 }
             }

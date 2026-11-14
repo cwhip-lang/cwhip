@@ -76,6 +76,8 @@ struct Style {
     /// newline. Independent of NewlineAfterCloseBrace and NewlineBeforeElse.
     bool newlineBeforeExcept = true;
     bool reflowComments = true;
+    /// When true, reflow /* */ comments to the column limit. False leaves them.
+    bool reflowBlockComments = false;
     bool blankLinesAroundLongControlStatement = true;
     int longControlStatementLines = 10;
     std::optional<BreakBeforeBinaryOperators> breakBeforeBinaryOperators;

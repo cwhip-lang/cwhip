@@ -17,7 +17,8 @@ enum class NewlineKind {
     Terminator,
     /// A skipNewlines site: before `{`, `else`, `from`, or `while`.
     Free,
-    /// Depth-0 newline that splits a block comment. Never add or remove it.
+    /// Depth-0 newline that splits a block comment. The printer keeps it unless
+    /// ReflowBlockComments reflows that comment.
     BlockComment
 };
 

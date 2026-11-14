@@ -115,6 +115,7 @@ const std::unordered_set<std::string>& knownKeys() {
         "BlankLinesAroundLongControlStatement",
         "LongControlStatementLines",
         "ReflowComments",
+        "ReflowBlockComments",
         "CommentPragmas",
         "StatementTerminator",
         "InsertSemicolons",
@@ -154,6 +155,7 @@ bool isBoolKey(const std::string& key) {
         "BinPackArguments",
         "BlankLinesAroundLongControlStatement",
         "ReflowComments",
+        "ReflowBlockComments",
         "InsertSemicolons",
         "AllowMultipleStatementsPerLine",
         "WrapOnlyInsideParensAndBrackets",
@@ -220,6 +222,7 @@ bool applyEntry(Style& style, const RawEntry& entry, const std::string& file,
         else if (key == "BlankLinesAroundLongControlStatement")
             style.blankLinesAroundLongControlStatement = flag;
         else if (key == "ReflowComments") style.reflowComments = flag;
+        else if (key == "ReflowBlockComments") style.reflowBlockComments = flag;
         // The other booleans are accepted so a short file can set them. The
         // printer keeps the syntax locks (no semicolons, no include expansion,
         // no string breaks) regardless of a contradictory true.
@@ -401,6 +404,8 @@ std::string builtinConfigText() {
          "A control statement longer than this many lines is long.");
     emit("ReflowComments", boolText(style.reflowComments),
          "Reflow hash and slash comments to the column limit.");
+    emit("ReflowBlockComments", boolText(style.reflowBlockComments),
+         "Reflow block comments to the column limit.");
     emit("StatementTerminator", "Newline", "A newline ends a statement.");
     emit("InsertSemicolons", "false", "Do not insert semicolons.");
     emit("AllowMultipleStatementsPerLine", "false", "Allow more than one statement on a line.");
