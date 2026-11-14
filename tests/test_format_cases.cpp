@@ -17,6 +17,44 @@ const char* const kLongCall =
     "    print(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, lambda, mu)\n"
     "}\n";
 
+const char* const kBuiltinConfig =
+    "Language: Cwhip\n"
+    "IndentWidth: 4\n"
+    "UseTab: Never\n"
+    "ContinuationIndentWidth: 8\n"
+    "AlignOperands: DontAlign\n"
+    "ColumnLimit: 80\n"
+    "BreakStringLiterals: false\n"
+    "AllowShortFunctionsOnASingleLine: None\n"
+    "AllowShortBlocksOnASingleLine: Never\n"
+    "AllowShortIfStatementsOnASingleLine: Never\n"
+    "AllowShortLoopsOnASingleLine: false\n"
+    "AllowShortEnumsOnASingleLine: false\n"
+    "WrapLongParenthesizedList: BreakAfterOpenParen\n"
+    "BinPackParameters: false\n"
+    "BinPackArguments: false\n"
+    "BlankLinesAroundLongControlStatement: true\n"
+    "LongControlStatementLines: 10\n"
+    "ReflowComments: true\n"
+    "StatementTerminator: Newline\n"
+    "InsertSemicolons: false\n"
+    "AllowMultipleStatementsPerLine: false\n"
+    "WrapOnlyInsideParensAndBrackets: true\n"
+    "KeepElseParenOnSameLine: true\n"
+    "ForbidElseIf: true\n"
+    "PreserveLogicalSpelling: true\n"
+    "PreserveKeywordCase: true\n"
+    "PreserveTypeAliasSpelling: true\n"
+    "PreserveNumericSpelling: true\n"
+    "PreserveStringLexeme: true\n"
+    "PreserveParentheses: true\n"
+    "SplitDotDot: false\n"
+    "SplitShiftRight: false\n"
+    "ExpandIncludes: false\n"
+    "ReorderIncludes: false\n"
+    "FormatInlineC: false\n"
+    "PreserveBlockCommentNewlines: true\n";
+
 const char* const kWrappedCall =
     "start {\n"
     "    print(\n"
@@ -51,6 +89,33 @@ void expectSame(const std::string& source, const cwhip::Style& style) {
 
 cwhip::StyleLoadResult parseStyle(const std::string& text) {
     return cwhip::parseStyleText(text, "style.cwhip-format");
+}
+
+void requireBuiltin(const cwhip::Style& style) {
+    const auto builtin = cwhip::builtinStyle();
+    require(style.indentWidth == builtin.indentWidth, "indent width");
+    require(style.continuationIndentWidth == builtin.continuationIndentWidth, "continuation");
+    require(style.columnLimit == builtin.columnLimit, "column limit");
+    require(style.breakStringLiterals == builtin.breakStringLiterals, "string breaks");
+    require(style.allowShortFunctions == builtin.allowShortFunctions, "short functions");
+    require(style.allowShortBlocks == builtin.allowShortBlocks, "short blocks");
+    require(style.allowShortIf == builtin.allowShortIf, "short if");
+    require(style.allowShortLoops == builtin.allowShortLoops, "short loops");
+    require(style.allowShortEnums == builtin.allowShortEnums, "short enums");
+    require(style.reflowComments == builtin.reflowComments, "reflow");
+    require(style.blankLinesAroundLongControlStatement ==
+                builtin.blankLinesAroundLongControlStatement,
+            "long control blanks");
+    require(style.longControlStatementLines == builtin.longControlStatementLines,
+            "long control length");
+    require(!style.breakBeforeBinaryOperators.has_value(), "binary break is unset");
+    require(!style.spaceBeforeParens.has_value(), "paren space is unset");
+    require(!style.commentPragmas.has_value(), "comment pragma is unset");
+    require(!style.braceBinding.has_value(), "brace binding is unset");
+    require(style.breakBeforeBinaryOperators == builtin.breakBeforeBinaryOperators, "binary");
+    require(style.spaceBeforeParens == builtin.spaceBeforeParens, "parens");
+    require(style.commentPragmas == builtin.commentPragmas, "pragma");
+    require(style.braceBinding == builtin.braceBinding, "brace");
 }
 
 void writeFile(const std::filesystem::path& path, const std::string& text) {
@@ -95,6 +160,19 @@ const TestGroupRegistration registration{50, {
          require(style.reflowComments, "reflow");
          require(style.blankLinesAroundLongControlStatement, "long control blanks");
          require(style.longControlStatementLines == 10, "long control length");
+     }},
+    {"builtin config text parses back and omits the open keys", [] {
+         const auto text = cwhip::builtinConfigText();
+         require(text == kBuiltinConfig, "builtin config text:\n" + text);
+         require(text.find("BreakBeforeBinaryOperators") == std::string::npos, "binary key");
+         require(text.find("BraceBinding") == std::string::npos, "brace key");
+         require(text.find("CommentPragmas") == std::string::npos, "pragma key");
+         require(text.find("SpaceBeforeParens") == std::string::npos, "paren key");
+         require(text.find("ContinuationIndentWidth: 8\n") != std::string::npos, "continuation 8");
+         require(text.find("ColumnLimit: 80\n") != std::string::npos, "column 80");
+         const auto loaded = parseStyle(text);
+         require(loaded.ok, loaded.diagnostic);
+         requireBuiltin(loaded.style);
      }},
     {"style file accepts a short override and rejects unknown keys", [] {
          const auto limit = parseStyle("ColumnLimit: 0\n");

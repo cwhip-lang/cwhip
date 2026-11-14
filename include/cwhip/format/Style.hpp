@@ -68,6 +68,10 @@ struct Style {
 
 Style builtinStyle();
 
+/// Key: Value text of the built-in defaults. The four open keys are omitted.
+/// Parsing the text yields builtinStyle().
+std::string builtinConfigText();
+
 struct StyleLoadResult {
     bool ok = true;
     bool found = false;

@@ -189,6 +189,11 @@ extern "C" void* cwhip_format_version(void* /*self*/) {
     return cwhip_string_new(&cwhip_string_class_meta, version, std::strlen(version));
 }
 
+extern "C" void* cwhip_format_builtin_config(void* /*self*/) {
+    const std::string text = cwhip::builtinConfigText();
+    return cwhip_string_new(&cwhip_string_class_meta, text.data(), text.size());
+}
+
 extern "C" int64_t cwhip_format_file(void* /*self*/, void* path, void* stylePath, bool inPlace) {
     return cwhip::formatOne(cwhip::borrowString(path), cwhip::borrowString(stylePath), inPlace);
 }
