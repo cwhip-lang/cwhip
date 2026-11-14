@@ -581,7 +581,8 @@ Statement Parser::parseStatement() {
     if (check(TokenType::Inline)) {
         return parseInlineC();
     }
-    if (check(TokenType::RemovedUnsigned) || check(TokenType::NativeInt) ||
+    if (check(TokenType::Const) || check(TokenType::RemovedUnsigned) ||
+        check(TokenType::NativeInt) ||
         check(TokenType::NativeUInt) || check(TokenType::NativeFloat) ||
         check(TokenType::Int8) ||
         check(TokenType::UInt8) || check(TokenType::Int16) ||
@@ -704,12 +705,15 @@ Statement Parser::parseInlineC() {
 }
 
 Statement Parser::parseDeclaration() {
+    const auto start = current();
+    const bool constant = match(TokenType::Const);
     const auto type = current();
     const auto typeName = parseType();
     const auto name = consume(TokenType::Identifier, "identifier (keywords are reserved)");
     Statement statement;
     statement.kind = StatementKind::Declaration;
-    statement.location = type.location;
+    statement.location = constant ? start.location : type.location;
+    statement.constant = constant;
     statement.name = name.text;
     statement.declaredType = typeName;
     if (match(TokenType::Equal)) {

@@ -116,6 +116,7 @@ const char* tokenTypeName(TokenType type) noexcept {
     case TokenType::Public: return "'public'";
     case TokenType::Protected: return "'protected'";
     case TokenType::Private: return "'private'";
+    case TokenType::Const: return "'const'";
     case TokenType::Virtual: return "'virtual'";
     case TokenType::Super: return "'super'";
     case TokenType::Null: return "'null'";
@@ -387,6 +388,7 @@ Token Lexer::scanIdentifierOrInteger() {
         {"from", TokenType::From},
         {"public", TokenType::Public}, {"protected", TokenType::Protected},
         {"private", TokenType::Private},
+        {"const", TokenType::Const},
         {"virtual", TokenType::Virtual},
         {"super", TokenType::Super},
         {"null", TokenType::Null},

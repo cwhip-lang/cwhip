@@ -66,9 +66,9 @@ The reserved words include `start`, `bool`, `int`, `uint`, `float`, `int8`,
 `uint8`, `int16`, `uint16`, `int32`, `uint32`, `int64`, `uint64`, `fp32`,
 `fp64`, `strg`, `list`, `dict`, `buffer`, `handle`, `range`, `any`, `type`, `class`,
 `namespace`, `include`, `inline`, `import`, `as`, `public`, `protected`,
-`private`, `virtual`, `super`, `null`, `true`, `false`, `return`, `void`,
-`if`, `else`, `while`, `do`, `for`, `in`, `is`, `break`, `continue`, `and`,
-`or`, `not`, `print`, `raise`, `try`, `except`, `finally`, `from`,
+`private`, `const`, `virtual`, `super`, `null`, `true`, `false`, `return`,
+`void`, `if`, `else`, `while`, `do`, `for`, `in`, `is`, `break`, `continue`,
+`and`, `or`, `not`, `print`, `raise`, `try`, `except`, `finally`, `from`,
 `switch`, `case`, and `default`.
 `next` is a case-insensitive contextual keyword only as a standalone statement;
 it remains an identifier in declarations, expressions, and member access.
@@ -253,11 +253,11 @@ statement           ::= declaration
                       | inline-c-statement
                       | block ;
 
-declaration         ::= type, IDENT,
+declaration         ::= [ "const" ], type, IDENT,
                         [ "=", expression
                         | direct-constructor-arguments ],
                         terminator
-                      | type, IDENT, inline-c-statement ;
+                      | [ "const" ], type, IDENT, inline-c-statement ;
 direct-constructor-arguments
                     ::= "(", [ expression, { ",", expression } ], ")" ;
 assignment          ::= expression, assignment-operator, expression, terminator ;
@@ -312,6 +312,12 @@ terminator          ::= NEWLINE, { NEWLINE } | ε ;
 allow adjacent simple statements on the same line. The declaration form that
 places `inline` after a type and identifier declares that local and adds it
 as an implicit capture. An initializer on that form is rejected.
+A leading `const` is accepted only on a local declaration. It is not part of
+a field, parameter, or method declaration. The local may omit its initializer.
+The first store gives it a value; a later store, including a compound
+assignment, raises a catchable exception. See
+[Variables and scope](LANGUAGE-REFERENCE.md#variables-and-scope). An `inline`
+capture of a `const` local is rejected during semantic analysis.
 An unqualified capture resolves a local/parameter before an instance field.
 Leading `.` selects the implicit receiver explicitly; other dotted capture
 paths must resolve through that receiver's base classes. Only the final

@@ -52,6 +52,7 @@ enum class TokenType {
     Public,
     Protected,
     Private,
+    Const,
     Virtual,
     Super,
     Null,

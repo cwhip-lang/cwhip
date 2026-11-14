@@ -472,6 +472,7 @@ const TestGroupRegistration registration{50, {
          require(line.size() > 80, "long call is not over 80");
          require(formatted(call) == kWrappedCall, formatted(call));
          expectSame("start {\n    print(alpha, beta)\n}\n");
+         expectSame("start {\n    const int64 value = 1\n    const int64 later\n    value = later\n}\n");
          auto unlimited = cwhip::builtinStyle();
          unlimited.columnLimit = 0;
          expectSame(call, unlimited);

@@ -111,6 +111,7 @@ const std::unordered_map<std::string, TokenType>& keywords() {
         {"from", TokenType::From},
         {"public", TokenType::Public}, {"protected", TokenType::Protected},
         {"private", TokenType::Private},
+        {"const", TokenType::Const},
         {"virtual", TokenType::Virtual},
         {"super", TokenType::Super},
         {"null", TokenType::Null},

@@ -688,6 +688,11 @@ private:
                     tokens_[index_ + 1].type == TokenType::End)) {
             annotations_[index_].reindent = true;
             advance();
+        } else if (is(TokenType::Const)) {
+            annotations_[index_].reindent = true;
+            advance();
+            declaration = true;
+            parseSimple(true);
         } else if (is(TokenType::Identifier) || is(TokenType::LeftParen) || isTypeStart(cur().type)) {
             declaration = looksLikeDeclaration();
             parseSimple(declaration);

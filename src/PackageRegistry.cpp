@@ -52,7 +52,7 @@ bool identifier(const std::string& value) {
         "else", "while", "do", "for", "in", "is", "break", "continue",
         "and", "or", "not", "print", "raise", "try", "except", "finally",
         "class", "namespace", "include", "inline", "import", "as", "from",
-        "public", "protected", "private", "virtual", "super", "null",
+        "public", "protected", "private", "const", "virtual", "super", "null",
         "true", "false", "return", "void"};
     std::string normalized;
     normalized.reserve(value.size());
