@@ -106,6 +106,7 @@ const std::unordered_set<std::string>& knownKeys() {
         "NewlineAfterOpenBrace",
         "NewlineAfterCloseBrace",
         "NewlineBeforeElse",
+        "NewlineBeforeExcept",
         "WrapLongParenthesizedList",
         "BinPackParameters",
         "BinPackArguments",
@@ -148,6 +149,7 @@ bool isBoolKey(const std::string& key) {
         "NewlineAfterOpenBrace",
         "NewlineAfterCloseBrace",
         "NewlineBeforeElse",
+        "NewlineBeforeExcept",
         "BinPackParameters",
         "BinPackArguments",
         "BlankLinesAroundLongControlStatement",
@@ -214,6 +216,7 @@ bool applyEntry(Style& style, const RawEntry& entry, const std::string& file,
         else if (key == "NewlineAfterOpenBrace") style.newlineAfterOpenBrace = flag;
         else if (key == "NewlineAfterCloseBrace") style.newlineAfterCloseBrace = flag;
         else if (key == "NewlineBeforeElse") style.newlineBeforeElse = flag;
+        else if (key == "NewlineBeforeExcept") style.newlineBeforeExcept = flag;
         else if (key == "BlankLinesAroundLongControlStatement")
             style.blankLinesAroundLongControlStatement = flag;
         else if (key == "ReflowComments") style.reflowComments = flag;
@@ -385,6 +388,8 @@ std::string builtinConfigText() {
          "Put the token after } on the next line.");
     emit("NewlineBeforeElse", boolText(style.newlineBeforeElse),
          "Put else on the line after }. False leaves it on the } line.");
+    emit("NewlineBeforeExcept", boolText(style.newlineBeforeExcept),
+         "Put except on the line after }. Also applies to finally. False leaves it on the } line.");
     emit("WrapLongParenthesizedList", "BreakAfterOpenParen",
          "Break a long parenthesized list after the opening parenthesis.");
     emit("BinPackParameters", "false", "Pack wrapped parameters onto one line.");
