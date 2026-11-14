@@ -9,6 +9,10 @@
 #include <string>
 #include <unistd.h>
 
+namespace cwhip {
+StyleLoadResult styleFor(const std::string& stylePath);
+}
+
 namespace {
 using namespace cwhip_test;
 
@@ -196,6 +200,43 @@ struct EnvGuard {
     void clear() const { unsetenv(name_.c_str()); }
     std::string name_;
 };
+
+struct CwdGuard {
+    std::filesystem::path previous;
+    CwdGuard() : previous(std::filesystem::current_path()) {}
+    ~CwdGuard() {
+        std::error_code error;
+        std::filesystem::current_path(previous, error);
+    }
+};
+
+struct PermGuard {
+    std::filesystem::path path;
+    std::filesystem::perms previous;
+    explicit PermGuard(std::filesystem::path target)
+        : path(std::move(target)), previous(std::filesystem::status(path).permissions()) {}
+    ~PermGuard() {
+        std::error_code error;
+        std::filesystem::permissions(path, previous, error);
+    }
+    void deny() const { std::filesystem::permissions(path, std::filesystem::perms::none); }
+};
+
+std::string controlWithPrints(const std::string& header, int count, const std::string& afterBrace,
+                              bool blanks) {
+    std::string text = "start {\n";
+    if (blanks) text += "\n";
+    text += "    " + header + " {\n";
+    for (int index = 1; index <= count; ++index) {
+        text += "        print(" + std::to_string(index) + ")\n";
+    }
+    text += "    }";
+    text += afterBrace;
+    text += "\n";
+    if (blanks) text += "\n";
+    text += "    print(0)\n}\n";
+    return text;
+}
 
 const TestGroupRegistration registration{50, {
     {"builtin style leaves the open keys unset", [] {
@@ -1184,6 +1225,937 @@ const TestGroupRegistration registration{50, {
                      "# Reflow block comments to the column limit.\n"
                      "ReflowBlockComments: false\n") != std::string::npos,
                  "dump comment");
+     }},
+    {"long controls respect the blank line switch and the line count", [] {
+         const std::string longIf = controlWithPrints("if (ready)", 9, "", false);
+         const std::string longIfBlanks = controlWithPrints("if (ready)", 9, "", true);
+         require(formatted(longIf) == longIfBlanks, formatted(longIf));
+         auto off = cwhip::builtinStyle();
+         off.blankLinesAroundLongControlStatement = false;
+         require(formatted(longIf, off) == longIf, formatted(longIf, off));
+         expectSame(longIfBlanks, off);
+         const std::string exact = controlWithPrints("if (ready)", 8, "", false);
+         expectSame(exact);
+         auto three = cwhip::builtinStyle();
+         three.longControlStatementLines = 3;
+         const std::string four = controlWithPrints("if (ready)", 2, "", false);
+         const std::string fourBlanks = controlWithPrints("if (ready)", 2, "", true);
+         const std::string threeLines = controlWithPrints("if (ready)", 1, "", false);
+         require(formatted(four, three) == fourBlanks, formatted(four, three));
+         expectSame(threeLines, three);
+         const std::string longWhile = controlWithPrints("while (ready)", 9, "", false);
+         const std::string longFor = controlWithPrints("for (value in items)", 9, "", false);
+         const std::string longDo = controlWithPrints("do", 9, " while (ready)", false);
+         require(formatted(longWhile) == controlWithPrints("while (ready)", 9, "", true),
+                 formatted(longWhile));
+         require(formatted(longFor) == controlWithPrints("for (value in items)", 9, "", true),
+                 formatted(longFor));
+         require(formatted(longDo) == controlWithPrints("do", 9, " while (ready)", true),
+                 formatted(longDo));
+         require(formatted(longWhile, off) == longWhile, "false inserted a blank around while");
+         const std::string longSwitch =
+             "start {\n"
+             "    switch (value) {\n"
+             "        case (1) {\n"
+             "            print(1)\n"
+             "            print(2)\n"
+             "            print(3)\n"
+             "            print(4)\n"
+             "            print(5)\n"
+             "            print(6)\n"
+             "            print(7)\n"
+             "        }\n"
+             "    }\n"
+             "    print(0)\n"
+             "}\n";
+         const std::string longSwitchBlanks =
+             "start {\n"
+             "\n"
+             "    switch (value) {\n"
+             "        case (1) {\n"
+             "            print(1)\n"
+             "            print(2)\n"
+             "            print(3)\n"
+             "            print(4)\n"
+             "            print(5)\n"
+             "            print(6)\n"
+             "            print(7)\n"
+             "        }\n"
+             "    }\n"
+             "\n"
+             "    print(0)\n"
+             "}\n";
+         require(formatted(longSwitch) == longSwitchBlanks, formatted(longSwitch));
+         require(formatted(longSwitch, off) == longSwitch, formatted(longSwitch, off));
+     }},
+    {"short blocks and short statements stay together on their own keys", [] {
+         const std::string start = "start { print(1) }\n";
+         const std::string startSplit = "start {\n    print(1)\n}\n";
+         const std::string ifLine = "start {\n    if (ready) { print(1) }\n}\n";
+         const std::string ifSplit =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         const std::string whileLine = "start {\n    while (ready) { print(1) }\n}\n";
+         const std::string whileSplit =
+             "start {\n"
+             "    while (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         const std::string forLine = "start {\n    for (value in items) { print(value) }\n}\n";
+         const std::string doLine = "start {\n    do { print(1) } while (ready)\n}\n";
+         const std::string method = "class Box {\n    int64 value() { return(1) }\n}\n";
+         const std::string methodSplit =
+             "class Box {\n"
+             "    int64 value() {\n"
+             "        return(1)\n"
+             "    }\n"
+             "}\n";
+         auto blocks = cwhip::builtinStyle();
+         blocks.allowShortBlocks = cwhip::AllowShortBlocks::Other;
+         expectSame(start, blocks);
+         require(formatted(ifLine, blocks) == ifSplit, "blocks alone kept an if");
+         require(formatted(method, blocks) == methodSplit, "blocks alone kept a function");
+         auto iff = blocks;
+         iff.allowShortIf = cwhip::AllowShortIf::Other;
+         expectSame(ifLine, iff);
+         auto loops = blocks;
+         loops.allowShortLoops = true;
+         expectSame(whileLine, loops);
+         expectSame(forLine, loops);
+         expectSame(doLine, loops);
+         require(formatted(whileLine, blocks) == whileSplit, "blocks alone kept a loop");
+         auto functions = blocks;
+         functions.allowShortFunctions = cwhip::AllowShortFunctions::Other;
+         expectSame(method, functions);
+         require(formatted(ifLine, functions) == ifSplit, "functions alone kept an if");
+         auto functionsDenied = cwhip::builtinStyle();
+         functionsDenied.allowShortFunctions = cwhip::AllowShortFunctions::Other;
+         functionsDenied.allowShortIf = cwhip::AllowShortIf::Other;
+         functionsDenied.allowShortLoops = true;
+         require(formatted(method, functionsDenied) == methodSplit, formatted(method, functionsDenied));
+         require(formatted(ifLine, functionsDenied) == ifSplit, formatted(ifLine, functionsDenied));
+         require(formatted(whileLine, functionsDenied) == whileSplit,
+                 formatted(whileLine, functionsDenied));
+         auto closeOff = blocks;
+         closeOff.newlineAfterCloseBrace = false;
+         expectSame("namespace Foo { class Bar { int64 value } }\n", closeOff);
+         auto tryKept = closeOff;
+         tryKept.newlineBeforeExcept = false;
+         expectSame(
+             "start { try { print(1) } except(Exception) { print(2) } finally { print(3) } }\n",
+             tryKept);
+         auto elseKept = closeOff;
+         elseKept.allowShortIf = cwhip::AllowShortIf::Other;
+         elseKept.newlineBeforeElse = false;
+         expectSame("start { if (ready) { print(1) } else { print(2) } }\n", elseKept);
+
+         const char* keepFunctions[] = {"All", "true", "Inline", "Empty"};
+         for (const char* spelling : keepFunctions) {
+             const auto loaded = parseStyle(
+                 std::string("AllowShortBlocksOnASingleLine: Always\n"
+                             "AllowShortFunctionsOnASingleLine: ") +
+                 spelling + "\n");
+             require(loaded.ok, loaded.diagnostic);
+             expectSame(method, loaded.style);
+         }
+         const char* splitFunctions[] = {"None", "false"};
+         for (const char* spelling : splitFunctions) {
+             const auto loaded = parseStyle(
+                 std::string("AllowShortBlocksOnASingleLine: Always\n"
+                             "AllowShortFunctionsOnASingleLine: ") +
+                 spelling + "\n");
+             require(loaded.ok, loaded.diagnostic);
+             require(formatted(method, loaded.style) == methodSplit, spelling);
+         }
+         const char* keepBlocks[] = {"Always", "true", "Empty"};
+         for (const char* spelling : keepBlocks) {
+             const auto loaded = parseStyle(std::string("AllowShortBlocksOnASingleLine: ") +
+                                            spelling + "\n");
+             require(loaded.ok, loaded.diagnostic);
+             expectSame(start, loaded.style);
+         }
+         const char* splitBlocks[] = {"Never", "false"};
+         for (const char* spelling : splitBlocks) {
+             const auto loaded = parseStyle(std::string("AllowShortBlocksOnASingleLine: ") +
+                                            spelling + "\n");
+             require(loaded.ok, loaded.diagnostic);
+             require(formatted(start, loaded.style) == startSplit, spelling);
+         }
+         const char* keepIf[] = {"Always", "true"};
+         for (const char* spelling : keepIf) {
+             const auto loaded = parseStyle(
+                 std::string("AllowShortBlocksOnASingleLine: Always\n"
+                             "AllowShortIfStatementsOnASingleLine: ") +
+                 spelling + "\n");
+             require(loaded.ok, loaded.diagnostic);
+             expectSame(ifLine, loaded.style);
+         }
+         const char* splitIf[] = {"Never", "false"};
+         for (const char* spelling : splitIf) {
+             const auto loaded = parseStyle(
+                 std::string("AllowShortBlocksOnASingleLine: Always\n"
+                             "AllowShortIfStatementsOnASingleLine: ") +
+                 spelling + "\n");
+             require(loaded.ok, loaded.diagnostic);
+             require(formatted(ifLine, loaded.style) == ifSplit, spelling);
+         }
+         const auto loopsOn = parseStyle(
+             "AllowShortBlocksOnASingleLine: Always\n"
+             "AllowShortLoopsOnASingleLine: true\n");
+         require(loopsOn.ok, loopsOn.diagnostic);
+         expectSame(whileLine, loopsOn.style);
+         const auto loopsOff = parseStyle(
+             "AllowShortBlocksOnASingleLine: Always\n"
+             "AllowShortLoopsOnASingleLine: false\n");
+         require(loopsOff.ok, loopsOff.diagnostic);
+         require(formatted(whileLine, loopsOff.style) == whileSplit, formatted(whileLine, loopsOff.style));
+         const auto badFunction = parseStyle("AllowShortFunctionsOnASingleLine: Sometimes\n");
+         require(!badFunction.ok, "Sometimes was accepted");
+         require(badFunction.diagnostic.find("AllowShortFunctionsOnASingleLine") != std::string::npos,
+                 badFunction.diagnostic);
+         const auto badBlock = parseStyle("AllowShortBlocksOnASingleLine: Sometimes\n");
+         require(!badBlock.ok &&
+                     badBlock.diagnostic.find("AllowShortBlocksOnASingleLine") != std::string::npos,
+                 badBlock.diagnostic);
+         const auto badIf = parseStyle("AllowShortIfStatementsOnASingleLine: Sometimes\n");
+         require(!badIf.ok && badIf.diagnostic.find("AllowShortIfStatementsOnASingleLine") !=
+                                  std::string::npos,
+                 badIf.diagnostic);
+     }},
+    {"control parentheses gain a space and calls lose one", [] {
+         const std::string source =
+             "start {\n"
+             "    if(ready) { print(1) }\n"
+             "    while(ready) { print(1) }\n"
+             "    for(value in items) { print(value) }\n"
+             "    switch(value) { case(1) { print(1) } default { print(0) } }\n"
+             "    do { print(1) } while(ready)\n"
+             "    longCall (1)\n"
+             "    print (2)\n"
+             "    print(3)\n"
+             "    return (4)\n"
+             "    return(5)\n"
+             "    raise (Error())\n"
+             "    raise(Error())\n"
+             "    try { print(6) } except (Exception) { print(7) }\n"
+             "    try { print(8) } except(Other) { print(9) }\n"
+             "    print(items[0] (1))\n"
+             "    print((ready) (1))\n"
+             "    print(items > (1))\n"
+             "    print(\"name\" (1))\n"
+             "}\n";
+         const std::string untouched =
+             "start {\n"
+             "    if(ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    while(ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    for(value in items) {\n"
+             "        print(value)\n"
+             "    }\n"
+             "    switch(value) {\n"
+             "        case(1) {\n"
+             "            print(1)\n"
+             "        }\n"
+             "        default {\n"
+             "            print(0)\n"
+             "        }\n"
+             "    }\n"
+             "    do {\n"
+             "        print(1)\n"
+             "    } while(ready)\n"
+             "    longCall (1)\n"
+             "    print (2)\n"
+             "    print(3)\n"
+             "    return (4)\n"
+             "    return(5)\n"
+             "    raise (Error())\n"
+             "    raise(Error())\n"
+             "    try {\n"
+             "        print(6)\n"
+             "    }\n"
+             "    except (Exception) {\n"
+             "        print(7)\n"
+             "    }\n"
+             "    try {\n"
+             "        print(8)\n"
+             "    }\n"
+             "    except(Other) {\n"
+             "        print(9)\n"
+             "    }\n"
+             "    print(items[0] (1))\n"
+             "    print((ready) (1))\n"
+             "    print(items > (1))\n"
+             "    print(\"name\" (1))\n"
+             "}\n";
+         const std::string spaced =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    while (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    for (value in items) {\n"
+             "        print(value)\n"
+             "    }\n"
+             "    switch (value) {\n"
+             "        case(1) {\n"
+             "            print(1)\n"
+             "        }\n"
+             "        default {\n"
+             "            print(0)\n"
+             "        }\n"
+             "    }\n"
+             "    do {\n"
+             "        print(1)\n"
+             "    } while (ready)\n"
+             "    longCall(1)\n"
+             "    print (2)\n"
+             "    print(3)\n"
+             "    return (4)\n"
+             "    return(5)\n"
+             "    raise (Error())\n"
+             "    raise(Error())\n"
+             "    try {\n"
+             "        print(6)\n"
+             "    }\n"
+             "    except (Exception) {\n"
+             "        print(7)\n"
+             "    }\n"
+             "    try {\n"
+             "        print(8)\n"
+             "    }\n"
+             "    except(Other) {\n"
+             "        print(9)\n"
+             "    }\n"
+             "    print(items[0](1))\n"
+             "    print((ready)(1))\n"
+             "    print(items >(1))\n"
+             "    print(\"name\"(1))\n"
+             "}\n";
+         require(formatted(source) == untouched, formatted(source));
+         auto controls = cwhip::builtinStyle();
+         controls.spaceBeforeParens = cwhip::SpaceBeforeParens::ControlStatements;
+         require(formatted(source, controls) == spaced, formatted(source, controls));
+     }},
+    {"long parameters and bracket lists wrap and strings stay whole", [] {
+         const std::string params =
+             "class Box {\n"
+             "    int64 value(int64 alpha, int64 beta, int64 gamma, int64 delta, int64 epsilon, "
+             "int64 zeta, int64 eta, int64 theta) {\n"
+             "        return(1)\n"
+             "    }\n"
+             "}\n";
+         const std::string paramsWrapped =
+             "class Box {\n"
+             "    int64 value(\n"
+             "            int64 alpha,\n"
+             "            int64 beta,\n"
+             "            int64 gamma,\n"
+             "            int64 delta,\n"
+             "            int64 epsilon,\n"
+             "            int64 zeta,\n"
+             "            int64 eta,\n"
+             "            int64 theta) {\n"
+             "        return(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(params) == paramsWrapped, formatted(params));
+         const auto packParams = parseStyle("BinPackParameters: true\n");
+         require(packParams.ok, packParams.diagnostic);
+         require(formatted(params, packParams.style) == paramsWrapped,
+                 formatted(params, packParams.style));
+         require(formatted("class Box {\n    int64 value(int64 alpha) { return(1) }\n}\n") ==
+                     "class Box {\n    int64 value(int64 alpha) {\n        return(1)\n    }\n}\n",
+                 "a short parameter list wrapped");
+         const std::string list =
+             "start {\n"
+             "    print([alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, "
+             "lambda, mu])\n"
+             "}\n";
+         const std::string listWrapped =
+             "start {\n"
+             "    print([\n"
+             "            alpha,\n"
+             "            beta,\n"
+             "            gamma,\n"
+             "            delta,\n"
+             "            epsilon,\n"
+             "            zeta,\n"
+             "            eta,\n"
+             "            theta,\n"
+             "            iota,\n"
+             "            kappa,\n"
+             "            lambda,\n"
+             "            mu])\n"
+             "}\n";
+         require(formatted(list) == listWrapped, formatted(list));
+         expectSame("start {\n    print([alpha, beta])\n}\n");
+         const auto packArgs = parseStyle("BinPackArguments: true\n");
+         require(packArgs.ok, packArgs.diagnostic);
+         require(formatted(kLongCall, packArgs.style) == kWrappedCall, formatted(kLongCall, packArgs.style));
+         const std::string text =
+             "start {\n"
+             "    strg label = "
+             "\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghij\"\n"
+             "}\n";
+         const auto label = text.substr(text.find('\n') + 1);
+         require(label.find('\n') > 80, "string line is not past the column limit");
+         expectSame(text);
+         auto breaking = cwhip::builtinStyle();
+         breaking.breakStringLiterals = true;
+         expectSame(text, breaking);
+         const auto parsed = parseStyle("BreakStringLiterals: true\n");
+         require(parsed.ok, parsed.diagnostic);
+         expectSame(text, parsed.style);
+     }},
+    {"hash comments reflow unless the column limit is zero", [] {
+         auto narrow = cwhip::builtinStyle();
+         narrow.columnLimit = 40;
+         const std::string lines =
+             "start {\n"
+             "    # alpha beta gamma delta epsilon zeta eta\n"
+             "    // alpha beta gamma delta epsilon zeta eta\n"
+             "    print(1)\n"
+             "}\n";
+         const std::string wrapped =
+             "start {\n"
+             "    # alpha beta gamma delta epsilon\n"
+             "    # zeta eta\n"
+             "    // alpha beta gamma delta epsilon\n"
+             "    // zeta eta\n"
+             "    print(1)\n"
+             "}\n";
+         require(formatted(lines, narrow) == wrapped, formatted(lines, narrow));
+         auto quiet = narrow;
+         quiet.reflowComments = false;
+         expectSame(lines, quiet);
+         auto unlimited = cwhip::builtinStyle();
+         unlimited.columnLimit = 0;
+         expectSame(lines, unlimited);
+         const std::string codeLine =
+             "start {\n"
+             "    if(ready) { print(1) } # test: alpha beta gamma delta epsilon zeta eta theta "
+             "iota kappa lambda mu\n"
+             "}\n";
+         const std::string codeReflowed =
+             "start {\n"
+             "    if(ready) {\n"
+             "        print(1)\n"
+             "    } # test: alpha beta gamma delta\n"
+             "    # epsilon zeta eta theta iota kappa\n"
+             "    # lambda mu\n"
+             "}\n";
+         require(formatted(codeLine, narrow) == codeReflowed, formatted(codeLine, narrow));
+         auto frozen = narrow;
+         frozen.commentPragmas = "^test:";
+         expectSame(codeLine, frozen);
+         const std::string hashLines =
+             "start {\n"
+             "    # test: alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu\n"
+             "    # ordinary alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu\n"
+             "    print(1)\n"
+             "}\n";
+         const std::string hashKept =
+             "start {\n"
+             "    # test: alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu\n"
+             "    # ordinary alpha beta gamma delta\n"
+             "    # epsilon zeta eta theta iota kappa\n"
+             "    # lambda mu\n"
+             "    print(1)\n"
+             "}\n";
+         require(formatted(hashLines, frozen) == hashKept, formatted(hashLines, frozen));
+         auto empty = narrow;
+         empty.commentPragmas = "";
+         require(formatted(hashLines, empty) == formatted(hashLines, narrow),
+                 "empty quotes protected a hash comment");
+         const auto unquoted = parseStyle("CommentPragmas: ^test:\n");
+         require(!unquoted.ok, "unquoted pragma");
+         require(unquoted.diagnostic.find("CommentPragmas must be a quoted string") !=
+                     std::string::npos,
+                 unquoted.diagnostic);
+         const auto quotes = parseStyle("CommentPragmas: \"\"\n");
+         require(quotes.ok && quotes.style.commentPragmas && quotes.style.commentPragmas->empty(),
+                 "empty double quotes");
+     }},
+    {"else if and a newline before except's parenthesis are format errors", [] {
+         const std::string chain =
+             "start {\n    if (ready) { print(1) } else if (other) { print(2) }\n}\n";
+         const auto failed = cwhip::formatSource(chain, cwhip::builtinStyle(), "joined.cw");
+         require(!failed.ok, "else if was formatted");
+         require(failed.text == chain, "else if rewrote the file");
+         require(failed.diagnostic.find("else if is not a statement") != std::string::npos,
+                 failed.diagnostic);
+         const auto allowed = parseStyle("ForbidElseIf: false\n");
+         require(allowed.ok, allowed.diagnostic);
+         const auto still = cwhip::formatSource(chain, allowed.style, "joined.cw");
+         require(!still.ok && still.text == chain, "ForbidElseIf false accepted else if");
+         require(still.diagnostic.find("else if is not a statement") != std::string::npos,
+                 still.diagnostic);
+         const std::string split =
+             "start {\n    try { print(1) } except\n    (Exception) { print(2) }\n}\n";
+         const auto moved = cwhip::formatSource(split, cwhip::builtinStyle(), "except.cw");
+         require(!moved.ok && moved.text == split, "except parenthesis was joined");
+         require(moved.diagnostic.find("newline between except and '('") != std::string::npos,
+                 moved.diagnostic);
+     }},
+    {"open braces move for loops switch try and else", [] {
+         auto on = cwhip::builtinStyle();
+         on.newlineBeforeOpenBrace = true;
+         on.blankLinesAroundLongControlStatement = false;
+         require(formatted("start { while (ready) { print(1) } }\n", on) ==
+                     "start\n"
+                     "{\n"
+                     "    while (ready)\n"
+                     "    {\n"
+                     "        print(1)\n"
+                     "    }\n"
+                     "}\n",
+                 formatted("start { while (ready) { print(1) } }\n", on));
+         require(formatted("start { for (value in items) { print(value) } }\n", on) ==
+                     "start\n"
+                     "{\n"
+                     "    for (value in items)\n"
+                     "    {\n"
+                     "        print(value)\n"
+                     "    }\n"
+                     "}\n",
+                 formatted("start { for (value in items) { print(value) } }\n", on));
+         require(formatted(
+                     "start { switch (value) { case (1) { print(1) } default { print(0) } } }\n",
+                     on) ==
+                     "start\n"
+                     "{\n"
+                     "    switch (value)\n"
+                     "    {\n"
+                     "        case (1)\n"
+                     "        {\n"
+                     "            print(1)\n"
+                     "        }\n"
+                     "        default\n"
+                     "        {\n"
+                     "            print(0)\n"
+                     "        }\n"
+                     "    }\n"
+                     "}\n",
+                 "switch braces");
+         require(formatted("start { do { print(1) } while (ready) }\n", on) ==
+                     "start\n"
+                     "{\n"
+                     "    do\n"
+                     "    {\n"
+                     "        print(1)\n"
+                     "    } while (ready)\n"
+                     "}\n",
+                 "do brace");
+         require(formatted(
+                     "start { try { print(1) } except(Exception) { print(2) } finally { print(3) } }\n",
+                     on) ==
+                     "start\n"
+                     "{\n"
+                     "    try\n"
+                     "    {\n"
+                     "        print(1)\n"
+                     "    }\n"
+                     "    except(Exception)\n"
+                     "    {\n"
+                     "        print(2)\n"
+                     "    }\n"
+                     "    finally\n"
+                     "    {\n"
+                     "        print(3)\n"
+                     "    }\n"
+                     "}\n",
+                 "try braces");
+         require(formatted(
+                     "start { if (ready) { print(1) } else (other) { print(2) } else { print(3) } }\n",
+                     on) ==
+                     "start\n"
+                     "{\n"
+                     "    if (ready)\n"
+                     "    {\n"
+                     "        print(1)\n"
+                     "    }\n"
+                     "    else (other)\n"
+                     "    {\n"
+                     "        print(2)\n"
+                     "    }\n"
+                     "    else\n"
+                     "    {\n"
+                     "        print(3)\n"
+                     "    }\n"
+                     "}\n",
+                 "else braces");
+     }},
+    {"do while stays together when close brace newlines are off", [] {
+         const std::string source = "start {\n    do { print(1) } while (ready)\n}\n";
+         const std::string kept =
+             "start {\n    do {\n        print(1)\n    } while (ready)\n}\n";
+         auto off = cwhip::builtinStyle();
+         off.newlineAfterCloseBrace = false;
+         require(formatted(source, off) == kept, formatted(source, off));
+         expectSame(kept, off);
+         require(formatted(source) == kept, "true moved while off the brace");
+     }},
+    {"custom binding splits except and leaves enum braces", [] {
+         const std::string source =
+             "start {\n"
+             "    try { print(1) } except(Exception) { print(2) } finally { print(3) }\n"
+             "}\n";
+         const std::string joined =
+             "start {\n"
+             "    try {\n"
+             "        print(1)\n"
+             "    } except(Exception) {\n"
+             "        print(2)\n"
+             "    } finally {\n"
+             "        print(3)\n"
+             "    }\n"
+             "}\n";
+         const std::string split =
+             "start {\n"
+             "    try {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    except(Exception) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "    finally {\n"
+             "        print(3)\n"
+             "    }\n"
+             "}\n";
+         auto off = cwhip::builtinStyle();
+         off.newlineBeforeExcept = false;
+         require(formatted(source, off) == joined, formatted(source, off));
+         auto custom = off;
+         custom.braceBinding = cwhip::BraceBinding::Custom;
+         require(formatted(source, custom) == split, formatted(source, custom));
+         const std::string enumeration = "class Box {\n    enum { A, B }\n}\n";
+         const std::string expanded =
+             "class Box {\n"
+             "    enum {\n"
+             "        A, B\n"
+             "    }\n"
+             "}\n";
+         require(formatted(enumeration, custom) == expanded, formatted(enumeration, custom));
+         require(formatted(enumeration, custom) == formatted(enumeration), "custom moved enum");
+         auto shortEnum = custom;
+         shortEnum.allowShortEnums = true;
+         expectSame(enumeration, shortEnum);
+         const std::string broken = "class Box {\n    enum\n    {\n        A\n    }\n}\n";
+         const auto failed = cwhip::formatSource(broken, custom, "enum.cw");
+         require(!failed.ok && failed.text == broken, "a newline before enum { was kept");
+         const auto plain = cwhip::formatSource(broken, cwhip::builtinStyle(), "enum.cw");
+         require(!plain.ok && plain.text == broken, "default accepted a newline before enum {");
+     }},
+    {"binary operators break inside parentheses and stay outside", [] {
+         const std::string inside =
+             "start {\n"
+             "    if (ready and anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(std::string("    if (ready and "
+                             "anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {")
+                         .size() > 80,
+                 "and fixture is not past the column limit");
+         expectSame(inside);
+         auto before = cwhip::builtinStyle();
+         before.breakBeforeBinaryOperators = cwhip::BreakBeforeBinaryOperators::NonAssignment;
+         const std::string brokenBefore =
+             "start {\n"
+             "    if (ready\n"
+             "            and anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(inside, before) == brokenBefore, formatted(inside, before));
+         auto after = cwhip::builtinStyle();
+         after.breakBeforeBinaryOperators = cwhip::BreakBeforeBinaryOperators::None;
+         const std::string brokenAfter =
+             "start {\n"
+             "    if (ready and\n"
+             "            anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(inside, after) == brokenAfter, formatted(inside, after));
+         const std::string ors =
+             "start {\n"
+             "    if (ready or anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    if (ready || anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         const std::string orsBroken =
+             "start {\n"
+             "    if (ready\n"
+             "            or anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    if (ready\n"
+             "            || anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHere) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(ors, before) == orsBroken, formatted(ors, before));
+         const std::string outside =
+             "start {\n"
+             "    ready and anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHerePlusMore\n"
+             "}\n";
+         require(std::string("    ready and "
+                             "anotherClauseThatIsVeryLongAndShouldNotWrapOutsideParenthesesHerePlusMore")
+                         .size() > 80,
+                 "outside operator is not past the column limit");
+         expectSame(outside, before);
+         expectSame(outside, after);
+     }},
+    {"indent widths other than four and eight are used", [] {
+         auto style = cwhip::builtinStyle();
+         style.indentWidth = 2;
+         style.continuationIndentWidth = 6;
+         const std::string wrapped =
+             "start {\n"
+             "  print(\n"
+             "        alpha,\n"
+             "        beta,\n"
+             "        gamma,\n"
+             "        delta,\n"
+             "        epsilon,\n"
+             "        zeta,\n"
+             "        eta,\n"
+             "        theta,\n"
+             "        iota,\n"
+             "        kappa,\n"
+             "        lambda,\n"
+             "        mu)\n"
+             "}\n";
+         require(formatted(kLongCall, style) == wrapped, formatted(kLongCall, style));
+         const auto parsed = parseStyle("IndentWidth: 2\nContinuationIndentWidth: 6\n");
+         require(parsed.ok, parsed.diagnostic);
+         require(formatted(kLongCall, parsed.style) == wrapped, formatted(kLongCall, parsed.style));
+     }},
+    {"the other spelling of a locked key leaves the output unchanged", [] {
+         const std::string source =
+             "include \"zeta.cw\"\n"
+             "include \"alpha.cw\"\n"
+             "\n"
+             "start {\n"
+             "    if (ready or set) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    if (ready || set) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "    if (not ready) {\n"
+             "        print(3)\n"
+             "    }\n"
+             "    if (!ready) {\n"
+             "        print(4)\n"
+             "    }\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    else (other) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "    print(1..20)\n"
+             "    print(int8(-2) >> 1)\n"
+             "    print(\"a\\n\\\"b\")\n"
+             "    print(.5)\n"
+             "    print(1.)\n"
+             "    strg text inline {\n"
+             "        const char *s = \"{\";\n"
+             "    }\n"
+             "    /* alpha beta gamma delta epsilon zeta\n"
+             "       eta theta iota kappa */\n"
+             "}\n";
+         expectSame(source);
+         const auto locked = parseStyle(
+             "BreakStringLiterals: true\n"
+             "BinPackParameters: true\n"
+             "BinPackArguments: true\n"
+             "InsertSemicolons: true\n"
+             "AllowMultipleStatementsPerLine: true\n"
+             "WrapOnlyInsideParensAndBrackets: false\n"
+             "KeepElseParenOnSameLine: false\n"
+             "ForbidElseIf: false\n"
+             "PreserveLogicalSpelling: false\n"
+             "PreserveKeywordCase: false\n"
+             "PreserveTypeAliasSpelling: false\n"
+             "PreserveNumericSpelling: false\n"
+             "PreserveStringLexeme: false\n"
+             "PreserveParentheses: false\n"
+             "SplitDotDot: true\n"
+             "SplitShiftRight: true\n"
+             "ExpandIncludes: true\n"
+             "ReorderIncludes: true\n"
+             "FormatInlineC: true\n"
+             "PreserveBlockCommentNewlines: false\n");
+         require(locked.ok, locked.diagnostic);
+         expectSame(source, locked.style);
+         require(source.find("include \"zeta.cw\"\ninclude \"alpha.cw\"") != std::string::npos,
+                 "include order");
+         const std::string joined = "start {\n    print(1) print(2)\n}\n";
+         const auto failed = cwhip::formatSource(joined, locked.style, "joined.cw");
+         require(!failed.ok && failed.text == joined, "multiple statements were allowed");
+         const std::string assigned =
+             "start {\n"
+             "    int64 value = call(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, "
+             "kappa, lambda, mu)\n"
+             "}\n";
+         expectSame(assigned, locked.style);
+         const std::string generic =
+             "start {\n"
+             "    dict<VeryLongTypeNameThatPushesThisGenericWellPastTheColumnLimit, "
+             "AnotherLongTypeNameHere> item\n"
+             "}\n";
+         expectSame(generic, locked.style);
+     }},
+    {"style text comments quotes and rejected values", [] {
+         const auto spaced = parseStyle("ColumnLimit :  40 # ColumnLimit: 1\n");
+         require(spaced.ok, spaced.diagnostic);
+         require(spaced.style.columnLimit == 40, "spaces or the trailing hash changed the value");
+         const std::string call = "start {\n    print(alpha, beta, gamma, delta, epsilon)\n}\n";
+         const auto line = std::string("    print(alpha, beta, gamma, delta, epsilon)");
+         require(line.size() > 40 && line.size() <= 80, "column fixture is the wrong length");
+         expectSame(call);
+         const std::string wrapped =
+             "start {\n"
+             "    print(\n"
+             "            alpha,\n"
+             "            beta,\n"
+             "            gamma,\n"
+             "            delta,\n"
+             "            epsilon)\n"
+             "}\n";
+         require(formatted(call, spaced.style) == wrapped, formatted(call, spaced.style));
+         const auto hashed = parseStyle(
+             "# ColumnLimit: 1\n"
+             "ColumnLimit: 40\n"
+             "CommentPragmas: \"keep#this\" # trailing\n");
+         require(hashed.ok, hashed.diagnostic);
+         require(hashed.style.columnLimit == 40, "a whole-line hash comment set the limit");
+         require(hashed.style.commentPragmas && *hashed.style.commentPragmas == "keep#this",
+                 "a hash inside quotes was stripped");
+         auto narrow = hashed.style;
+         const std::string comments =
+             "start {\n"
+             "    # keep#this alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu\n"
+             "    # ordinary alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu\n"
+             "    print(1)\n"
+             "}\n";
+         const auto kept = formatted(comments, narrow);
+         require(kept.find("    # keep#this alpha beta gamma delta epsilon zeta eta theta iota "
+                           "kappa lambda mu\n") != std::string::npos,
+                 kept);
+         require(kept.find("    # ordinary alpha beta gamma delta epsilon zeta eta theta iota "
+                           "kappa lambda mu\n") == std::string::npos,
+                 kept);
+         const auto escaped = parseStyle("CommentPragmas: \"a\\\"b\"\n");
+         require(escaped.ok && escaped.style.commentPragmas && *escaped.style.commentPragmas == "a\"b",
+                 "quote escape");
+         const auto slash = parseStyle("CommentPragmas: \"a\\\\b\"\n");
+         require(slash.ok && slash.style.commentPragmas && *slash.style.commentPragmas == "a\\b",
+                 "backslash escape");
+         const auto newline = parseStyle("CommentPragmas: \"a\\nb\"\n");
+         require(newline.ok && newline.style.commentPragmas &&
+                     *newline.style.commentPragmas == "a\nb",
+                 "newline escape");
+         const auto tab = parseStyle("CommentPragmas: \"a\\tb\"\n");
+         require(tab.ok && tab.style.commentPragmas && *tab.style.commentPragmas == "a\tb",
+                 "tab escape");
+         const auto badEscape = parseStyle("CommentPragmas: \"\\q\"\n");
+         require(!badEscape.ok, "bad escape");
+         require(badEscape.diagnostic.find("unterminated string") != std::string::npos,
+                 badEscape.diagnostic);
+         const auto single = parseStyle("CommentPragmas: 'a#b'\n");
+         require(single.ok && single.style.commentPragmas && *single.style.commentPragmas == "a#b",
+                 "single quoted hash");
+         const auto leadingSpace = parseStyle(" ColumnLimit: 1\n");
+         require(!leadingSpace.ok && leadingSpace.diagnostic.find("nested map") != std::string::npos,
+                 leadingSpace.diagnostic);
+         const auto leadingTab = parseStyle("\tColumnLimit: 1\n");
+         require(!leadingTab.ok && leadingTab.diagnostic.find("nested map") != std::string::npos,
+                 leadingTab.diagnostic);
+         const auto emptyValue = parseStyle("ColumnLimit:\n");
+         require(!emptyValue.ok && emptyValue.diagnostic.find("nested map: ColumnLimit") !=
+                                       std::string::npos,
+                 emptyValue.diagnostic);
+         const auto missingColon = parseStyle("ColumnLimit 40\n");
+         require(!missingColon.ok &&
+                     missingColon.diagnostic.find("expected Key: Value") != std::string::npos,
+                 missingColon.diagnostic);
+         const auto useTab = parseStyle("UseTab: Always\n");
+         require(!useTab.ok && useTab.diagnostic.find("invalid value for UseTab") != std::string::npos,
+                 useTab.diagnostic);
+         const auto align = parseStyle("AlignOperands: Align\n");
+         require(!align.ok &&
+                     align.diagnostic.find("invalid value for AlignOperands") != std::string::npos,
+                 align.diagnostic);
+         const auto wrap = parseStyle("WrapLongParenthesizedList: BinPack\n");
+         require(!wrap.ok && wrap.diagnostic.find("invalid value for WrapLongParenthesizedList") !=
+                                 std::string::npos,
+                 wrap.diagnostic);
+         const auto terminator = parseStyle("StatementTerminator: Semicolon\n");
+         require(!terminator.ok &&
+                     terminator.diagnostic.find("invalid value for StatementTerminator") !=
+                         std::string::npos,
+                 terminator.diagnostic);
+     }},
+    {"an empty style file an empty home and an unreadable file", [] {
+         EnvGuard home("HOME");
+         const auto root = std::filesystem::temp_directory_path() /
+                           ("cwhip-format-style-" + std::to_string(static_cast<long long>(getpid())));
+         std::filesystem::remove_all(root);
+         const auto child = root / "parent" / "child";
+         writeFile(root / "parent" / ".cwhip-format", "ColumnLimit: 3\n");
+         writeFile(child / ".cwhip-format", "");
+         const auto stopped = cwhip::loadStyleAt(child.string());
+         require(stopped.ok && stopped.found && stopped.style.columnLimit == 80,
+                 "empty style file did not stop the walk: " + std::to_string(stopped.style.columnLimit));
+         const auto here = root / "a" / "b" / "c" / "d" / "e" / "f";
+         writeFile(here / "note.txt", "x");
+         writeFile(root / "home" / ".config" / "cwhip" / ".cwhip-format", "ColumnLimit: 3\n");
+         home.set((root / "home").string());
+         const auto fromHome = cwhip::loadStyleAt(here.string());
+         require(fromHome.ok && fromHome.found && fromHome.style.columnLimit == 3,
+                 fromHome.diagnostic);
+         home.set("");
+         const auto emptyHome = cwhip::loadStyleAt(here.string());
+         require(emptyHome.ok && !emptyHome.found && emptyHome.style.columnLimit == 80,
+                 "empty HOME was used");
+         writeFile(root / "secret" / ".cwhip-format", "ColumnLimit: 4\n");
+         {
+             PermGuard denied(root / "secret" / ".cwhip-format");
+             denied.deny();
+             const auto unreadable = cwhip::loadStyleAt((root / "secret").string());
+             require(!unreadable.ok, "an unreadable style file was used");
+             require(unreadable.diagnostic.find("cannot read style file") != std::string::npos,
+                     unreadable.diagnostic);
+         }
+        {
+            const auto inner = root / "deleted";
+            std::filesystem::create_directories(inner);
+            CwdGuard cwd;
+            std::filesystem::current_path(inner);
+            require(std::filesystem::remove(inner), "could not remove the current directory");
+            const auto lost = cwhip::styleFor("");
+            require(!lost.ok, lost.diagnostic.empty() ? "current directory was readable"
+                                                      : lost.diagnostic);
+            require(lost.diagnostic.find("cannot read the current directory") != std::string::npos,
+                    lost.diagnostic);
+        }
+         std::filesystem::remove_all(root);
      }},
 }};
 
