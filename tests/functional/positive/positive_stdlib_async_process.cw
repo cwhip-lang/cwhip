@@ -3,6 +3,7 @@ import system as Sys
 import time as T
 
 class Thread {
+    public:
     handle launch()
     void join(handle worker)
 }
@@ -12,6 +13,7 @@ void Thread.join(handle worker) from "cwhip_thread_join"
 
 # Drains every event until the single completion event, keeping bytes lossless.
 class Collector {
+    public:
     buffer out
     buffer err
     String outText
@@ -70,6 +72,7 @@ class Collector {
 
 # Counts byte totals only, for output much larger than a pipe's capacity.
 class Counter {
+    public:
     int64 outBytes
     int64 errBytes
     int64 outChunks
@@ -100,6 +103,7 @@ class Counter {
 }
 
 class Ticker : Thread {
+    public:
     int64 ticks
     bool stop
 
@@ -117,6 +121,7 @@ class Ticker : Thread {
 }
 
 class BlockedReader : Thread {
+    public:
     P.AsyncProcess child
     bool returned
     bool useWait
@@ -139,6 +144,7 @@ class BlockedReader : Thread {
 }
 
 class Closer : Thread {
+    public:
     P.AsyncProcess child
 
     Closer(P.AsyncProcess target) {

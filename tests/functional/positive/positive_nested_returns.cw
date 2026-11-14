@@ -1,4 +1,5 @@
 class Payload {
+    public:
     int64 code
 
     Payload(int64 value) {
@@ -7,6 +8,7 @@ class Payload {
 }
 
 class ReturnProbe {
+    public:
     int64 evaluations
 
     strg makeValue() {

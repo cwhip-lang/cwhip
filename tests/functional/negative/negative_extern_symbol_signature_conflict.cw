@@ -1,5 +1,6 @@
 # Rejects reusing one C symbol for native methods with incompatible ABI signatures.
 class Native {
+    public:
     int64 integerValue(int64 value)
     strg stringValue(strg value)
 }

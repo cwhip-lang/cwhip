@@ -2,6 +2,7 @@
 # the definition, and the emitted symbol are all keyed by parameter types,
 # not just the method name.
 class Calc {
+    public:
     int64 scale(int64 v)
     int64 scale(int64 v, int64 by)
 }

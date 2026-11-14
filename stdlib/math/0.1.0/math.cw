@@ -1,5 +1,6 @@
 namespace Math {
     class Math {
+        public:
         fp64 pi() {
             return(3.141592653589793f64)
         }

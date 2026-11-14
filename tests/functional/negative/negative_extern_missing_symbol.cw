@@ -1,5 +1,6 @@
 # Fails to link when a native method names a C symbol that does not exist.
 class Native {
+    public:
     int64 missing(int64 value)
 }
 

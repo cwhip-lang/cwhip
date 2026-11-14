@@ -2,6 +2,7 @@ import process as P
 import time as T
 
 class Thread {
+    public:
     handle launch()
     void join(handle worker)
 }
@@ -10,6 +11,7 @@ handle Thread.launch() from "cwhip_thread_start"
 void Thread.join(handle worker) from "cwhip_thread_join"
 
 class Check {
+    public:
     int64 failures
 
     Check() {
@@ -28,6 +30,7 @@ class Check {
 
 # Pulls events until `expected` stdout bytes arrived or the child completed.
 class Reader {
+    public:
     String out
     String err
     int64 outBytes
@@ -90,6 +93,7 @@ class Reader {
 
 # Writes numbered lines from another Cwhip thread while the main thread reads.
 class LineWriter : Thread {
+    public:
     P.AsyncProcess child
     int64 count
     bool ok
@@ -115,6 +119,7 @@ class LineWriter : Thread {
 }
 
 class Counter {
+    public:
     int64 bytes
     bool completed
 

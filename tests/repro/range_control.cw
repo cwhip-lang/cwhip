@@ -2,6 +2,7 @@
 # Standalone: cwhip tests/repro/range_control.cw -o /tmp/range_control && /tmp/range_control
 # Exhaustive width/edge coverage remains in tests/test_range_execution.py.
 class Worker {
+    public:
     range<int64> saved
     int64 calls
     int64 endpoint(int64 n) {

@@ -1,5 +1,6 @@
 # Uncaught explicit exceptions retain Cwhip method frames from innermost to start.
 class Worker {
+  public:
   void inner(Worker self) {
     raise(Exception("trace sentinel"))
   }

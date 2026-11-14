@@ -1,6 +1,7 @@
 # A class can initialize its virtual base directly; when used as a base,
 # its initializer and argument expression are skipped.
 class A {
+    public:
     int64 value
 
     A(int64 initial) {
@@ -14,6 +15,7 @@ class A {
 }
 
 class B : virtual A {
+    public:
     int64 initializerArgument() {
         print("B initializer argument")
         return(1)
@@ -34,6 +36,7 @@ class B : virtual A {
 }
 
 class C : B {
+    public:
     C() {
         super virtual A(2)
         super B()

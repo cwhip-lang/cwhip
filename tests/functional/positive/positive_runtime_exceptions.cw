@@ -8,6 +8,7 @@ class Box {
   }
 }
 class Worker {
+  public:
   int64 fail() {
     Box local = Box()
     raise(Exception("from method"))
@@ -15,6 +16,7 @@ class Worker {
   }
 }
 class ThrowingBox {
+  public:
   destroy {
     raise(Exception("from destructor"))
   }
@@ -23,6 +25,7 @@ class ThrowingBox {
   }
 }
 class Partial {
+  public:
   Partial() {
     raise(Exception("constructor failed"))
   }
@@ -31,6 +34,7 @@ class Partial {
   }
 }
 class Builder {
+  public:
   void build() {
     Partial partial = Partial()
   }

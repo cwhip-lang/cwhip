@@ -6,6 +6,7 @@ class Primary {
 }
 
 class Secondary {
+    public:
     int64 secondary
     Secondary() { secondary = 20 }
     void updateSecondary() {
@@ -60,6 +61,7 @@ class Fields : Primary, Secondary {
 }
 
 class Root {
+    public:
     int64 shared
     list values
     Root() { shared = 40 }
@@ -70,6 +72,7 @@ class Root {
 class Left : virtual Root {}
 class Right : virtual Root {}
 class Diamond : Left, Right {
+    public:
     void update() {
         inline (int64 shared) { *shared += 2; }
         inline (int64 Right.Root.shared) { *shared += 3; }
@@ -77,10 +80,11 @@ class Diamond : Left, Right {
     }
 }
 
-class RepeatedRoot { int64 value }
+class RepeatedRoot { public: int64 value }
 class First : RepeatedRoot {}
 class Second : RepeatedRoot {}
 class Repeated : First, Second {
+    public:
     void update() {
         inline (int64 First.RepeatedRoot.value) { *value = 51; }
         inline (int64 Second.RepeatedRoot.value) { *value = 61; }

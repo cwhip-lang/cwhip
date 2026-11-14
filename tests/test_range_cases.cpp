@@ -9,6 +9,7 @@ const TestGroupRegistration registration{17, {
     {"first-class range types and consumers", [] {
         expectValid(R"(
 class Worker {
+    public:
     range<int64> saved
     range<int64> identity(range<int64> values) { saved = values
         return(saved) }
@@ -81,6 +82,7 @@ start {
         expectValid(R"(
 namespace N {
     class Worker {
+        public:
         range<int64> identity(range<int64> values)
     }
     range<int64> Worker.identity(range<int64> values) { return(values) }

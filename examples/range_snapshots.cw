@@ -1,4 +1,5 @@
 class Bounds {
+    public:
     int64 calls
     int64 capture(int64 value) {
         calls += 1

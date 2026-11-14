@@ -1,5 +1,6 @@
 # Rejects declared any types in native method parameters.
 class Native {
+    public:
     int64 use(any value)
 }
 

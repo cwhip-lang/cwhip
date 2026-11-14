@@ -3,6 +3,7 @@ include "../includes/namespace_fragment.cw"
 
 namespace Included {
     class Local {
+        public:
         int64 value() {
             return(2)
         }

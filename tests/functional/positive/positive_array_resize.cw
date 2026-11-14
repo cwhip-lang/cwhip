@@ -1,4 +1,5 @@
 class Node {
+    public:
     int64 value
     Node(int64 initial) {
         value = initial
@@ -9,6 +10,7 @@ class Node {
 }
 
 class Grower {
+    public:
     int64 grow(list values) {
         values.resize(12)
         return(7)

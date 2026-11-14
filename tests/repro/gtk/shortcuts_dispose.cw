@@ -1,4 +1,5 @@
 class Action {
+    public:
     Gtk.Window window
     Gtk.Notebook notebook
     Gtk.ScrolledWindow page
@@ -25,6 +26,7 @@ class Action {
 }
 void Action.note() from "binding_released"
 class UI {
+    public:
     Gtk.Window window
     Gtk.Notebook notebook
     Gtk.ScrolledWindow first

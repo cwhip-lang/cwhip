@@ -1,5 +1,6 @@
 import sourceview
 class UI {
+    public:
     Gtk.Window window
     GtkSource.View view
     void<> allocatedAction

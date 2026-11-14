@@ -11,6 +11,7 @@ from program_runner import environment, invoke
 
 NATIVE = """
 class Native {
+    public:
     handle register(int64<int64> cb)
     int64 invoke(handle registration, int64 value)
     void release(handle registration)
@@ -67,10 +68,12 @@ def main():
         cases = [
             ("transfer_roots", NATIVE + """
 class Payload {
+    public:
     int64 run(int64 n) { return(n + 2) }
     destroy { print("disposed") }
 }
 class Factory {
+    public:
     handle prepare(Native n) { return(n.transfer(Payload().run)) }
 }
 start {
@@ -112,7 +115,7 @@ start {
 start { Native().unregisteredEnter() }
 """, "", "native reentry requires a registered thread"),
             ("transfer_signature", """
-class Payload { void run() {} }
+class Payload { public: void run() {} }
 start {
     void<> cb = Payload().run
     inline(void<> cb) {
@@ -122,6 +125,7 @@ start {
 """, "", "signature mismatch"),
             ("native_abis", NATIVE + """
 class W {
+    public:
     strg mixed(strg text, int64 i, uint64 u, fp64 f, bool b,
                list xs, dict d, buffer bytes, handle opaque) {
         Native().collect()
@@ -210,10 +214,12 @@ start {
 """, "-4 18446744073709551615 1.5 true 2 1 3 truepingnative425", None),
             ("contexts", """
 class W {
+    public:
     int64 run(int64 n) { return(n + 1) }
     fp64 run(fp64 n) { return(n + 0.5) }
 }
 class Use {
+    public:
     int64 use(int64<int64> cb, int64 value) { return(cb(value)) }
     fp64 use(fp64<fp64> cb, fp64 value) { return(cb(value)) }
     int64<int64> saved
@@ -234,10 +240,12 @@ start {
 """, "42210", None),
             ("simple_roots", NATIVE + """
 class W {
+    public:
     int64 run(int64 n) { return(n + 40) }
     destroy { print("finalized") }
 }
 class Box {
+    public:
     int64<int64> cb
     int64<int64> make() {
         W local = W()
@@ -255,6 +263,7 @@ start {
 """, "true42", None),
             ("values", """
 class Worker {
+    public:
     int64 bias
     Worker(int64 initial) { bias = initial }
     int64 add(int64 n) { return(bias + n) }
@@ -264,11 +273,13 @@ class Worker {
     void ping() { print("ping") }
 }
 class Box {
+    public:
     int64<int64> value
     int64<int64> pass(int64<int64> cb) { return(cb) }
     int64 apply(int64<int64> cb, int64 x) { return(cb(x)) }
 }
 class Factory {
+    public:
     int64 count
     Worker make() {
         count += 1
@@ -304,6 +315,7 @@ start {
 """, "22 23 242managed20ping1 17true true truetruenullcallback<int64(int64)>", None),
             ("exceptions", """
 class Worker {
+    public:
     int64 fail(int64 n) { return(1 / n) }
     destroy { print("destroyed") }
 }
@@ -325,12 +337,12 @@ start {
 }
 """, "caughtdestroyeddeadcapture deadcapture nullempty", None),
             ("virtual", """
-class First { int64 f() { return(1) } }
-class Base { int64 value(int64 n) { return(n + 2) } }
-class Derived : First, Base { int64 value(int64 n) { return(n + 20) } }
+class First { public: int64 f() { return(1) } }
+class Base { public: int64 value(int64 n) { return(n + 2) } }
+class Derived : First, Base { public: int64 value(int64 n) { return(n + 20) } }
 class Left : virtual Base {}
 class Right : virtual Base {}
-class Diamond : Left, Right { int64 value(int64 n) { return(n + 200) } }
+class Diamond : Left, Right { public: int64 value(int64 n) { return(n + 200) } }
 start {
     Derived d = Derived()
     Base b = d
@@ -346,12 +358,14 @@ start {
 """, "21 22201 202", None),
             ("native_roots", NATIVE + """
 class Worker {
+    public:
     int64 base
     Worker(int64 initial) { base = initial }
     int64 add(int64 value) { return(base + value) }
     destroy { print("finalized") }
 }
 class Factory {
+    public:
     handle make(Native native) {
         Worker w(40)
         return(native.register(w.add))
@@ -361,7 +375,7 @@ class Factory {
         return(native.register(w.add))
     }
 }
-class Quiet { int64 add(int64 value) { return(value) } }
+class Quiet { public: int64 add(int64 value) { return(value) } }
 start {
     Native n = Native()
     Factory factory = Factory()
@@ -383,7 +397,7 @@ start {
 }
 """, "42finalized50", None),
             ("native_exception", NATIVE + """
-class Worker { int64 fail(int64 n) { return(1 / n) } }
+class Worker { public: int64 fail(int64 n) { return(1 / n) } }
 start {
     Native n = Native()
     Worker w = Worker()
@@ -392,7 +406,7 @@ start {
 }
 """, "", "uncaught Cwhip exception"),
             ("released", NATIVE + """
-class Worker { int64 run(int64 n) { return(n) } }
+class Worker { public: int64 run(int64 n) { return(n) } }
 start {
     Native n = Native()
     Worker w = Worker()
@@ -402,7 +416,7 @@ start {
 }
 """, "", "registration has been released"),
             ("foreign", NATIVE + """
-class Worker { int64 run(int64 n) { return(n) } }
+class Worker { public: int64 run(int64 n) { return(n) } }
 start {
     Native n = Native()
     Worker w = Worker()
@@ -412,6 +426,7 @@ start {
 """, "", "registered Cwhip thread"),
             ("reentrant", NATIVE + """
 class Worker {
+    public:
     Native native
     handle registration
     int64 depth
@@ -438,6 +453,7 @@ start {
 """, "12", None),
             ("in_flight_release", NATIVE + """
 class Worker {
+    public:
     Native native
     handle registration
     int64 run(int64 n) { native.release(registration)
@@ -452,7 +468,7 @@ start {
 }
 """, "", "in-flight registration"),
             ("native_signature", """
-class W { int64 run(int64 n) { return(n) } }
+class W { public: int64 run(int64 n) { return(n) } }
 start {
     W w = W()
     int64<int64> cb = w.run
@@ -463,6 +479,7 @@ start {
 """, "", "signature mismatch"),
             ("native_destroyed", NATIVE + """
 class W {
+    public:
     int64 run(int64 n) { return(n) }
     destroy {}
 }
@@ -476,6 +493,7 @@ start {
 """, "", "object has been destroyed"),
             ("native_caught", NATIVE + """
 class W {
+    public:
     int64 run(int64 n) {
         try { return(1 / n) } except() { return(-1) }
     }
@@ -490,7 +508,7 @@ start {
 }
 """, "-1", None),
             ("registered_foreign", NATIVE + """
-class W { int64 run(int64 n) { return(n) } }
+class W { public: int64 run(int64 n) { return(n) } }
 start {
     Native n = Native()
     W w = W()
@@ -499,7 +517,7 @@ start {
 }
 """, "", "foreign-thread invocation"),
             ("unlocked", NATIVE + """
-class W { int64 run(int64 n) { return(n) } }
+class W { public: int64 run(int64 n) { return(n) } }
 start {
     Native n = Native()
     W w = W()
@@ -508,7 +526,7 @@ start {
 }
 """, "", "holding the runtime lock"),
             ("undisposed", NATIVE + """
-class W { int64 run(int64 n) { return(n) } }
+class W { public: int64 run(int64 n) { return(n) } }
 start {
     Native n = Native()
     W w = W()
@@ -517,7 +535,7 @@ start {
 }
 """, "", "undisposed callback registrations"),
             ("double_release", NATIVE + """
-class W { int64 run(int64 n) { return(n) } }
+class W { public: int64 run(int64 n) { return(n) } }
 start {
     Native n = Native()
     W w = W()
@@ -527,7 +545,7 @@ start {
 }
 """, "", "registration has been released"),
             ("early_dispose", NATIVE + """
-class W { int64 run(int64 n) { return(n) } }
+class W { public: int64 run(int64 n) { return(n) } }
 start {
     Native n = Native()
     W w = W()
@@ -537,10 +555,12 @@ start {
 """, "", "idle released owner-thread registration"),
             ("argument_destroys", """
 class W {
+    public:
     int64 run(int64 n) { return(42) }
     destroy {}
 }
 class Killer {
+    public:
     int64 kill(W object) { object.destroy()
         return(1) }
 }
@@ -569,6 +589,7 @@ start {
             print(f"PASS {name}")
 
         prefix = """class W {
+    public:
     int64 run(int64 n) { return(n) }
     fp64 run(fp64 n) { return(n) }
     private:
@@ -603,11 +624,12 @@ start {
              "not accessible"),
         ]
         prefix += """class Use {
+    public:
     int64 use(int64<int64> cb) { return(cb(1)) }
     fp64 use(fp64<fp64> cb) { return(cb(1.0)) }
 }
-class A { int64 run(int64 n) { return(n) } }
-class B { int64 run(int64 n) { return(n) } }
+class A { public: int64 run(int64 n) { return(n) } }
+class B { public: int64 run(int64 n) { return(n) } }
 class Both : A, B {}
 class Hidden : private A {}
 """
@@ -625,6 +647,7 @@ class Hidden : private A {}
         (module / "model.cw").write_text("""
 namespace Model {
     class Cell {
+        public:
         int64 n
         Cell(int64 initial) { n = initial }
         Cell echo(Cell other) { return(other) }

@@ -652,7 +652,9 @@ non-virtual bases also have no explicit constructors.
   protected, and private inheritance maps them to private; a base-private
   member remains inaccessible through inheritance. Class-body `public:`,
   `protected:`, and `private:` sections apply to subsequent fields, methods,
-  constructors, and destructor declarations. Private members are accessible
+  constructors, and destructor declarations. Members before the first access
+  section are private. Namespace and module bodies have no access sections.
+  Private members are accessible
   only within their declaring class, and private inheritance prevents further
   derived classes from accessing inherited members. Protected members are
   accessible from their declaring class and derived-class method bodies. Constructor access is
@@ -687,6 +689,7 @@ Exception handling supports constructed exception objects and typed filters:
 
 ```cwhip
 class NetworkError : Exception {
+    public:
     NetworkError(strg message) {
         super Exception(message)
     }
@@ -1722,6 +1725,7 @@ Cwhip body outside the class or a C symbol binding in place of that body:
 
 ```cwhip
 class Foo {
+    public:
     int64 compute(int64 x)
     strg echo(strg value)
 }

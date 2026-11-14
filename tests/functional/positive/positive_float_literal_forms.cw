@@ -2,6 +2,7 @@
 # (".5"), trailing-dot ("5."), digit.digit, and each of those with a decimal
 # exponent. A bare "0" with no dot/exponent remains an int literal.
 class App {
+    public:
     App() {}
     destroy {}
     void run() {

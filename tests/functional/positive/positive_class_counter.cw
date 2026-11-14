@@ -1,5 +1,6 @@
 # Verifies object fields can be updated by methods and then read through both methods and direct member access.
 class Counter {
+    public:
     int64 value
 
     Counter(int64 initial) {

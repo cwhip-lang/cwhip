@@ -4,6 +4,7 @@ import system
 // Demonstrates Gtk.Scale: range/step configure, get/set value, and
 // value-changed callbacks for horizontal and vertical sliders.
 class Demo {
+    public:
     Gtk.Window window
     Gtk.Label readout
     Gtk.Scale horizontal

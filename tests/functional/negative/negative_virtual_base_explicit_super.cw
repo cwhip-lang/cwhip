@@ -3,6 +3,7 @@ class Root {
 }
 
 class Left : virtual Root {
+    public:
     Left() {
         super Root()
     }

@@ -562,8 +562,10 @@ and thread bindings.
   mismatched closer can therefore affect whether later newlines are emitted;
   syntax diagnostics, not the lexer, report unmatched delimiters.
 - Base modifiers may appear in any order and repeated access modifiers use
-  the last one; repeating `virtual` is a parse error. Class member access
-  begins as public and changes only at an access section.
+  the last one; repeating `virtual` is a parse error. A base with no access
+  modifier stays public. Class member access begins as private and changes
+  only at an access section. Namespace and module bodies have no access
+  sections; they do not introduce a separate visibility system.
 - Conditional `else (expression)` clauses may be chained before one optional
   final bare `else`; conditions are tested in order and only the first matching
   branch runs. `else if` is not supported. `do { ... } while (...)` has no

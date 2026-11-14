@@ -1,5 +1,6 @@
 # Exercises a transitive virtual-base diamond, shared state, construction/destruction order, failure cleanup, and GC.
 class Payload {
+    public:
     int64 value
 
     Payload(int64 initial) {
@@ -8,6 +9,7 @@ class Payload {
 }
 
 class Common {
+    public:
     Payload item
     int64 marker
 
@@ -22,6 +24,7 @@ class Common {
 }
 
 class Ancestor : Common {
+    public:
     int64 value
 
     Ancestor(int64 initial) {
@@ -44,6 +47,7 @@ class Ancestor : Common {
 }
 
 class Root : virtual Ancestor {
+    public:
     int64 rootValue
 
     Root(int64 initial) {
@@ -57,6 +61,7 @@ class Root : virtual Ancestor {
 }
 
 class Left : virtual Root {
+    public:
     Left() {
         print("Left+")
     }
@@ -67,6 +72,7 @@ class Left : virtual Root {
 }
 
 class Right : virtual Root {
+    public:
     Right() {
         print("Right+")
     }
@@ -77,6 +83,7 @@ class Right : virtual Root {
 }
 
 class Diamond : Left, Right {
+    public:
     Diamond(int64 rootInitial, int64 ancestorInitial) {
         super virtual Ancestor(ancestorInitial)
         super virtual Root(rootInitial)
@@ -95,6 +102,7 @@ class Diamond : Left, Right {
 }
 
 class FailedAncestor {
+    public:
     FailedAncestor(int64 initial) {
         raise(Exception("transitive initialization failed"))
     }
@@ -105,11 +113,13 @@ class FailedAncestor {
 }
 
 class FailedSide : virtual FailedAncestor {
+    public:
     FailedSide() {
     }
 }
 
 class FailedDiamond : FailedSide {
+    public:
     FailedDiamond() {
         super virtual FailedAncestor(1)
         super FailedSide()
@@ -121,6 +131,7 @@ class FailedDiamond : FailedSide {
 }
 
 class Maker {
+    public:
     void release() {
         Diamond temporary = Diamond(11, 3)
     }

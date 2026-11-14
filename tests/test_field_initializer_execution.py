@@ -9,6 +9,7 @@ import subprocess
 
 SOURCE = r"""
 class Plain {
+    public:
     enum { VALUE = 42 }
     int64 number = VALUE
     strg text = "initialized"
@@ -28,6 +29,7 @@ class Plain {
     type descriptor = int64
 }
 class Base {
+    public:
     int64 number = 11
     Base() {
         print("{}\n", number == 11)
@@ -37,6 +39,7 @@ class Base {
     int64 read() { return(number) }
 }
 class Derived: Base {
+    public:
     int64 own = 17
     Derived() {
         super Base()
@@ -45,22 +48,26 @@ class Derived: Base {
     int64 read() { return(own) }
 }
 class Root {
+    public:
     int64 value = 10
     Root() { print("{}\n", value == 10) }
 }
 class Left: virtual Root {
+    public:
     Left() {
         print("{}\n", Root.value == 10)
         Root.value = 11
     }
 }
 class Right: virtual Root {
+    public:
     Right() {
         print("{}\n", Root.value == 11)
         Root.value = 12
     }
 }
 class Diamond: Left, Right {
+    public:
     Diamond() {
         super Left()
         super Right()
@@ -68,11 +75,12 @@ class Diamond: Left, Right {
     }
 }
 class Automatic: virtual Root {}
-class RepeatedRoot { int64 value = 7 }
+class RepeatedRoot { public: int64 value = 7 }
 class RepeatedLeft: RepeatedRoot {}
 class RepeatedRight: RepeatedRoot {}
 class Repeated: RepeatedLeft, RepeatedRight {}
 class Overloaded {
+    public:
     int64 value = 19
     Overloaded() { print("{}\n", value == 19) }
     Overloaded(int64 argument) {
@@ -81,11 +89,13 @@ class Overloaded {
     }
 }
 class OutOfLine {
+    public:
     int64 value = 23
     OutOfLine()
 }
 OutOfLine OutOfLine.OutOfLine() { print("{}\n", value == 23) }
 class Maker {
+    public:
     Plain make() { return(Plain()) }
     int64 argument(Plain item) { return(item.number) }
 }

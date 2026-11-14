@@ -1,5 +1,6 @@
 # Covers ordered dict slices and removal, mutation during iteration, list iteration, and nested collection references.
 class Node {
+    public:
     int64 value
     Node(int64 initial) {
         value = initial

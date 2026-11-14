@@ -5,6 +5,7 @@
 
 class ExceptionBase: Exception { 
 
+    public:
     ExceptionBase(strg val) {
         super Exception(val)
     }
@@ -13,6 +14,7 @@ class ExceptionBase: Exception {
 
 class LeftException: virtual ExceptionBase {
 
+    public:
     LeftException() {
         #super virtual ExceptionBase(val)
     }
@@ -20,6 +22,7 @@ class LeftException: virtual ExceptionBase {
 
 class RightException: virtual ExceptionBase {
 
+    public:
     RightException() {
         # super virtual ExceptionBase(val)
     }
@@ -27,6 +30,7 @@ class RightException: virtual ExceptionBase {
 
 class ChildException: LeftException, RightException {
 
+    public:
     ChildException(strg val) {
         super virtual ExceptionBase(val)
         super LeftException()
@@ -36,6 +40,7 @@ class ChildException: LeftException, RightException {
 
 class Thrower {
 
+    public:
     void throw() {
         raise(ChildException("this is the string"))
     }

@@ -1,16 +1,19 @@
 class Text {
+    public:
     strg wrap(strg value) {
         return(format("[{}]", value))
     }
 }
 
 class ExtendedString : String {
+    public:
     ExtendedString() {
         super String()
     }
 }
 
 class Order {
+    public:
     int64 count
     int64 next() {
         count = count + 1

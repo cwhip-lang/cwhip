@@ -1,5 +1,6 @@
 namespace System {
     class Runtime {
+        public:
         handle fileOpen(String path, String mode)
         String fileRead(handle fp, int64 size)
         String fileReadAll(handle fp)
@@ -18,6 +19,7 @@ namespace System {
     }
 
     class Process {
+        public:
         int64 argc()
         list argv()
         String arg(int64 index)
@@ -28,6 +30,7 @@ namespace System {
     }
 
     class StandardIO {
+        public:
         String read(int64 size)
         String readLine()
         int64 write(String text)
@@ -136,6 +139,7 @@ namespace System {
     }
 
     class FileSystem {
+        public:
         bool exists(String path)
         bool isFile(String path)
         bool isDir(String path)
@@ -159,10 +163,12 @@ namespace System {
     }
 
     class Glob {
+        public:
         list glob(String pattern)
     }
 
     class System {
+        public:
         int64 argc() {
             return(Process().argc())
         }

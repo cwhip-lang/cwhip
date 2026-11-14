@@ -1,14 +1,17 @@
 class RootTag {
+    public:
     RootTag() {}
 }
 
 class DerivedTag : RootTag {
+    public:
     DerivedTag() {
         super RootTag()
     }
 }
 
 class Pick {
+    public:
     Pick() {
         print("zero")
     }
@@ -35,12 +38,14 @@ class Pick {
 }
 
 class BaseOnly {
+    public:
     BaseOnly(RootTag value) {
         print("base-only")
     }
 }
 
 class MethodChoice {
+    public:
     int64 choose(RootTag value) {
         return(1)
     }
@@ -51,6 +56,7 @@ class MethodChoice {
 }
 
 class Base {
+    public:
     Base(int64 value) {
         print("base int")
     }
@@ -61,12 +67,14 @@ class Base {
 }
 
 class ChildBase : Base {
+    public:
     ChildBase(int64 value) {
         super Base(value)
     }
 }
 
 class VirtualRoot {
+    public:
     VirtualRoot(int64 value) {
         print("virtual int")
     }
@@ -77,6 +85,7 @@ class VirtualRoot {
 }
 
 class VirtualChild : virtual VirtualRoot {
+    public:
     VirtualChild(strg value) {
         super virtual VirtualRoot(value)
     }

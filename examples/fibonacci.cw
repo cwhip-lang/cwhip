@@ -4,6 +4,7 @@ namespace Math {
     class Fib {
 
         # Naive recursive version (fine for small n)
+        public:
         int64 compute (int64 n) {
             if (n <= 1) {
                 return(n)

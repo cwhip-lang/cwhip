@@ -1,5 +1,6 @@
 # Allocation-heavy GC benchmark. Compile with bin/cwhip -o bench gc_throughput.cw.
 class Tree {
+    public:
     Tree left
     Tree right
     Tree(int64 depth) {

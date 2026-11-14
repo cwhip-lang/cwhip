@@ -4,6 +4,7 @@ namespace GtkSource {
     // Classifies file names and contents for source editing.
     class Content {
         // Registered language id for a file name ("" means plain text).
+        public:
         String languageFor(String path)
         // False for data that is not editable text (contains NUL bytes).
         bool isText(String data)

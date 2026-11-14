@@ -2,6 +2,7 @@
 namespace Shapes {
     namespace Geometry {
         class Circle {
+            public:
             int64 sides() {
                 return(1)
             }
@@ -12,6 +13,7 @@ namespace Shapes {
 namespace Shapes {
     namespace Geometry {
         class Rectangle {
+            public:
             int64 sides() {
                 return(4)
             }

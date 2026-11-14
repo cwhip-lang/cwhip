@@ -1,5 +1,6 @@
 # Checks named exception bindings, finally execution, saved exception text, and runtime errors exposed to handlers.
 class Box {
+  public:
   strg note
   int64 read() {
     return(1)

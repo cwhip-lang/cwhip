@@ -106,11 +106,11 @@ const TestGroupRegistration registration{0, {
                      "callback should be lexed as an identifier");
              expectValid("namespace callback {\n"
                          " class Item {\n"
-                         "  int32 callback\n"
+                         "  public:\n  int32 callback\n"
                          "  int32 method(int32 callback) { return(callback) }\n"
                          " }\n"
                          "}\n"
-                         "class Methods { int32 callback() { return(1) } }\n"
+                         "class Methods { public: int32 callback() { return(1) } }\n"
                          "start {\n"
                          " callback.Item item = callback.Item()\n"
                          " callback.Item callback = item\n"

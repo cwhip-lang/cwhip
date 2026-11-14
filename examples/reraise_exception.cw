@@ -4,6 +4,7 @@
 
 class Foo {
 
+    public:
     Foo() {
         raise(Exception("this is the string"))
     }
@@ -11,6 +12,7 @@ class Foo {
 
 class Bar : Foo {
 
+    public:
     Bar() {
         try {
             super Foo()

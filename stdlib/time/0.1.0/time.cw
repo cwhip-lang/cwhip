@@ -1,5 +1,6 @@
 namespace Time {
     class Clock {
+        public:
         uint64 epochSeconds()
         uint64 epochMilliseconds()
         uint64 monotonicMilliseconds()

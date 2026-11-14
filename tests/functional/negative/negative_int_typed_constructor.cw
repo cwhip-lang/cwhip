@@ -1,4 +1,5 @@
 class Counter {
+  public:
   int Counter(int start) {
     return(start)
   }

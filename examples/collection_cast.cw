@@ -1,6 +1,7 @@
 
 class Bar {
 
+    public:
     int64 val
 
     Bar(int64 v) {
@@ -14,6 +15,7 @@ class Bar {
 
 class Foo {
 
+    public:
     list flarp
 
     Foo() {

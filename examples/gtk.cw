@@ -2,6 +2,7 @@ import gtk
 import system
 
 class Editor {
+    public:
     Gtk.Window window
     Gtk.Label preview
     Gtk.Entry entry

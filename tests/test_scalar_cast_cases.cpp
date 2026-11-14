@@ -45,6 +45,7 @@ const TestGroupRegistration registration{2, {
      }},
     {"fp64 casts branch through ordered range checks before LLVM conversion", [] {
          auto program = parse(R"(class Casts {
+             public:
              int64 signedValue(fp64 value) { return(int64(value)) }
              uint64 unsignedValue(fp64 value) { return(uint64(value)) }
          }
@@ -73,6 +74,7 @@ const TestGroupRegistration registration{2, {
      }},
     {"signed to uint64 casts retain i64 bits without a range check", [] {
          auto program = parse(R"(class Casts {
+             public:
              uint64 bits(int64 value) { return(uint64(value)) }
          }
          start {}
@@ -87,6 +89,7 @@ const TestGroupRegistration registration{2, {
      }},
     {"boolean fp64 conversion uses unordered not-equal without fast math", [] {
          auto program = parse(R"(class Casts {
+             public:
              bool truth(fp64 value) { return(bool(value)) }
          }
          start {}

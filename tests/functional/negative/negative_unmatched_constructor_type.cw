@@ -1,4 +1,5 @@
 class OnlyInt {
+    public:
     OnlyInt(int64 value) {}
 }
 

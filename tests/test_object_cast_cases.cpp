@@ -8,11 +8,13 @@ using namespace cwhip_test;
 const TestGroupRegistration registration{2, {
     {"parenthesized cast receivers support standalone void method calls", [] {
          expectValid(R"(class Bar {
+             public:
              int64 val
              Bar(int64 v) { val = v }
              void show() { print(format("class Bar {}", val)) }
          }
          class Foo {
+             public:
              list flarp
              Foo() {
                  flarp = []
@@ -32,13 +34,13 @@ const TestGroupRegistration registration{2, {
          for (const auto& expression : {"(1)", "(1 + 2)", "(b)", "(b.val)",
                                         "(b as Bar)", "(values[0] as Bar)", "(Bar())"}) {
              expectDiagnostic(
-                 "class Bar { int64 val }\nstart {\n Bar b()\n list values = [b]\n " +
+                 "class Bar { public: int64 val }\nstart {\n Bar b()\n list values = [b]\n " +
                      std::string(expression) + "\n}",
                  "only method calls may be used as expression statements");
          }
      }},
     {"parenthesized statement routing preserves assignments and ordinary calls", [] {
-         expectValid(R"(class Bar { int64 val
+         expectValid(R"(class Bar { public: int64 val
              void show() {}
              void invoke() { (show()) }
          }
@@ -55,7 +57,7 @@ const TestGroupRegistration registration{2, {
          })");
      }},
     {"checked object casts accept class references, null, and collection values", [] {
-         expectValid(R"(class Foo { int64 read() { return(7) } }
+         expectValid(R"(class Foo { public: int64 read() { return(7) } }
              class Bar : Foo {}
              class Other {}
              start {
@@ -113,7 +115,7 @@ const TestGroupRegistration registration{2, {
                           "unknown type name 'Missing'");
          expectDiagnostic("class Foo {}\nstart { print(null is null) }",
                           "expected type name after 'is'");
-         expectDiagnostic("class Foo { void noValue() {} }\n"
+         expectDiagnostic("class Foo { public: void noValue() {} }\n"
                           "start { print(Foo().noValue() as int64) }",
                           "checked cast does not support source type 'void'");
          expectDiagnostic("class Foo {}\nstart { print(Foo() as) }",
@@ -123,15 +125,16 @@ const TestGroupRegistration registration{2, {
      }},
     {"checked object casts normalize qualified namespace targets", [] {
          expectValid(R"(namespace model {
-             class Foo { int64 read() { return(7) } }
+             class Foo { public: int64 read() { return(7) } }
              class Casts {
+                 public:
                  Foo convert(list values) { return(values[0] as Foo) }
              }
          }
          start { print(([model.Foo()][0] as model.Foo).read()) })");
      }},
     {"checked object casts have postfix precedence and compose with calls", [] {
-         auto program = parse(R"(class Foo { int64 read() { return(7) } }
+         auto program = parse(R"(class Foo { public: int64 read() { return(7) } }
              start { print(([Foo()][0] as Foo).read() + 1) })");
          const auto& sum = *program.statements.front().expressions.front();
          require(sum.kind == cwhip::ExpressionKind::Binary, "addition must be outside cast");

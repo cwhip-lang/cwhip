@@ -2,6 +2,7 @@
 # implicit conversions, so overload resolution is an exact-match rule: a
 # bool argument does not silently select the int or float overload.
 class Printer {
+    public:
     Printer() {}
 
     int64 show(int64 value) {

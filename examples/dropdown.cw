@@ -4,6 +4,7 @@ import system
 // Demonstrates Gtk.DropDown: setChoices, selected index/text, and
 // onSelected callbacks for enum-style pickers.
 class Demo {
+    public:
     Gtk.Window window
     Gtk.Label readout
     Gtk.DropDown role

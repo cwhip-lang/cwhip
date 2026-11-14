@@ -104,6 +104,7 @@ dynamic operations, and the installed C bridge are specified in
 ```cwhip
 // test: {"stdout": "42"}
 class Worker {
+    public:
     int64 answer(int64 value) { return(value + 2)}
 }
 start {
@@ -458,6 +459,7 @@ or a condition from its block, but not `else` from its opening `(`.
 # Complete program: conditional alternatives and parenthesized return values.
 // test: {"stdout": "less\n"}
 class Comparison {
+    public:
     strg describe(int left, int right) {
         if (left == right) {
             return("equal")
@@ -578,9 +580,12 @@ is not a comment introducer or statement separator.
 
 ## Classes, objects, inheritance, and dispatch
 
-Classes contain fields and methods. Member access is `public` by default;
-`private:` and `protected:` switch the access level for following members;
-`public:` restores public access.
+Classes contain fields and methods. Member access is `private` by default:
+a member with no preceding `public:` or `protected:` is private. `public:`
+and `protected:` opt in for the members that follow, and that section stays
+in effect until the next access marker. Namespaces and modules have no
+access sections of their own; a class declared in either place uses this
+same member default.
 Fields may use compile-time constant initializers; see
 [Compile-time field initializers](#compile-time-field-initializers). A
 constructor is named after its class, omits the return type (write `Name(...)`,
@@ -599,6 +604,7 @@ Fields may be initialized with a compile-time constant expression:
 
 ```cwhip
 class Settings {
+    public:
     enum { BASE = 40 }
     int64 count = BASE + 2
     strg label = "ready"
@@ -733,9 +739,11 @@ later statements, or mixed direct/protected sequences are rejected.
 ```cwhip
 class Foo {
     // test: {"stdout": "caught the first timethis is the stringcaught the second time"}
+    public:
     Foo() { raise(Exception("this is the string")) }
 }
 class Bar : Foo {
+    public:
     Bar() {
         try { super Foo() }
         except() {
@@ -757,6 +765,7 @@ start {
 // Complete program: inheritance, construction, override, and dispatch.
 // test: {"stdout": "42"}
 class Meter {
+    public:
     int64 value
     Meter(int64 initial) {
         value = initial
@@ -767,6 +776,7 @@ class Meter {
 }
 
 class AdjustedMeter : public Meter {
+    public:
     AdjustedMeter(int64 initial) {
         super Meter(initial)
     }
@@ -836,6 +846,7 @@ be in the same namespace scope as the class they define. See
 // test: {"stdout": "7"}
 namespace Geometry {
     class Point {
+        public:
         int64 x
         Point(int64 value) {
             x = value
@@ -934,6 +945,7 @@ still cannot return. Non-void return values use `return(expression)`; bare
 // Complete program: raising and catching a typed exception.
 // test: {"stdout": "brokenfinished"}
 class Problem : public Exception {
+    public:
     Problem(String text) {
         super Exception(text)
     }
@@ -971,6 +983,7 @@ existing range nor raises an error. A newly formed range sees the new values.
 // Complete program: parameters, storage, return values, snapshots, and slicing.
 // test: {"stdout": "123/100/true/false/100true/dcb"}
 class Worker {
+    public:
     range<int64> processRange(range<int64> values) { return(values)}
 }
 start {
@@ -1213,6 +1226,7 @@ release the global lock.
 // Fragment: requires a visible `Thread` base class supplied by declarations
 // or a package. Thread operations are native bindings, not built-in syntax.
 class Worker : Thread {
+    public:
     void run() {
         print("worker")
     }
@@ -1290,6 +1304,7 @@ library API. See `destructor-declaration` and `postfix`, and
 ```cwhip
 // Fragment: finalizer timing is controlled by garbage collection.
 class Resource {
+    public:
     destroy {
         print("resource became unreachable")
     }
@@ -1304,6 +1319,7 @@ binding:
 ```cwhip
 // Fragment: declaration and matching external C ABI binding.
 class System {
+    public:
     String lastError()
 }
 
@@ -1351,6 +1367,7 @@ int64 result inline {
 ```cwhip
 class Counter {
     // test: {"stdout": "101"}
+    public:
     int64 count
     Counter() { count = 0 }
     void add(int64 count) {

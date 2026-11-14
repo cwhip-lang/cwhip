@@ -6,6 +6,7 @@
 # main thread only, after join()/wait() barriers, so output is
 # deterministic regardless of OS thread scheduling.
 class Thread {
+    public:
     handle launch()
     void join(handle worker)
 }
@@ -14,6 +15,7 @@ handle Thread.launch() from "cwhip_thread_start"
 void Thread.join(handle worker) from "cwhip_thread_join"
 
 class Semaphore {
+    public:
     handle create(int64 initialCount)
     void wait(handle sem)
     void signal(handle sem)
@@ -26,6 +28,7 @@ void Semaphore.signal(handle sem) from "cwhip_semaphore_signal"
 void Semaphore.release(handle sem) from "cwhip_semaphore_release"
 
 class Counter {
+    public:
     int64 value
 
     Counter(int64 initial) {
@@ -34,6 +37,7 @@ class Counter {
 }
 
 class Doubler : Thread {
+    public:
     int64 input
     int64 result
 
@@ -48,6 +52,7 @@ class Doubler : Thread {
 }
 
 class Incrementer : Thread {
+    public:
     Counter shared
     handle mutex
     handle done

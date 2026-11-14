@@ -26,7 +26,8 @@ def write_package(root: Path, name: str, version: str = "1.0.0", *, abi: str | N
                   manifest: str | None = None) -> Path:
     directory = root / name / version
     (directory / "lib").mkdir(parents=True)
-    (directory / f"{name}.cw").write_text(f"class {name.capitalize()} {{\n    {name.capitalize()}() {{}}\n}}\n")
+    (directory / f"{name}.cw").write_text(
+        f"class {name.capitalize()} {{\n    public:\n    {name.capitalize()}() {{}}\n}}\n")
     (directory / "lib" / f"lib{name}.a").write_bytes(b"!<arch>\nnative-" + name.encode())
     if manifest is None:
         abi_line = f'sdk-abi = "{abi}"\n' if abi is not None else ""

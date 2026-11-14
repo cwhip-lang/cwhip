@@ -152,9 +152,10 @@ start {
         gui_source.write_text("""
 import gtk as Gtk
 import sourceview as Source
-class Native { int64 emit() }
+class Native { public: int64 emit() }
 int64 Native.emit() from "numeric_gui_emit"
 class Probe {
+    public:
     Gtk.Application app
     Probe self
     Gtk.Window window
@@ -242,7 +243,7 @@ start { Probe probe = Probe()
         " { (void)self; return x; }" for typ in types))
     execute([clang, "-I", sdk / "include", "-c", native_source, "-o", work / "native.o"])
     execute(["ar", "rcs", native / "lib/libnativefixture.a", work / "native.o"])
-    (native / "nativefixture.cw").write_text("class Native {\n" + "\n".join(
+    (native / "nativefixture.cw").write_text("class Native {\npublic:\n" + "\n".join(
         f"    {typ} echo_{typ}({typ} x)" for typ in types) + "\n}\n" + "\n".join(
         f'{typ} Native.echo_{typ}({typ} x) from "echo_{typ}"' for typ in types) + "\n")
     manifest = native / "cwhip-package.toml"
@@ -311,7 +312,7 @@ library-paths = ["lib"]
     cmake_source = work / "cmake-source"
     cmake_source.mkdir()
     (cmake_source / "main.cw").write_text("""
-class Native { int8 value(int8 x) }
+class Native { public: int8 value(int8 x) }
 int8 Native.value(int8 x) from "echo_int8"
 start { print("{}\\n", Native().value(-7)) }
 """)

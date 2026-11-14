@@ -1,4 +1,5 @@
 class Box : Exception {
+  public:
   Box() {
     super Exception("box")
   }

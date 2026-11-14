@@ -1,5 +1,6 @@
 # Exercises independent base subobjects and qualified field access in a non-virtual diamond.
 class Node {
+    public:
     int64 value
 
     Node(int64 initial) {
@@ -8,6 +9,7 @@ class Node {
 }
 
 class Root {
+    public:
     Node item
     int64 value
 
@@ -17,6 +19,7 @@ class Root {
 }
 
 class Left : Root {
+    public:
     int64 left
 
     int64 sum() {
@@ -25,6 +28,7 @@ class Left : Root {
 }
 
 class Right : Root {
+    public:
     int64 right
 
     int64 sumRight() {
@@ -33,6 +37,7 @@ class Right : Root {
 }
 
 class Diamond : Left, Right {
+    public:
     int64 extra
 
     int64 sum() {

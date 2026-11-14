@@ -1,5 +1,6 @@
 namespace Terminal {
     class Terminal {
+        public:
         bool isInteractive()
         bool isOutputInteractive()
         int64 columns()

@@ -1,5 +1,6 @@
 # Exercises typed subclass matching, mismatch propagation, runtime errors, and rethrow.
 class DomainError : Exception {
+  public:
   int64 code
   DomainError(strg text, int64 value) {
     super Exception(text)
@@ -7,23 +8,27 @@ class DomainError : Exception {
   }
 }
 class SpecificError : DomainError {
+  public:
   SpecificError(strg text, int64 value) {
     super DomainError(text, value)
   }
 }
 class OtherError : Exception {
+  public:
   OtherError(strg text) {
     super Exception(text)
   }
 }
 namespace errors {
   class QualifiedError : Exception {
+    public:
     QualifiedError(strg text) {
       super Exception(text)
     }
   }
 }
 class ExceptionProbe {
+  public:
   int64 same(Exception left, Exception right)
 }
 int64 ExceptionProbe.same(Exception left, Exception right) from "cwhip_method_demo_exception_identity"

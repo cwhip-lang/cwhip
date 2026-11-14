@@ -9,6 +9,7 @@ import tempfile
 
 PROGRAM = r'''
 class Answer {
+    public:
     int32 value() { return(6 * 7) }
     void done() { return() }
     void bare() { return }
@@ -60,9 +61,9 @@ start {
 MIGRATION_ERRORS = (
     ("start { dict d = {} }\n", "dict literals now use [k: v]"),
     ('start { dict d = {"k": 1} }\n', "dict literals now use [k: v]"),
-    ("class X { int32 f() { return 1 } }\nstart {}\n",
+    ("class X { public: int32 f() { return 1 } }\nstart {}\n",
      "return value must be parenthesized: return(expr)"),
-    ("class X { int32 f() { return(1) + 2 } }\nstart {}\n",
+    ("class X { public: int32 f() { return(1) + 2 } }\nstart {}\n",
      "return value must be parenthesized: return(expr)"),
     ("start { raise 1 }\n", "raise arguments must be parenthesized: raise(expr)"),
     ("start { ; legacy comment\n}\n", "';' is not a comment; use '#' or '//'"),

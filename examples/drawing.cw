@@ -5,6 +5,7 @@ import system
 // extents (path 2) plus ContextMenu owner/onPopup rebuild. Path 1
 // (ScrolledWindow + setContentSize) is documented in doc/GTK.md.
 class Demo {
+    public:
     Gtk.DrawingArea area
     Gtk.Scrollbar hBar
     Gtk.Scrollbar vBar

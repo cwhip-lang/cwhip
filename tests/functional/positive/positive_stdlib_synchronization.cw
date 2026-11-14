@@ -1,6 +1,7 @@
 import synchronization as Sync
 
 class Thread {
+    public:
     handle launch()
     void join(handle worker)
 }
@@ -9,6 +10,7 @@ handle Thread.launch() from "cwhip_thread_start"
 void Thread.join(handle worker) from "cwhip_thread_join"
 
 class SharedState {
+    public:
     Sync.Mutex mutex
     Sync.Condition condition
     bool ready
@@ -21,6 +23,7 @@ class SharedState {
 }
 
 class SignalWorker : Thread {
+    public:
     SharedState shared
 
     SignalWorker(SharedState state) {

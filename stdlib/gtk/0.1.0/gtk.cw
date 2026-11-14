@@ -1,5 +1,6 @@
 namespace Gtk {
     class Config {
+        public:
         String validate(String text)
         String fileStatus(String path)
         String value(String text, String section, String key)
@@ -29,6 +30,7 @@ namespace Gtk {
     void Config.flush() from "cwhip_gtk_config_flush"
 
     class Keyboard {
+        public:
         String normalize(String trigger)
         int64 record(Entry entry, void<String> result)
         bool cancel(int64 token)
@@ -38,6 +40,7 @@ namespace Gtk {
     bool Keyboard.cancel(int64 token) from "cwhip_gtk_keyboard_cancel"
 
     class Font {
+        public:
         bool isMonospace(String family)
     }
     bool Font.isMonospace(String family) from "cwhip_gtk_font_is_monospace"
@@ -45,6 +48,7 @@ namespace Gtk {
     // Display clipboard helpers. setText updates the system clipboard and a
     // same-process cache; text() returns that cache (GDK reads are async).
     class Clipboard {
+        public:
         void setText(String text)
         String text()
     }
@@ -793,6 +797,7 @@ namespace Gtk {
 
     class ScrolledWindow : Widget {
         // Matches GtkPolicyType: always / automatic / never / external.
+        public:
         enum { POLICY_ALWAYS = 0, POLICY_AUTOMATIC = 1, POLICY_NEVER = 2, POLICY_EXTERNAL = 3 }
         public:
         ScrolledWindow() { super Widget(7, "", 0, 0) }

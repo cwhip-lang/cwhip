@@ -2,6 +2,7 @@
 namespace Bar {
     class Foo {
 
+        public:
         handle fh
         strg err
 

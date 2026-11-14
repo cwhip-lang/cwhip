@@ -11,6 +11,7 @@ from program_runner import environment, invoke
 NATIVE = """
 import gtk
 class F {
+    public:
     void collect()
     int64 dialogs()
     int64 finalizedObjects()
@@ -55,6 +56,7 @@ void F.setScale(int64 token, fp64 value) from "binding_scale_set"
 SHORTCUT_NATIVE = """
 import sourceview
 class Keys {
+    public:
     bool press(int64 token, String trigger)
     void viewProperties(int64 token, int64 tabs, bool enabled)
     void viewDisplay(int64 token, bool whitespace, bool indent)
@@ -67,6 +69,7 @@ void Keys.viewDisplay(int64 token, bool whitespace, bool indent) from "binding_v
 CONFIG = r'''
 import system
 class UI {
+    public:
     String original
     String updated
     void<String> savedAction
@@ -134,17 +137,21 @@ start {
 
 MENU = """
 class Handler {
+    public:
     void action() { F().collect()
         print("action;") }
 }
 class Stop {
+    public:
     void action() { Gtk.Application().shutdown()
         print("stopped;") }
 }
 class Check {
+    public:
     void action(bool active) { print(format("check {};", active)) }
 }
 class UI {
+    public:
     Gtk.Window window
     Gtk.MenuBar menus
     int64 item
@@ -179,6 +186,7 @@ start {
 
 DIALOG = """
 class Relay {
+    public:
     void<String> target
     Relay(void<String> action) { target = action }
     void deliver(String path) { F().collect()
@@ -188,6 +196,7 @@ class Relay {
 }
 void Relay.note() from "binding_released"
 class UI {
+    public:
     Gtk.Window window
     Gtk.FileDialog dialog
     void<String> resultAction
@@ -271,6 +280,7 @@ start {
 DRAWING = """
 import system
 class UI {
+    public:
     Gtk.Window window
     Gtk.DrawingArea area
     Gtk.DrawingArea paneArea
@@ -455,6 +465,7 @@ start {
 SCALE = """
 import system
 class UI {
+    public:
     Gtk.Window window
     Gtk.Scale horizontal
     Gtk.Scale vertical
@@ -530,6 +541,7 @@ start {
 PROGRESS = """
 import system
 class UI {
+    public:
     Gtk.Window window
     Gtk.ProgressBar bar
     Gtk.ProgressBar vertical
@@ -586,6 +598,7 @@ start {
 SPIN = """
 import system
 class UI {
+    public:
     Gtk.Window window
     Gtk.SpinButton spin
     int64 changes
@@ -642,6 +655,7 @@ start {
 DROPDOWN = """
 import system
 class UI {
+    public:
     Gtk.Window window
     Gtk.DropDown drop
     int64 changes
@@ -709,6 +723,7 @@ start {
 TEXTVIEW = """
 import system
 class UI {
+    public:
     Gtk.Window window
     Gtk.TextView view
     Gtk.Frame frame
@@ -782,6 +797,7 @@ start {
 LIFETIME = """
 import system
 class Relay {
+    public:
     void received(String path) { System.Process().exit(1) }
     void receivedMany(list paths) { System.Process().exit(1) }
     void note()
@@ -789,6 +805,7 @@ class Relay {
 }
 void Relay.note() from "binding_released"
 class UI {
+    public:
     Gtk.Window window
     Gtk.FileDialog dialog
     void show() {

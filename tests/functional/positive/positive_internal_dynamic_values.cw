@@ -1,11 +1,13 @@
 # Exercises the permitted uses of collection values without declaring any.
 class Holder {
+    public:
     int64 value
     void set(int64 input) { value = input }
     int64 get() { return(value)}
 }
 
 class Reader {
+    public:
     int64 read(list values) { return(values[0])}
 }
 

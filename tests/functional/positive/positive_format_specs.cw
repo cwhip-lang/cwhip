@@ -1,4 +1,5 @@
 class Counter {
+    public:
     int64 calls
     int64 next() {
         calls += 1
@@ -7,6 +8,7 @@ class Counter {
 }
 
 class Formatter {
+    public:
     strg message(int64 value) {
         return(format("[{:08X}]", value))
     }

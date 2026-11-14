@@ -1,5 +1,6 @@
 # Exercises C-bound methods across scalar and reference types alongside an ordinary out-of-line method.
 class Native {
+    public:
     int64 marker
 
     Native(int64 initialMarker) {
@@ -16,12 +17,14 @@ class Native {
 }
 
 class Doubler {
+    public:
     int64 compute(int64 x)
 }
 
 # Counter is deliberately declared after Native: signatures resolve across
 # the whole source unit, including native-bound reference parameters/results.
 class Counter {
+    public:
     int64 value
 
     Counter(int64 initial) {

@@ -1,5 +1,6 @@
 namespace Networking {
     class Runtime {
+        public:
         int64 socketCreate()
         bool socketConnect(int64 fd, String host, int64 port)
         int64 socketSend(int64 fd, buffer data)

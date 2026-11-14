@@ -1,5 +1,6 @@
 namespace Synchronization {
     class Runtime {
+        public:
         handle mutexCreate()
         bool mutexLock(handle mutex)
         bool mutexUnlock(handle mutex)

@@ -26,10 +26,12 @@ def main():
     assert "range" in {entry.text for entry in spec.findall(".//keyword")}
     source = r"""
 class Box {
+    public:
     int64 value
     Box(int64 n) { value = n }
 }
 class Worker {
+    public:
     range<int64> saved
     int64 calls
     int64 endpoint(int64 n) {

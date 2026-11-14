@@ -1,4 +1,5 @@
 class ProtectedChoice {
+    public:
     ProtectedChoice(int64 value) {}
 
     private:

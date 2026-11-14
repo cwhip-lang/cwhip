@@ -5,6 +5,7 @@ import system as Sys
 
 namespace Cli {
     class ValueType {
+        public:
         int64 FLAG = 0
         int64 COUNTER = 1
         int64 STRING = 2
@@ -12,6 +13,7 @@ namespace Cli {
     }
 
     class Action {
+        public:
         int64 NONE = 0
         int64 HELP = 1
         int64 VERSION = 2
@@ -22,6 +24,7 @@ namespace Cli {
     }
 
     class Option {
+        public:
         String shortName = ""
         String longName = ""
         String name = ""
@@ -36,6 +39,7 @@ namespace Cli {
     }
 
     class Positional {
+        public:
         String name = ""
         String description = ""
         bool required = false
@@ -43,6 +47,7 @@ namespace Cli {
     }
 
     class CommandLine {
+        public:
         String programName
         String description
         String version

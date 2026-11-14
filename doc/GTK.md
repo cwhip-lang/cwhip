@@ -238,6 +238,7 @@ Minimal demo (panel child + clear + circle + click mark):
 import gtk
 
 class Demo {
+    public:
     Gtk.DrawingArea area
     fp64 markX
     fp64 markY
@@ -994,6 +995,7 @@ a checkbox, scrolled content, and a close button, see `examples/gtk.cw`
 import gtk
 
 class Demo {
+    public:
     Gtk.Window window
     Gtk.Entry entry
     Gtk.Label label

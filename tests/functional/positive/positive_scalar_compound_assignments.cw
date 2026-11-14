@@ -1,10 +1,12 @@
 # Exercises scalar compound arithmetic, field targets, and one-time receiver evaluation.
 class Box {
+    public:
     int64 value
     Box() {}
 }
 
 class Factory {
+    public:
     Box box
     int64 calls
     Factory(Box value) { box = value }

@@ -1,5 +1,6 @@
 # Exercises distinct bool, double-backed float, and uint64 unsigned semantics.
 class ScalarBox {
+    public:
     bool enabled
     fp64 amount
     uint64 count
