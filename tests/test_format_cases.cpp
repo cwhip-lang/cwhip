@@ -64,6 +64,8 @@ const char* const kBuiltinConfig =
     "LongControlStatementLines: 10\n"
     "# Reflow hash and slash comments to the column limit.\n"
     "ReflowComments: true\n"
+    "# Reflow block comments to the column limit.\n"
+    "ReflowBlockComments: false\n"
     "# A newline ends a statement.\n"
     "StatementTerminator: Newline\n"
     "# Do not insert semicolons.\n"
@@ -149,6 +151,7 @@ void requireBuiltin(const cwhip::Style& style) {
     require(style.allowShortLoops == builtin.allowShortLoops, "short loops");
     require(style.allowShortEnums == builtin.allowShortEnums, "short enums");
     require(style.reflowComments == builtin.reflowComments, "reflow");
+    require(style.reflowBlockComments == builtin.reflowBlockComments, "reflow block");
     require(style.blankLinesAroundLongControlStatement ==
                 builtin.blankLinesAroundLongControlStatement,
             "long control blanks");
@@ -209,6 +212,7 @@ const TestGroupRegistration registration{50, {
          require(!style.allowShortLoops, "short loops");
          require(!style.allowShortEnums, "short enums");
          require(style.reflowComments, "reflow");
+         require(!style.reflowBlockComments, "block comments stay put");
          require(style.blankLinesAroundLongControlStatement, "long control blanks");
          require(style.longControlStatementLines == 10, "long control length");
          require(!style.newlineBeforeOpenBrace, "newline before open brace");
@@ -1067,6 +1071,118 @@ const TestGroupRegistration registration{50, {
                      "# Put except on the line after }. Also applies to finally. "
                      "False leaves it on the } line.\n"
                      "NewlineBeforeExcept: true\n") != std::string::npos,
+                 "dump comment");
+     }},
+    {"reflow block comments follows its own key", [] {
+         const std::string block =
+             "start {\n"
+             "    /* alpha beta gamma delta epsilon zeta\n"
+             "       eta theta iota kappa */\n"
+             "    print(1)\n"
+             "}\n";
+         const std::string reflowedBlock =
+             "start {\n"
+             "    /* alpha beta gamma delta epsilon\n"
+             "     * zeta eta theta iota kappa */\n"
+             "    print(1)\n"
+             "}\n";
+         expectSame(block);
+         auto on = cwhip::builtinStyle();
+         on.reflowBlockComments = true;
+         on.columnLimit = 40;
+         require(formatted(block, on) == reflowedBlock, formatted(block, on));
+         require(formatted(reflowedBlock, on) == reflowedBlock, "reflow was not stable");
+         const std::string joined =
+             "start {\n"
+             "    /* alpha beta\n"
+             "       gamma */\n"
+             "    print(1)\n"
+             "}\n";
+         const std::string joinedOut =
+             "start {\n"
+             "    /* alpha beta gamma */\n"
+             "    print(1)\n"
+             "}\n";
+         auto wide = cwhip::builtinStyle();
+         wide.reflowBlockComments = true;
+         require(formatted(joined, wide) == joinedOut, formatted(joined, wide));
+         require(formatted(joinedOut, wide) == joinedOut, "joined reflow was not stable");
+         const std::string inside =
+             "start {\n"
+             "    print(/* alpha beta\n"
+             "            gamma */ 1)\n"
+             "}\n";
+         const std::string insideOut =
+             "start {\n"
+             "    print(/* alpha beta gamma */ 1)\n"
+             "}\n";
+         require(formatted(inside, wide) == insideOut, formatted(inside, wide));
+         auto off = on;
+         off.reflowBlockComments = false;
+         expectSame(block, off);
+
+         const std::string line =
+             "start {\n"
+             "    /* alpha beta gamma delta epsilon zeta eta theta iota kappa */\n"
+             "    print(1)\n"
+             "}\n";
+         require(formatted(line, on) == reflowedBlock, formatted(line, on));
+         expectSame(line, off);
+
+         const std::string mixed =
+             "start {\n"
+             "    // alpha beta gamma delta epsilon zeta eta\n"
+             "    /* alpha beta gamma delta epsilon zeta\n"
+             "       eta theta iota kappa */\n"
+             "    print(1)\n"
+             "}\n";
+         const std::string mixedReflowedLines =
+             "start {\n"
+             "    // alpha beta gamma delta epsilon\n"
+             "    // zeta eta\n"
+             "    /* alpha beta gamma delta epsilon zeta\n"
+             "       eta theta iota kappa */\n"
+             "    print(1)\n"
+             "}\n";
+         const std::string mixedReflowedBlock =
+             "start {\n"
+             "    // alpha beta gamma delta epsilon zeta eta\n"
+             "    /* alpha beta gamma delta epsilon\n"
+             "     * zeta eta theta iota kappa */\n"
+             "    print(1)\n"
+             "}\n";
+         auto linesOnly = on;
+         linesOnly.reflowBlockComments = false;
+         require(formatted(mixed, linesOnly) == mixedReflowedLines, formatted(mixed, linesOnly));
+         auto blocksOnly = on;
+         blocksOnly.reflowComments = false;
+         require(formatted(mixed, blocksOnly) == mixedReflowedBlock, formatted(mixed, blocksOnly));
+
+         const std::string fitting = "start {\n    print(1) /* stay */\n}\n";
+         expectSame(fitting, on);
+         auto unlimited = on;
+         unlimited.columnLimit = 0;
+         expectSame(block, unlimited);
+
+         const std::string straddling =
+             "start {\n"
+             "    print(1) /* comment\n"
+             "still a comment */ print(2)\n"
+             "}\n";
+         expectSame(straddling, on);
+
+         const auto enabled = parseStyle("ReflowBlockComments: true\n");
+         require(enabled.ok, enabled.diagnostic);
+         require(enabled.style.reflowBlockComments, "true did not parse");
+         const auto disabled = parseStyle("ReflowBlockComments: false\n");
+         require(disabled.ok, disabled.diagnostic);
+         require(!disabled.style.reflowBlockComments, "false did not parse");
+         const auto dumped = parseStyle(cwhip::builtinConfigText());
+         require(dumped.ok, dumped.diagnostic);
+         require(!dumped.style.reflowBlockComments, "dumped default is not false");
+         require(cwhip::builtinConfigText().find(
+                     "# Reflow block comments to the column limit.\n"
+                     "ReflowBlockComments: false\n") != std::string::npos,
                  "dump comment");
      }},
 }};

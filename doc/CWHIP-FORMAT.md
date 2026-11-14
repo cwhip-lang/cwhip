@@ -247,9 +247,11 @@ Declarations written immediately above the keyword, each followed by a single ne
 
 ### Comments in source
 
-**ReflowComments** — default `true`. `true` reflows `#` and `//` comments to `ColumnLimit`, breaking them on spaces onto more comment lines with the same marker. `false` leaves those comments as written. `/* */` comments are not reflowed. Reflow also stays off when `ColumnLimit` is `0`. A line comment matched by `CommentPragmas` is left as written.
+**ReflowComments** — default `true`. `true` reflows `#` and `//` comments to `ColumnLimit`, breaking them on spaces onto more comment lines with the same marker. `false` leaves those comments as written. `/* */` comments follow `ReflowBlockComments`. Reflow also stays off when `ColumnLimit` is `0`. A line comment matched by `CommentPragmas` is left as written.
 
-**PreserveBlockCommentNewlines** — default `true`. Newlines inside `/* */` comments stay. `true` and `false` are both accepted; those newlines stay either way. A block comment between two statements stays between them.
+**ReflowBlockComments** — default `false`. `true` reflows a `/* */` comment to `ColumnLimit`, breaking it on spaces. A one-line comment that already fits is left as written. A one-line comment past the limit is broken. The lines of one `/* */` comment are reflowed together, so short lines join and long lines break. The first line starts with `/*`, a later line starts with ` *`, and the last line ends with `*/`. `false` leaves the comment text as written. `#` and `//` comments are not affected. Reflow stays off when `ColumnLimit` is `0`. A block comment with code before the `/*` and code after the `*/` on a later line is left as written, so that newline can keep the two pieces of code apart.
+
+**PreserveBlockCommentNewlines** — default `true`. Newlines inside `/* */` comments stay, unless `ReflowBlockComments` reflows that comment. `true` and `false` are both accepted; this key does not itself add or remove those newlines. A block comment between two statements stays between them.
 
 ### Spelling and syntax the formatter keeps
 
