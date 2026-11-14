@@ -17,6 +17,7 @@
 - [Debugging Cwhip programs](DEBUGGING.md)
 - [Build and run examples](EXAMPLES.md)
 - [Cwhip compiler man page](cwhip.1)
+- [Cwhip source formatter (`cwhip-format`)](CWHIP-FORMAT.md)
 - [Standalone cedit editor](https://github.com/cwhip-lang/cedit)
 - [Standalone cdbg debugger](https://github.com/cwhip-lang/cdbg)
 - [Standard library reference](STDLIB.md)
