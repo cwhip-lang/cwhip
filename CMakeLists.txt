@@ -60,6 +60,18 @@ add_custom_target(site
     VERBATIM
 )
 
+# Rewrites Cwhip sources in place when cwhip-format is available.
+add_custom_target(format
+    COMMAND "${CMAKE_COMMAND}"
+        "-DCWHIP_SOURCE_DIR=${CMAKE_SOURCE_DIR}"
+        "-DCWHIP_BINARY_DIR=${CMAKE_BINARY_DIR}"
+        "-DCWHIP_FORMAT_HINT=${CWHIP_RUNTIME_OUTPUT_DIRECTORY}"
+        -P "${CMAKE_SOURCE_DIR}/cmake/FormatSources.cmake"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Formatting Cwhip sources"
+    VERBATIM
+)
+
 install(FILES README.md DESTINATION "${CMAKE_INSTALL_DOCDIR}")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/installed-docs/CWHIP-LANGUAGE-NOTES.md"
     CONTENT "# Cwhip language notes\n\nSee [the complete language notes](doc/CWHIP-LANGUAGE-NOTES.md).\n")
