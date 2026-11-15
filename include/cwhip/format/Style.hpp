@@ -67,6 +67,10 @@ struct Style {
     /// stay on the '}' line. do/while stays put. else is NewlineBeforeElse.
     /// except and finally are NewlineBeforeExcept.
     bool newlineAfterCloseBrace = true;
+    /// When true, '}' that shares its line with earlier code starts on the
+    /// next line, including the '}' at the end of a short block. False leaves
+    /// that '}' where today's layout puts it and does not delete a newline.
+    bool newlineBeforeCloseBrace = true;
     /// When true, else that shares the '}' line starts on the next line.
     /// False leaves that else on the '}' line and does not delete a newline.
     /// Independent of NewlineAfterCloseBrace.

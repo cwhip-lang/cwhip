@@ -52,6 +52,8 @@ const char* const kBuiltinConfig =
     "NewlineAfterOpenBrace: true\n"
     "# Put the token after } on the next line.\n"
     "NewlineAfterCloseBrace: true\n"
+    "# Put } on its own line. False leaves it at the end of the line.\n"
+    "NewlineBeforeCloseBrace: true\n"
     "# Put else on the line after }. False leaves it on the } line.\n"
     "NewlineBeforeElse: true\n"
     "# Put except on the line after }. Also applies to finally. False leaves it on the } line.\n"
@@ -172,6 +174,8 @@ void requireBuiltin(const cwhip::Style& style) {
     require(style.newlineBeforeOpenBrace == builtin.newlineBeforeOpenBrace, "newline before {");
     require(style.newlineAfterOpenBrace == builtin.newlineAfterOpenBrace, "newline after {");
     require(style.newlineAfterCloseBrace == builtin.newlineAfterCloseBrace, "newline after }");
+    require(style.newlineBeforeCloseBrace == builtin.newlineBeforeCloseBrace,
+            "newline before }");
     require(style.newlineBeforeElse == builtin.newlineBeforeElse, "newline before else");
     require(style.newlineBeforeExcept == builtin.newlineBeforeExcept, "newline before except");
 }
@@ -259,6 +263,7 @@ const TestGroupRegistration registration{50, {
          require(!style.newlineBeforeOpenBrace, "newline before open brace");
          require(style.newlineAfterOpenBrace, "newline after open brace");
          require(style.newlineAfterCloseBrace, "newline after close brace");
+         require(style.newlineBeforeCloseBrace, "newline before close brace");
          require(style.newlineBeforeElse, "newline before else");
          require(style.newlineBeforeExcept, "newline before except");
      }},
@@ -462,6 +467,7 @@ const TestGroupRegistration registration{50, {
          allowed.allowShortIf = cwhip::AllowShortIf::Other;
          allowed.allowShortLoops = true;
          allowed.allowShortEnums = true;
+         allowed.newlineBeforeCloseBrace = false;
          expectSame("class Box {\n    int64 value() { return(1) }\n}\n", allowed);
          expectSame("class Box {\n    enum { A, B }\n}\n", allowed);
      }},
@@ -746,6 +752,7 @@ const TestGroupRegistration registration{50, {
 
          auto openOff = cwhip::builtinStyle();
          openOff.newlineAfterOpenBrace = false;
+         openOff.newlineBeforeCloseBrace = false;
          expectSame(partial, openOff);
          require(formatted(oneLine, openOff) == "start { print(1)\n}\n", formatted(oneLine, openOff));
          require(formatted("start {}\n", openOff) == "start {}\n", "empty body stays");
@@ -758,6 +765,7 @@ const TestGroupRegistration registration{50, {
 
          auto closeOff = cwhip::builtinStyle();
          closeOff.newlineAfterCloseBrace = false;
+         closeOff.newlineBeforeCloseBrace = false;
          expectSame(nested, closeOff);
          expectSame(commentedClose, closeOff);
          require(formatted(attached, closeOff) == attachedSplit, formatted(attached, closeOff));
@@ -775,6 +783,7 @@ const TestGroupRegistration registration{50, {
          const auto commentedStyle = parseStyle(
              "# NewlineAfterOpenBrace: true\n"
              "NewlineAfterOpenBrace: false # body may stay\n"
+             "NewlineBeforeCloseBrace: false\n"
              "NewlineAfterCloseBrace: false\n");
          require(commentedStyle.ok, commentedStyle.diagnostic);
          require(!commentedStyle.style.newlineAfterOpenBrace, "open comment");
@@ -1192,6 +1201,141 @@ const TestGroupRegistration registration{50, {
                      "NewlineBeforeExcept: true\n") != std::string::npos,
                  "dump comment");
      }},
+    {"newline before close brace follows its own key", [] {
+         const std::string trailing =
+             "start {\n"
+             "    print(1) }\n";
+         const std::string trailingSplit =
+             "start {\n"
+             "    print(1)\n"
+             "}\n";
+         require(formatted(trailing) == trailingSplit, formatted(trailing));
+         expectSame(trailingSplit);
+         auto off = cwhip::builtinStyle();
+         off.newlineBeforeCloseBrace = false;
+         expectSame(trailing, off);
+
+         const std::string shortBlock = "start { print(1) }\n";
+         const std::string shortHeld = shortBlock;
+         const std::string shortSplit = "start { print(1)\n}\n";
+         auto kept = off;
+         kept.allowShortBlocks = cwhip::AllowShortBlocks::Other;
+         expectSame(shortHeld, kept);
+         auto keptOn = kept;
+         keptOn.newlineBeforeCloseBrace = true;
+         require(formatted(shortBlock, keptOn) == shortSplit, formatted(shortBlock, keptOn));
+         expectSame(shortSplit, keptOn);
+         require(formatted(shortBlock) == "start {\n    print(1)\n}\n",
+                 "default still expands a one-line block");
+
+         const std::string method = "class Box {\n    int64 value() { return(1) }\n}\n";
+         const std::string methodHeld = method;
+         const std::string methodSplit =
+             "class Box {\n"
+             "    int64 value() { return(1)\n"
+             "    }\n"
+             "}\n";
+         auto functions = kept;
+         functions.allowShortFunctions = cwhip::AllowShortFunctions::Other;
+         expectSame(methodHeld, functions);
+         auto functionsOn = functions;
+         functionsOn.newlineBeforeCloseBrace = true;
+         require(formatted(method, functionsOn) == methodSplit, formatted(method, functionsOn));
+         expectSame(methodSplit, functionsOn);
+
+         const std::string enumeration = "class Box {\n    enum { A, B }\n}\n";
+         const std::string enumSplit =
+             "class Box {\n"
+             "    enum { A, B\n"
+             "    }\n"
+             "}\n";
+         auto enums = off;
+         enums.allowShortEnums = true;
+         expectSame(enumeration, enums);
+         auto enumsOn = enums;
+         enumsOn.newlineBeforeCloseBrace = true;
+         require(formatted(enumeration, enumsOn) == enumSplit, formatted(enumeration, enumsOn));
+         expectSame(enumSplit, enumsOn);
+
+         const std::string doLine = "start {\n    do { print(1) } while (ready)\n}\n";
+         const std::string doSplit =
+             "start {\n"
+             "    do { print(1)\n"
+             "    } while (ready)\n"
+             "}\n";
+         auto loops = kept;
+         loops.allowShortLoops = true;
+         expectSame(doLine, loops);
+         auto loopsOn = loops;
+         loopsOn.newlineBeforeCloseBrace = true;
+         require(formatted(doLine, loopsOn) == doSplit, formatted(doLine, loopsOn));
+         expectSame(doSplit, loopsOn);
+
+         const std::string empty = "start {}\n";
+         auto openOff = off;
+         openOff.newlineAfterOpenBrace = false;
+         require(formatted(empty, openOff) == empty, "false leaves an empty brace pair");
+         auto openOn = openOff;
+         openOn.newlineBeforeCloseBrace = true;
+         require(formatted(empty, openOn) == "start {\n}\n", formatted(empty, openOn));
+
+         const std::string nested =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    } }\n";
+         const std::string nestedSplit =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         auto closeOff = off;
+         closeOff.newlineAfterCloseBrace = false;
+         expectSame(nested, closeOff);
+         auto closeOn = closeOff;
+         closeOn.newlineBeforeCloseBrace = true;
+         require(formatted(nested, closeOn) == nestedSplit, formatted(nested, closeOn));
+
+         const std::string commented =
+             "start {\n"
+             "    if (ready) {\n"
+             "        print(1)\n"
+             "    } /* stay */ }\n";
+         expectSame(commented, closeOff);
+         const auto moved = formatted(commented, closeOn);
+         require(moved.find("} /* stay */ }") == std::string::npos, moved);
+         require(moved.find("/* stay */") != std::string::npos, moved);
+         require(moved.find("\n} /* stay */ }") == std::string::npos, moved);
+
+         const std::string doWhile = "start {\n    do { print(1) } while (ready)\n}\n";
+         const std::string doWhileOut =
+             "start {\n    do {\n        print(1)\n    } while (ready)\n}\n";
+         require(formatted(doWhile) == doWhileOut, formatted(doWhile));
+         require(formatted(doWhile, off) == doWhileOut, "false moved while");
+         expectSame(doWhileOut);
+         expectSame(doWhileOut, off);
+
+         const auto commentedStyle = parseStyle(
+             "# NewlineBeforeCloseBrace: false\n"
+             "NewlineBeforeCloseBrace: true # next line\n");
+         require(commentedStyle.ok, commentedStyle.diagnostic);
+         require(commentedStyle.style.newlineBeforeCloseBrace, "hash comment hid the key");
+         const auto disabled = parseStyle("NewlineBeforeCloseBrace: false\n");
+         require(disabled.ok, disabled.diagnostic);
+         require(!disabled.style.newlineBeforeCloseBrace, "false did not parse");
+         const auto invalid = parseStyle("NewlineBeforeCloseBrace: Never\n");
+         require(!invalid.ok, "Never is not a bool");
+         require(invalid.diagnostic.find("NewlineBeforeCloseBrace") != std::string::npos,
+                 invalid.diagnostic);
+         const auto dumped = parseStyle(cwhip::builtinConfigText());
+         require(dumped.ok, dumped.diagnostic);
+         require(dumped.style.newlineBeforeCloseBrace, "dumped default is not true");
+         require(cwhip::builtinConfigText().find(
+                     "# Put } on its own line. False leaves it at the end of the line.\n"
+                     "NewlineBeforeCloseBrace: true\n") != std::string::npos,
+                 "dump comment");
+     }},
     {"reflow block comments follows its own key", [] {
          const std::string block =
              "start {\n"
@@ -1394,6 +1538,7 @@ const TestGroupRegistration registration{50, {
              "}\n";
          auto blocks = cwhip::builtinStyle();
          blocks.allowShortBlocks = cwhip::AllowShortBlocks::Other;
+         blocks.newlineBeforeCloseBrace = false;
          expectSame(start, blocks);
          require(formatted(ifLine, blocks) == ifSplit, "blocks alone kept an if");
          require(formatted(method, blocks) == methodSplit, "blocks alone kept a function");
@@ -1434,7 +1579,8 @@ const TestGroupRegistration registration{50, {
          const char* keepFunctions[] = {"All", "true", "Inline", "Empty"};
          for (const char* spelling : keepFunctions) {
              const auto loaded = parseStyle(
-                 std::string("AllowShortBlocksOnASingleLine: Always\n"
+                 std::string("NewlineBeforeCloseBrace: false\n"
+                             "AllowShortBlocksOnASingleLine: Always\n"
                              "AllowShortFunctionsOnASingleLine: ") +
                  spelling + "\n");
              require(loaded.ok, loaded.diagnostic);
@@ -1451,8 +1597,10 @@ const TestGroupRegistration registration{50, {
          }
          const char* keepBlocks[] = {"Always", "true", "Empty"};
          for (const char* spelling : keepBlocks) {
-             const auto loaded = parseStyle(std::string("AllowShortBlocksOnASingleLine: ") +
-                                            spelling + "\n");
+             const auto loaded = parseStyle(
+                 std::string("NewlineBeforeCloseBrace: false\n"
+                             "AllowShortBlocksOnASingleLine: ") +
+                 spelling + "\n");
              require(loaded.ok, loaded.diagnostic);
              expectSame(start, loaded.style);
          }
@@ -1466,7 +1614,8 @@ const TestGroupRegistration registration{50, {
          const char* keepIf[] = {"Always", "true"};
          for (const char* spelling : keepIf) {
              const auto loaded = parseStyle(
-                 std::string("AllowShortBlocksOnASingleLine: Always\n"
+                 std::string("NewlineBeforeCloseBrace: false\n"
+                             "AllowShortBlocksOnASingleLine: Always\n"
                              "AllowShortIfStatementsOnASingleLine: ") +
                  spelling + "\n");
              require(loaded.ok, loaded.diagnostic);
@@ -1482,6 +1631,7 @@ const TestGroupRegistration registration{50, {
              require(formatted(ifLine, loaded.style) == ifSplit, spelling);
          }
          const auto loopsOn = parseStyle(
+             "NewlineBeforeCloseBrace: false\n"
              "AllowShortBlocksOnASingleLine: Always\n"
              "AllowShortLoopsOnASingleLine: true\n");
          require(loopsOn.ok, loopsOn.diagnostic);
@@ -1926,6 +2076,7 @@ const TestGroupRegistration registration{50, {
          require(formatted(enumeration, custom) == formatted(enumeration), "custom moved enum");
          auto shortEnum = custom;
          shortEnum.allowShortEnums = true;
+         shortEnum.newlineBeforeCloseBrace = false;
          expectSame(enumeration, shortEnum);
          const std::string broken = "class Box {\n    enum\n    {\n        A\n    }\n}\n";
          const auto failed = cwhip::formatSource(broken, custom, "enum.cw");

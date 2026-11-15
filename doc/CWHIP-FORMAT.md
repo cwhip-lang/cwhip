@@ -160,7 +160,7 @@ A list that fits on one line stays there. Wrapping stays inside `()` and `[]`. A
 
 ### One-line blocks
 
-A block that already spans several lines stays that way. These keys decide whether a block written on one line is split. Splitting puts the token after `{` on the next line and puts `}` on its own line.
+A block that already spans several lines stays that way. These keys decide whether a block written on one line is split. Splitting puts the token after `{` on the next line and puts `}` on its own line. `NewlineBeforeCloseBrace: true` still puts `}` on the next line when a block is kept short, so the whole block stays on one line only when that key is `false`.
 
 **AllowShortFunctionsOnASingleLine** — default `None`. `None` and `false` split a one-line function body. `All`, `true`, `Inline`, and `Empty` leave it on one line. The dump writes `None` or `All`. `AllowShortBlocksOnASingleLine: Never` still splits function bodies.
 
@@ -192,7 +192,7 @@ The same split applies to a one-line `if`, loop, enum, or function. An empty `{}
 
 **NewlineAfterOpenBrace** — default `true`. `true` puts the token after `{` on the next line. `false` lets the body stay on the `{` line. This key does not move `{` onto or off the header.
 
-`false` leaves the body on the `{` line. A one-line `start { print(1) }` keeps `print(1)` on the brace line and puts `}` on the next line, because a one-line block is still expanded. A body that is already on the next line stays there. An empty `{}` stays on one line when this key is `false`. A one-line block that the `AllowShort*` keys are keeping on one line stays on one line when this key is `true`.
+`false` leaves the body on the `{` line. A one-line `start { print(1) }` keeps `print(1)` on the brace line and puts `}` on the next line, because a one-line block is still expanded. A body that is already on the next line stays there. An empty `{}` stays on one line when this key is `false` and `NewlineBeforeCloseBrace` is `false`. A one-line block that the `AllowShort*` keys are keeping on one line keeps its body on the `{` line when this key is `true`. `NewlineBeforeCloseBrace` still puts `}` on the next line.
 
 **NewlineAfterCloseBrace** — default `true`. `true` puts the token after `}` on the next line. `false` lets what follows stay on the `}` line.
 
@@ -204,7 +204,35 @@ do {
 } while (ready)
 ```
 
-A one-line block is still expanded when this key is `false` and `NewlineAfterOpenBrace` is `true`, so `start { print(1) }` becomes a body line and a `}` line. A comment written between two closing braces stays on that line when this key is `false` (`} /* stay */ }`). When it is `true`, the comment moves with the following `}` onto the next line.
+A one-line block is still expanded when this key is `false` and `NewlineAfterOpenBrace` is `true`, so `start { print(1) }` becomes a body line and a `}` line. A comment written between two closing braces stays on that line when this key is `false` and `NewlineBeforeCloseBrace` is `false` (`} /* stay */ }`). When either key is `true`, the comment moves with the following `}` onto the next line.
+
+**NewlineBeforeCloseBrace** — default `true`. `true` puts `}` on its own line, with a newline before it. That includes a `}` at the end of a short block, and a `}` that shares its line with the last statement of a longer block. `false` leaves `}` where today's layout puts it. An expanded one-line block still ends with `}` on its own line. A short block that is allowed to stay on one line can end with `}`. A `}` that already has its own line stays there: `false` does not pull it back.
+
+```
+start {
+    print(1) }
+```
+
+With `true`, that becomes:
+
+```
+start {
+    print(1)
+}
+```
+
+With `false`, the `}` stays at the end of the `print` line.
+
+A short block kept by `AllowShortBlocksOnASingleLine: Always` still loses its closing brace when this key is `true`:
+
+```
+start { print(1)
+}
+```
+
+The same input with this key `false` stays `start { print(1) }`. An empty `start {}` stays on one line only when this key is `false` and `NewlineAfterOpenBrace` is `false`. With this key `true`, it becomes `start {` and `}` on the next line.
+
+This key does not move the token after `}`. `while`, `else`, `except`, and `finally` still follow `NewlineAfterCloseBrace`, `NewlineBeforeElse`, and `NewlineBeforeExcept`. A second `}` on the same line (`} }`, or `} /* stay */ }`) moves to the next line when this key is `true`, even if `NewlineAfterCloseBrace` is `false`. The comment moves with that `}`.
 
 **NewlineBeforeElse** — default `true`. `true` puts `else` that shares the `}` line onto the next line. `false` leaves that `else` on the `}` line. An `else` that already has its own line keeps it. This key is independent of `NewlineAfterCloseBrace`: with the close key set to `false` and this key left at `true`, `else` still moves.
 
