@@ -14,6 +14,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -22,7 +23,8 @@
 namespace cwhip {
 
 std::string printFormatted(std::string_view source, const std::vector<FormatToken>& tokens,
-                           const UnwrapResult& unwrapped, const Style& style);
+                           const UnwrapResult& unwrapped, const Style& style, int firstLine,
+                           int lastLine);
 
 namespace {
 
@@ -56,6 +58,11 @@ void writeStderr(const std::string& diagnostic) {
 } // namespace
 
 FormatResult formatSource(std::string_view source, const Style& style, std::string_view fileName) {
+    return formatSourceRange(source, style, fileName, 0, 0);
+}
+
+FormatResult formatSourceRange(std::string_view source, const Style& style,
+                               std::string_view fileName, int firstLine, int lastLine) {
     const std::string name(fileName);
     try {
         FormatLexer lexer(std::string(source), name);
@@ -70,7 +77,7 @@ FormatResult formatSource(std::string_view source, const Style& style, std::stri
         }
         FormatResult result;
         result.ok = true;
-        result.text = printFormatted(source, tokens, unwrapped, style);
+        result.text = printFormatted(source, tokens, unwrapped, style, firstLine, lastLine);
         return result;
     } catch (const DiagnosticError& error) {
         FormatResult failed;
@@ -119,9 +126,61 @@ bool writeStdout(const std::string& text) {
     return written == text.size();
 }
 
-int64_t formatOne(const std::string& path, const std::string& stylePath, bool inPlace) {
+bool parseLineRange(const std::string& text, int& first, int& last, std::string& error) {
+    if (text.empty()) {
+        first = 0;
+        last = 0;
+        return true;
+    }
+    const auto colon = text.find(':');
+    if (colon == std::string::npos || text.find(':', colon + 1) != std::string::npos) {
+        error = "invalid line range: " + text;
+        return false;
+    }
+    auto number = [](const std::string& part, int& value) {
+        if (part.empty()) return false;
+        int parsed = 0;
+        for (char character : part) {
+            if (character < '0' || character > '9') return false;
+            parsed = parsed * 10 + (character - '0');
+        }
+        if (parsed < 1) return false;
+        value = parsed;
+        return true;
+    };
+    if (!number(text.substr(0, colon), first) || !number(text.substr(colon + 1), last) ||
+        last < first) {
+        error = "invalid line range: " + text;
+        return false;
+    }
+    return true;
+}
+
+std::string readStdin(std::string& error) {
+    std::ostringstream buffer;
+    buffer << std::cin.rdbuf();
+    if (!std::cin && !std::cin.eof()) {
+        error = "-:1:1: cannot read standard input";
+        return {};
+    }
+    return buffer.str();
+}
+
+int64_t formatOne(const std::string& path, const std::string& stylePath, bool inPlace,
+                  bool dryRun, const std::string& lines) {
+    int firstLine = 0;
+    int lastLine = 0;
+    std::string rangeError;
+    if (!parseLineRange(lines, firstLine, lastLine, rangeError)) {
+        writeStderr(rangeError);
+        return 2;
+    }
+    if (path == "-" && inPlace && !dryRun) {
+        writeStderr("-:1:1: cannot rewrite standard input in place");
+        return 1;
+    }
     std::string error;
-    const auto original = readFile(path, error);
+    const auto original = path == "-" ? readStdin(error) : readFile(path, error);
     if (!error.empty()) {
         writeStderr(error);
         return 1;
@@ -131,15 +190,23 @@ int64_t formatOne(const std::string& path, const std::string& stylePath, bool in
         writeStderr(loaded.diagnostic);
         return 1;
     }
-    const auto formatted = formatSource(original, loaded.style, path);
+    const auto formatted =
+        formatSourceRange(original, loaded.style, path == "-" ? "-.cw" : path, firstLine, lastLine);
     if (!formatted.ok) {
         writeStderr(formatted.diagnostic);
-        if (!inPlace) {
+        if (!inPlace && !dryRun) {
             if (!writeStdout(original)) {
                 writeStderr(path + ":1:1: cannot write stdout");
             }
         }
         return 1;
+    }
+    if (dryRun) {
+        if (formatted.text != original) {
+            writeStderr(path + ":1:1: code should be cwhip-formatted");
+            return 1;
+        }
+        return 0;
     }
     if (!inPlace) {
         if (!writeStdout(formatted.text)) {
@@ -194,6 +261,8 @@ extern "C" void* cwhip_format_builtin_config(void* /*self*/) {
     return cwhip_string_new(&cwhip_string_class_meta, text.data(), text.size());
 }
 
-extern "C" int64_t cwhip_format_file(void* /*self*/, void* path, void* stylePath, bool inPlace) {
-    return cwhip::formatOne(cwhip::borrowString(path), cwhip::borrowString(stylePath), inPlace);
+extern "C" int64_t cwhip_format_file(void* /*self*/, void* path, void* stylePath, bool inPlace,
+                                   bool dryRun, void* lines) {
+    return cwhip::formatOne(cwhip::borrowString(path), cwhip::borrowString(stylePath), inPlace,
+                            dryRun, cwhip::borrowString(lines));
 }

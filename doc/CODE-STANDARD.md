@@ -6,7 +6,9 @@ This document is intended to be used by programmers writing code in the Cwhip pr
 
 - Prefer to define class methods outside of the class body. This keeps the definition of the class small and readable.
 - Always use a new line after a **{** and before a **}**. Including one line code blocks. This helps to visually define code blocks.
-- Indents are 4 spaces. Continuations are allowed inside **[]** and **()** and indent is 8 spaces past the normal indent.
+- Indents are 4 spaces. Continuations are allowed inside **[]** and **()** and indent is 8 spaces past the normal indent. A long call or dict breaks after `(` or `[`, one item per line, including a call or dict on the right of `=`. A long out-of-line method breaks before `from` at the block indent. A generic and a class base list stay on one line.
+- One space around `=` and around binary operators. Unary `+`, `-`, `!`, and `~` stay tight. `not` has one space after it. `..` stays tight. One space after a comma, none before. No space inside `()`, `[]`, or `<>`. One space before `{` when it shares the line.
+- A comment-only line, `case`, `default`, a `{` on its own line, and `except`, `finally`, and `from` when they start a line use the block indent.
 - Line length should be kept to less than 80 characters to allow clean editing on a console.
 
 ## Naming
@@ -61,7 +63,11 @@ This document is intended to be used by programmers writing code in the Cwhip pr
 ## Formatter defaults
 
 The block below came from the `cwhip-format` built-in defaults
-(`--dump-config`).
+(`--dump-config`). Spacing, list wrapping, and the block indent of a
+comment-only line, `case`, `default`, a brace that starts a line, and
+`except`, `finally`, and `from` are always applied. They are not keys
+in this dump. `BreakBeforeBinaryOperators`, `BraceBinding`,
+`CommentPragmas`, and `SpaceBeforeParens` stay unset.
 
 ```
 # Language of the file. Cwhip is the only accepted value.

@@ -10,7 +10,7 @@ After a build, the program is `bin/cwhip-format`, next to `cwhip`. An install pl
 cwhip-format [options] <file...>
 ```
 
-`file` is one or more paths to Cwhip source. The name does not have to end in `.cw`. Options may be mixed with the paths. A path that starts with `-` can be written after `--`, which ends option parsing.
+`file` is one or more paths to Cwhip source. The name does not have to end in `.cw`. Options may be mixed with the paths. A path that starts with `-` and is longer than one character can be written after `--`, which ends option parsing. A file named `-` is standard input.
 
 | Option | Meaning |
 |---|---|
@@ -18,6 +18,8 @@ cwhip-format [options] <file...>
 | `-V`, `--version` | Print `cwhip-format: v` plus the version, and exit 0. The version is the one `cwhip --version` prints after `cwhip: v`. |
 | `-i`, `--in-place` | Rewrite each file in place. |
 | `-v`, `--verbose` | With `-i`, print each file's name to standard error. Without `-i`, print nothing. |
+| `--dry-run` | Exit 1 when a file would change. Do not write the file and do not print the formatted text. There is no short name. |
+| `--lines START:END` | Format only that inclusive 1-based line range. There is no short name. |
 | `--dump-config` | Write the built-in configuration to standard output and exit 0. There is no short name. |
 
 `--help` and `--version` stop the command at that flag, so a file list is not required. `--dump-config` still reads the rest of the command line: an unknown option is an error, and any file names are not opened.
@@ -32,13 +34,29 @@ With `-i` or `--in-place`, standard output stays empty on success and each file 
 
 With `-v` or `--verbose` and `-i`, each file's path is written to standard error before that file is formatted. The path is one line, in the order given, exactly as it appears on the command line. A name is printed whether or not the text changes, and also when that file fails. Standard output stays empty on success. Without `-i`, `-v` prints nothing, so the formatted text on standard output is unchanged. Without `-v`, an in-place run stays quiet.
 
+`make format` rewrites sources with `-i`. It does not pass `--dry-run`.
+
+### Standard input
+
+A file named `-` reads the source from standard input and writes the formatted text to standard output. `-` is a positional path, so it does not need `--` in front of it. `-i -` is an error, `-:1:1: cannot rewrite standard input in place`, and the process exits 1. `--dry-run -` is allowed. It reads standard input, writes nothing on success, and exits 1 when the text would change.
+
+### `--dry-run`
+
+`--dry-run` compares each file with the text the formatter would write. When they differ, the tool writes `path:1:1: code should be cwhip-formatted` to standard error and that file counts as a failure. When they match, that file succeeds. The formatted text is not printed, and the file is not changed. Combined with `-i`, the dry run wins and the file stays as it is. A source the formatter cannot group is still exit 1 with the usual diagnostic, not the dry-run message. The same is true of a missing file.
+
+### `--lines`
+
+`--lines START:END` formats an inclusive range of 1-based lines. A statement the range touches is formatted as a whole. Bytes outside those statements are copied. Without `-i`, the whole buffer is written to standard output. With `-i`, the file is replaced by that buffer. `--dry-run` with `--lines` reports a change only when the selected statements would change.
+
+`START` and `END` are positive integers, `END` is at least `START`, and the value contains one colon. Anything else is `invalid line range: ...` on standard error and exit 2. The file is not changed.
+
 ### `--dump-config`
 
 `--dump-config` prints the built-in style, not the style that would apply in the current directory. Each key is two lines: a `#` comment, then `Key: Value`. The text ends with a newline. It is itself a valid `.cwhip-format` file, and reading it back produces the built-in style.
 
 The dump does not format source. Combined with `-i` and file names, it still only prints that built-in text. It does not create missing files, and it does not change files that exist. A `.cwhip-format` in the current directory has no effect on the dump. `ColumnLimit` in the dump is `80`.
 
-Four keys are left out of the dump because the built-in style does not choose them: `BreakBeforeBinaryOperators`, `SpaceBeforeParens`, `CommentPragmas`, and `BraceBinding`. Add those yourself when you want them. They are described at the end of this manual.
+Four keys are left out of the dump because the built-in style does not choose them: `BreakBeforeBinaryOperators`, `SpaceBeforeParens`, `CommentPragmas`, and `BraceBinding`. Add those yourself when you want them. They are described at the end of this manual. Spacing, list wrapping, and the block indent of a comment-only line, `case`, `default`, a brace that starts a line, and `except`, `finally`, and `from` are always applied. They are not keys.
 
 ### Help, version, and errors
 
@@ -54,6 +72,8 @@ Options:
   -V, --version	Show the program version
   -i, --in-place	Rewrite each file in place
   -v, --verbose	Print each file name when rewriting in place
+      --dry-run	Exit non-zero when a file would change, and do not write
+      --lines <value>	Format only these 1-based lines, START:END
       --dump-config	Write the built-in default configuration
   file	Cwhip source file (required)
 ```
@@ -137,6 +157,8 @@ A short file replaces only the keys it names. Copy the dump to `.cwhip-format` w
 
 **IndentWidth** — default `4`. Spaces for each indent level. A nested statement is indented by this many spaces times its depth. The value is a non-negative integer.
 
+A comment-only line, `case`, `default`, a `{` that already has its own line, and `except`, `finally`, and `from` when they already start a line use that block indent. The column in the source is not kept. The `while` of `do`/`while` still keeps the column it was written at.
+
 **UseTab** — default `Never`. Inserted indent uses spaces. `Never` is the only accepted value.
 
 **ContinuationIndentWidth** — default `8`. Extra spaces past the block indent on a wrapped line. A wrapped item inside a block indented 4 spaces is indented 12 spaces. The value is a non-negative integer. The built-in width is 8, which is two indent levels when `IndentWidth` is 4.
@@ -156,7 +178,28 @@ start {
 }
 ```
 
-A list that fits on one line stays there. Wrapping stays inside `()` and `[]`. A generic, an assignment, a field initializer, and a class base list stay on one line, because a newline there would change the program. String literals are not split across lines.
+A list that fits on one line stays there, including a list that was already broken. With a positive limit the formatter drops newlines inside `()` and `[]`, measures the list as one line, and then breaks it again or joins it. `ColumnLimit: 0` leaves those newlines and their indent as written. A line comment inside the list keeps a following newline, so the comment does not swallow the next item.
+
+Wrapping stays inside `()` and `[]`. A call or a dict on the right of `=` wraps the same way, and the `=` stays on the first line. A long expression that is not inside `()` or `[]` stays on one line, because a newline there would end the statement. A generic and a class base list stay on one line for the same reason. String literals are not split across lines.
+
+A long out-of-line method breaks before `from`. That break is not a continuation: `from` is placed at the block indent.
+
+```
+String Name.method(int64 value)
+from "native_symbol"
+```
+
+### Spacing
+
+These spaces are always normalized. There is no style key for them.
+
+- One space around `=` and around `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `<=`, `>=`, `&&`, `||`, `and`, `or`, `is`, `in`, `&`, `|`, `^`, `<<`, `>>`, and the compound assignments. Unary `+`, `-`, `!`, and `~` stay tight. The word `not` has one space after it. `..` has no spaces on either side.
+- One space after a comma and none before it. A trailing comma before `)` or `]` has no space after it.
+- No space after `(` `[` `<` or before `)` `]` `>`. A comma inside `<>` still has one space after it: `dict<int64, String>`. `<` and `>` are generic delimiters in a type, after `as` or `is`, in a parameter list, and in a base list. In an expression they are comparisons and take operator spaces.
+- One space before `{` when `{` shares the line. A `{` at the start of a line is only indented.
+- Trailing spaces are removed. Spaces inside an inline C body stay, because that body is one lexeme.
+
+The space before `(` is copied unless `SpaceBeforeParens` is set. `:` and `.` are copied too.
 
 ### One-line blocks
 

@@ -326,7 +326,7 @@ set_target_properties(cwhip_frontend PROPERTIES
 add_executable(cwhip main.cpp)
 target_link_libraries(cwhip PRIVATE cwhip_frontend)
 add_executable(cwhip-lsp LspServer.cpp)
-target_link_libraries(cwhip-lsp PRIVATE cwhip_frontend)
+target_link_libraries(cwhip-lsp PRIVATE cwhip_frontend cwhip_format)
 target_compile_definitions(cwhip PRIVATE
     CWHIP_VERSION="${PROJECT_VERSION}"
     CWHIP_CLANG_EXECUTABLE="${CWHIP_CLANG_EXECUTABLE}"

@@ -8,6 +8,7 @@
  *   2026-11-13  Initial file.
  *   2026-11-15  Apply the Cwhip coding standard.
  *   2026-11-15  Print in-place file names with -v.
+ *   2026-11-15  Add a dry run, standard input, and a line range.
  */
 
 import cli as Cli
@@ -48,15 +49,18 @@ class FormatTool {
      *   path — String path.
      *   stylePath — String style path.
      *   inPlace — bool in place.
+     *   dryRun — bool dry run. Exits non-zero when the file would change.
+     *   lines — String lines. Empty formats the whole file. Otherwise
+     *     START:END, 1-based and inclusive.
      *
      * Returns int64.
      */
-    int64 formatFile(String path, String stylePath, bool inPlace)
+    int64 formatFile(String path, String stylePath, bool inPlace, bool dryRun, String lines)
 }
 
 String FormatTool.version() from "cwhip_format_version"
 String FormatTool.builtinConfig() from "cwhip_format_builtin_config"
-int64 FormatTool.formatFile(String path, String stylePath, bool inPlace) from "cwhip_format_file"
+int64 FormatTool.formatFile(String path, String stylePath, bool inPlace, bool dryRun, String lines) from "cwhip_format_file"
 
 start {
     FormatTool tool = FormatTool()
@@ -91,6 +95,19 @@ start {
     verbose.name = "verbose"
     verbose.description = "Print each file name when rewriting in place"
     command.addOption(verbose)
+
+    Cli.Option dryRun = Cli.Option()
+    dryRun.longName = "dry-run"
+    dryRun.name = "dry-run"
+    dryRun.description = "Exit non-zero when a file would change, and do not write"
+    command.addOption(dryRun)
+
+    Cli.Option lines = Cli.Option()
+    lines.longName = "lines"
+    lines.name = "lines"
+    lines.description = "Format only these 1-based lines, START:END"
+    lines.valueType = Cli.ValueType().STRING
+    command.addOption(lines)
 
     Cli.Option dumpConfig = Cli.Option()
     dumpConfig.longName = "dump-config"
@@ -129,8 +146,13 @@ start {
         Sys.System().exit(0)
     }
 
-    bool rewrite = command.switchValue("in-place")
+    bool dry = command.switchValue("dry-run")
+    bool rewrite = command.switchValue("in-place") and not dry
     bool showNames = command.switchValue("verbose")
+    String lineRange = ""
+    if (command.wasProvided("lines")) {
+        lineRange = command.value("lines")
+    }
     list files = command.allPositionalValues()
     int64 index = 0
     int64 status = 0
@@ -139,9 +161,9 @@ start {
         if (rewrite and showNames) {
             Sys.System().io().writeErrorLine(path)
         }
-        int64 result = tool.formatFile(path, "", rewrite)
-        if (result != 0) {
-            status = 1
+        int64 result = tool.formatFile(path, "", rewrite, dry, lineRange)
+        if (result != 0 and status != 2) {
+            status = result
         }
         index = index + 1
     }

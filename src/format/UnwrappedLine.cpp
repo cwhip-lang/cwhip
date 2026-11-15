@@ -195,10 +195,57 @@ private:
         if (!is(TokenType::Newline)) return false;
         skipNewlines(NewlineKind::Free);
         if (!done() && !failed_) {
-            annotations_[index_].preserveIndent = true;
-            annotations_[index_].reindent = false;
+            const auto type = cur().type;
+            // A brace, except, finally, or from that already starts a line
+            // takes the block indent. Other free-newline followers keep the
+            // source column (the while of do/while).
+            if (type == TokenType::LeftBrace || type == TokenType::Except ||
+                type == TokenType::Finally || type == TokenType::From) {
+                annotations_[index_].preserveIndent = false;
+                annotations_[index_].reindent = true;
+            } else {
+                annotations_[index_].preserveIndent = true;
+                annotations_[index_].reindent = false;
+            }
         }
         return true;
+    }
+
+    /// Mark `<`...`>` / `>>` that follow the type at `index_`. Does not consume.
+    void markGenericsAhead() {
+        if (index_ >= tokens_.size() || !isTypeStart(tokens_[index_].type)) return;
+        std::size_t index = index_;
+        if (tokens_[index].type == TokenType::Identifier ||
+            tokens_[index].type == TokenType::RangeType) {
+            if (tokens_[index].type == TokenType::Identifier) {
+                ++index;
+                while (index + 1 < tokens_.size() && tokens_[index].type == TokenType::Dot &&
+                       tokens_[index + 1].type == TokenType::Identifier) {
+                    index += 2;
+                }
+            } else {
+                ++index;
+            }
+        } else {
+            ++index;
+        }
+        while (index < tokens_.size() && tokens_[index].type == TokenType::Less) {
+            int depth = 0;
+            do {
+                if (index >= tokens_.size()) return;
+                const auto type = tokens_[index].type;
+                if (type == TokenType::Less || type == TokenType::Greater ||
+                    type == TokenType::ShiftRight) {
+                    annotations_[index].genericDelimiter = true;
+                    annotations_[index].forbidWrap = true;
+                }
+                if (type == TokenType::Less) ++depth;
+                else if (type == TokenType::Greater) --depth;
+                else if (type == TokenType::ShiftRight) depth = depth > 1 ? depth - 2 : 0;
+                else if (type == TokenType::Newline || type == TokenType::RightBrace) return;
+                ++index;
+            } while (index < tokens_.size() && depth > 0);
+        }
     }
 
     void noteLine(std::size_t begin) {
@@ -210,6 +257,7 @@ private:
     }
 
     void skipType() {
+        markGenericsAhead();
         if (is(TokenType::RangeType)) {
             advance();
         } else if (is(TokenType::Identifier)) {
@@ -230,14 +278,21 @@ private:
         while (!failed_ && is(TokenType::Less)) {
             int depth = 1;
             annotations_[index_].forbidWrap = true;
+            annotations_[index_].genericDelimiter = true;
             advance();
             while (!failed_ && depth > 0 && !done()) {
                 annotations_[index_].forbidWrap = true;
                 stamp(index_);
-                if (is(TokenType::Less)) ++depth;
-                else if (is(TokenType::Greater)) --depth;
-                else if (is(TokenType::ShiftRight)) depth = depth > 1 ? depth - 2 : 0;
-                else if (is(TokenType::Newline) || is(TokenType::RightBrace)) {
+                if (is(TokenType::Less)) {
+                    annotations_[index_].genericDelimiter = true;
+                    ++depth;
+                } else if (is(TokenType::Greater)) {
+                    annotations_[index_].genericDelimiter = true;
+                    --depth;
+                } else if (is(TokenType::ShiftRight)) {
+                    annotations_[index_].genericDelimiter = true;
+                    depth = depth > 1 ? depth - 2 : 0;
+                } else if (is(TokenType::Newline) || is(TokenType::RightBrace)) {
                     fail("cannot group statements");
                     return;
                 }
@@ -289,17 +344,24 @@ private:
                tokens_[after + 2].type == TokenType::Identifier;
     }
 
-    void consumeDelimited(bool openingIsList) {
+    void consumeDelimited(bool openingIsList, bool inTypes = false) {
         if (!is(TokenType::LeftParen) && !is(TokenType::LeftBracket)) {
             fail("expected '('");
             return;
         }
         annotations_[index_].listOpen = openingIsList;
         int depth = 1;
+        bool typeNext = false;
         advance();
         while (!failed_ && depth > 0 && !done()) {
             stamp(index_);
             annotations_[index_].parenDepthBefore = depth;
+            if (inTypes && depth == 1 && isTypeStart(cur().type)) markGenericsAhead();
+            if (typeNext && isTypeStart(cur().type)) {
+                markGenericsAhead();
+                typeNext = false;
+            }
+            if (is(TokenType::Is) || is(TokenType::As)) typeNext = true;
             if (is(TokenType::LeftParen) || is(TokenType::LeftBracket)) {
                 annotations_[index_].listOpen = true;
                 ++depth;
@@ -316,8 +378,9 @@ private:
         if (depth != 0) fail("cannot group statements");
     }
 
-    void consumeStatementTail(bool forbidding) {
+    void consumeStatementTail(bool /*afterAssign*/) {
         int depth = 0;
+        bool typeNext = false;
         while (!failed_ && !done()) {
             if (depth == 0 && (is(TokenType::Newline) || is(TokenType::RightBrace) ||
                                is(TokenType::End) || is(TokenType::LeftBrace))) {
@@ -325,9 +388,15 @@ private:
             }
             stamp(index_);
             annotations_[index_].parenDepthBefore = depth;
-            if (forbidding) annotations_[index_].forbidWrap = true;
+            // A newline at depth 0 would end the statement, so those tokens
+            // are not wrap points. A call or a dict after '=' is still a list.
+            if (typeNext && isTypeStart(cur().type)) {
+                markGenericsAhead();
+                typeNext = false;
+            }
+            if (is(TokenType::Is) || is(TokenType::As)) typeNext = true;
             if (is(TokenType::LeftParen) || is(TokenType::LeftBracket)) {
-                if (!forbidding) annotations_[index_].listOpen = true;
+                annotations_[index_].listOpen = true;
                 ++depth;
             } else if (is(TokenType::RightParen) || is(TokenType::RightBracket)) {
                 if (depth == 0) {
@@ -335,10 +404,9 @@ private:
                     return;
                 }
                 --depth;
-            } else if (depth == 0 && is(TokenType::Equal)) {
-                forbidding = true;
+            } else if (depth == 0) {
                 annotations_[index_].forbidWrap = true;
-            } else if (depth > 0 && isWrapOperator(cur().type) && !forbidding) {
+            } else if (isWrapOperator(cur().type)) {
                 annotations_[index_].binaryOperator = true;
             }
             advance();
@@ -508,7 +576,9 @@ private:
         while (!failed_ && !done() && !is(TokenType::RightBrace)) {
             skipNewlines(NewlineKind::Terminator);
             if (is(TokenType::RightBrace) || done()) break;
-            if (take(TokenType::Case)) {
+            if (is(TokenType::Case)) {
+                annotations_[index_].reindent = true;
+                advance();
                 if (!is(TokenType::LeftParen)) {
                     fail("expected '(' after case");
                     return;
@@ -517,7 +587,9 @@ private:
                 if (failed_) return;
                 skipFree();
                 parseBlock(BlockKind::Generic, true);
-            } else if (take(TokenType::Default)) {
+            } else if (is(TokenType::Default)) {
+                annotations_[index_].reindent = true;
+                advance();
                 skipFree();
                 parseBlock(BlockKind::Generic, true);
             } else {
@@ -585,7 +657,7 @@ private:
                     fail("expected '(' after except");
                     return;
                 }
-                consumeDelimited(false);
+                consumeDelimited(false, true);
                 if (failed_) return;
                 if (take(TokenType::As)) {
                     if (!take(TokenType::Identifier)) {
@@ -748,7 +820,7 @@ private:
             fail("expected '('");
             return;
         }
-        consumeDelimited(true);
+        consumeDelimited(true, true);
         if (failed_) return;
         if (requireImmediateBrace) {
             if (is(TokenType::Newline)) {
@@ -768,7 +840,8 @@ private:
         }
         skipFree();
         if (is(TokenType::From)) {
-            annotations_[index_].preserveIndent = true;
+            annotations_[index_].preserveIndent = false;
+            annotations_[index_].reindent = true;
             advance();
             if (!is(TokenType::String)) {
                 fail("expected a string after from");
@@ -798,6 +871,7 @@ private:
             advance();
             while (!failed_ && !is(TokenType::LeftBrace) && !done()) {
                 annotations_[index_].forbidWrap = true;
+                if (isTypeStart(cur().type)) markGenericsAhead();
                 if (is(TokenType::Newline)) {
                     fail("cannot group statements");
                     return;
