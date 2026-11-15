@@ -590,7 +590,7 @@ and thread bindings.
   after this leading try, or in a mixed direct/protected sequence. These are
   semantic constraints, not new parser productions.
 - The parser allows some forms that later fail semantic analysis: for example
-  `return` in `start` or within `finally` (including nested blocks),
+  `return` within `finally` (including nested blocks),
   `break` outside a loop, invalid lvalues, inaccessible
   members, unknown types, bad argument/return conversions, an invalid
   `super` initializer, or a `raise` expression outside the exception class

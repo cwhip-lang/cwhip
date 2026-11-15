@@ -98,7 +98,8 @@ The language is intended to have full object-oriented programming support. Broad
   `false`, floats use `printf`'s `%.15g` format, and unsigned integers display
   as unsigned decimal values. Formatted print placeholders accept these scalar
   types too.
-- Using a local before it has been initialized is a warning.
+- Using a local before it has been initialized is a compile-time error
+  (`variable '…' may be uninitialized`).
 - A local may be prefixed with `const`. The first value, from an initializer
   or a later assignment, is kept. A further assignment to that variable
   raises a catchable exception. The variable may be declared with no

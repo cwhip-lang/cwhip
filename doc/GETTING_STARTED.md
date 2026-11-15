@@ -382,8 +382,10 @@ types are `int8`, `int16`, `int32`, and `int64`; unsigned integer types are
 `int32`, `uint32`, and `fp32` types. Conditions require `bool`. `strg` and
 `String` name the managed string type.
 `list`, `dict`, `buffer`, and native `handle` types are also available.
-Initialize fields in a constructor; field declarations have no in-class
-initializer syntax.
+Initialize fields in a constructor, or with a compile-time constant on the
+declaration (`int64 value = 0`). Any other initializer expression is rejected.
+See
+[Compile-time field initializers](LANGUAGE-REFERENCE.md#compile-time-field-initializers).
 Managed objects are garbage-collected; native resources still need appropriate
 API-specific release/close handling.
 
