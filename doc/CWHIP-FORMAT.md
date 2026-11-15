@@ -98,7 +98,7 @@ Rules:
 
 - Blank lines are ignored.
 - Spaces around the key and the value are ignored.
-- A line that begins with a space or a tab is an error (`nested map`).
+- A line that begins with a space or a tab is an error (`nested map`) when text remains after the `#` comment is removed. An indented comment such as `    # note` is ignored. `    ColumnLimit: 100` is still `nested map`.
 - A line needs a colon and a value. `Key:` with nothing after it is an error.
 - A key may appear once. A second line is `duplicate key: Key`.
 - A key the tool does not know is `unknown key: Key`. `BasedOnStyle` is rejected that way. There is no named base style.

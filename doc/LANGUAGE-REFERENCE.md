@@ -937,9 +937,12 @@ Returning runs enclosing `finally` blocks from innermost to outermost before
 leaving the method. A return inside `finally` (even in a nested statement)
 is invalid. A non-void method must return a value or raise on every reachable
 path; loops alone do not guarantee this. See `try-statement` and
-`raise-statement`. Constructors and destructors remain void-only, and `start`
-still cannot return. Non-void return values use `return(expression)`; bare
-`return` and `return()` are void returns.
+`raise-statement`. Constructors and destructors remain void-only. `start` may
+return: `return(expr)` requires an integer exit status, and a bare `return`
+exits 0. See
+[Program structure and entry point](#program-structure-and-entry-point).
+Non-void return values use `return(expression)`; bare `return` and `return()`
+are void returns.
 
 ```cwhip
 // Complete program: raising and catching a typed exception.
