@@ -1,20 +1,11 @@
 # CWHIP Coding standard
 
-This document is intended to be used by programmers writing code in the
-Cwhip programming language. This is a subset of the guidelines that is
-used by the AI that generated much of the proof of concept code that is
-located in this repository and others.
-
-Near-term application work is comments and general cleanup, not
-language-feature demos or missing-feature showcases. Do not mass-rewrite
-existing application source only to match this standard in the same
-change that documents it. Apply these rules on touch, or in a cleanup
-pass.
+This document is intended to be used by the AI programmer when writing code in the
+Cwhip programming language. This is a superset of the guidelines that is intended to be 
+used by a human programmer.
 
 Other proof-of-concept applications may keep their own `CODING.md` if
-those rules do not conflict with this document. CPlanets behavior stays
-in [RULES.md](RULES.md). Work shape stays in [PLAN.md](PLAN.md). This
-document is how source is written.
+those rules do not conflict with this document.
 
 ## General guidelines
 
@@ -27,8 +18,7 @@ document is how source is written.
   indent.
 - Line length should be kept to less than 80 characters to allow clean
   editing on a console.
-- Reflow hash and slash comments to the column limit. Do not reflow
-  block comments.
+- Reflow all comments to the column limit.
 - Put a blank line before and after a control statement longer than
   10 lines. When variables are defined for a test or a loop, keep
   those definitions inside the blank-line boundary, with the
@@ -191,17 +181,6 @@ one pattern:
   (combat versus seat, policy, and cycle).
 - Server verbosity defaults live in the server config. They are
   copied onto `Scenario.verbosity` at serve start.
-
-## Knobs and tuning
-
-Virtually every variable that touches planets, ships, players,
-combat, travel, production, identify, or clock must be settable at
-minimum in a text file. Some are settable through the human GUI.
-Most server settings stay in a text file. Balance and interest
-tuning come after playable completeness and that text-file coverage.
-Do not treat magnitude balancing as the current goal. Inventory:
-[KNOB-COVERAGE.md](KNOB-COVERAGE.md). Phase order:
-[TUNING-PLAYABLE.md](TUNING-PLAYABLE.md).
 
 ## Formatter defaults
 
