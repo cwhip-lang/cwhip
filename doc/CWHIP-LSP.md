@@ -73,7 +73,7 @@ A normal session is `initialize`, then `initialized`, then document notification
 
 ### Formatting
 
-`textDocument/formatting` and `textDocument/rangeFormatting` format the text stored for `params.textDocument.uri`. They do not read that file from disk. The style is the one `cwhip-format` would use in the server's current directory. A style file that cannot be loaded is error `-32603`, and the message is that diagnostic.
+`textDocument/formatting` and `textDocument/rangeFormatting` format the text stored for `params.textDocument.uri`. They do not read that file from disk. The style is the one `cwhip-format` would use in the server's current directory when that directory can be read. If the current directory cannot be read, the server uses the built-in style and still returns the edit. `cwhip-format` would report `.:1:1: cannot read the current directory` and would not format. A style file that cannot be loaded is error `-32603`, and the message is that diagnostic.
 
 A uri that is not open, or a request with no `textDocument`, is error `-32602` and the message `document not open`. Source the formatter cannot group is error `-32603`, and the message is the diagnostic (`path:line:column: message`).
 

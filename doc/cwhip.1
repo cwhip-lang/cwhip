@@ -18,10 +18,16 @@ to produce an executable, or a relocatable object with
 Object inputs
 .RI ( .o ,
 .IR .obj )
-are linked with the generated code. Exactly one source input must contain the
-top\-level
+are linked with the generated code. The
+.I .cw
+inputs together must contain exactly one top\-level
 .B start
-block when an executable is produced.
+block. That check runs for
+.B \-c
+and
+.B \-\-check\-only
+as well as for a link. A link of only object files has no source input, so
+the check does not run.
 .PP
 The compiler is relocatable: it locates its runtime library, runtime headers,
 String builtin, and standard modules relative to its own executable, so an

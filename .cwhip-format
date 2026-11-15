@@ -36,9 +36,9 @@ NewlineBeforeElse: true
 NewlineBeforeExcept: true
 # Break a long parenthesized list after the opening parenthesis.
 WrapLongParenthesizedList: BreakAfterOpenParen
-# Pack wrapped parameters onto one line.
+# Wrapped parameters stay one per line.
 BinPackParameters: false
-# Pack wrapped arguments onto one line.
+# Wrapped arguments stay one per line.
 BinPackArguments: false
 # Insert a blank line around a long control statement.
 BlankLinesAroundLongControlStatement: true

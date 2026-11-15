@@ -28,7 +28,8 @@ those rules do not conflict with this document.
   block indent.
 - Line length should be kept to less than 80 characters to allow clean
   editing on a console.
-- Reflow all comments to the column limit.
+- Reflow `#` and `//` comments to the column limit. A `/* */` comment
+  stays as written unless `ReflowBlockComments` is set.
 - Put a blank line before and after a control statement longer than
   10 lines. When variables are defined for a test or a loop, keep
   those definitions inside the blank-line boundary, with the
@@ -240,9 +241,9 @@ NewlineBeforeElse: true
 NewlineBeforeExcept: true
 # Break a long parenthesized list after the opening parenthesis.
 WrapLongParenthesizedList: BreakAfterOpenParen
-# Pack wrapped parameters onto one line.
+# Wrapped parameters stay one per line.
 BinPackParameters: false
-# Pack wrapped arguments onto one line.
+# Wrapped arguments stay one per line.
 BinPackArguments: false
 # Insert a blank line around a long control statement.
 BlankLinesAroundLongControlStatement: true

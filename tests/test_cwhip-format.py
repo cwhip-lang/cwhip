@@ -517,6 +517,18 @@ class FormatCommandTests(unittest.TestCase):
         self.assertEqual(clean.returncode, 0, clean.stderr)
         self.assertEqual(clean.stdout, "")
         self.assertEqual(clean.stderr, "")
+        broken = "start {\n    print(1) print(2)\n}\n"
+        failed = self.run_tool_input(broken, "-")
+        self.assertEqual(failed.returncode, 1)
+        self.assertEqual(failed.stdout, broken)
+        self.assertRegex(failed.stderr, r"^-:\d+:\d+: expected newline after statement\n$")
+        self.assertNotIn("-.cw", failed.stderr)
+        dry_broken = self.run_tool_input(broken, "--dry-run", "-")
+        self.assertEqual(dry_broken.returncode, 1)
+        self.assertEqual(dry_broken.stdout, "")
+        self.assertRegex(dry_broken.stderr, r"^-:\d+:\d+: expected newline after statement\n$")
+        self.assertNotIn("-.cw", dry_broken.stderr)
+        self.assertNotIn("code should be cwhip-formatted", dry_broken.stderr)
 
     def test_line_range_formats_only_the_selected_statement(self):
         with tempfile.TemporaryDirectory() as directory:
