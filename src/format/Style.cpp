@@ -400,8 +400,8 @@ std::string builtinConfigText() {
          "Put except on the line after }. Also applies to finally. False leaves it on the } line.");
     emit("WrapLongParenthesizedList", "BreakAfterOpenParen",
          "Break a long parenthesized list after the opening parenthesis.");
-    emit("BinPackParameters", "false", "Pack wrapped parameters onto one line.");
-    emit("BinPackArguments", "false", "Pack wrapped arguments onto one line.");
+    emit("BinPackParameters", "false", "Wrapped parameters stay one per line.");
+    emit("BinPackArguments", "false", "Wrapped arguments stay one per line.");
     emit("BlankLinesAroundLongControlStatement",
          boolText(style.blankLinesAroundLongControlStatement),
          "Insert a blank line around a long control statement.");

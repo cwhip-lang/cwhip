@@ -42,17 +42,17 @@ specifier subset.
 ./bin/cwhip tests/functional/positive/positive_class_counter.cw \
   -o bin/positive_class_counter
 ./bin/positive_class_counter
-# Prints: 42, then 42
+# Prints: 424242
 
 ./bin/cwhip tests/functional/positive/positive_gc_object_graph.cw \
   -o bin/positive_gc_object_graph
 ./bin/positive_gc_object_graph
-# Prints: 1, 64, and 77 after repeated collections.
+# Prints: 16477 after repeated collections.
 
 ./bin/cwhip tests/functional/positive/positive_multiple_inheritance.cw \
   -o bin/positive_multiple_inheritance
 ./bin/positive_multiple_inheritance
-# Prints: 7, 7, 10, 20, and 3; the two Root subobjects hold separate Node references.
+# Prints: 7710203; the two Root subobjects hold separate Node references.
 
 ./bin/cwhip tests/functional/positive/positive_secondary_bases.cw \
   -o bin/positive_secondary_bases

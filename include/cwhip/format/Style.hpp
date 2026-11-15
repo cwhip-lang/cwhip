@@ -14,7 +14,7 @@ namespace cwhip {
 enum class BreakBeforeBinaryOperators {
     /// Break after the operator. Clang-format reads `false` as this.
     None,
-    /// Break before &&, and, and the other non-assignment operators.
+    /// Break before wrapped non-assignment operators except <, >, <<, and >>.
     NonAssignment
 };
 

@@ -32,9 +32,9 @@ Without `-i`, the tool writes the formatted text of each file to standard output
 
 With `-i` or `--in-place`, standard output stays empty on success and each file is replaced with its formatted text. A file whose formatted text is already the same as its contents is left untouched, so its modification time does not change. A file that does change is written to `path.cwhip-format-tmp` and then renamed onto `path`. That temporary file is removed after a successful replace, and also if the write or the rename fails. A failed replace leaves the original file in place.
 
-With `-v` or `--verbose` and `-i`, each file's path is written to standard error before that file is formatted. The path is one line, in the order given, exactly as it appears on the command line. A name is printed whether or not the text changes, and also when that file fails. Standard output stays empty on success. Without `-i`, `-v` prints nothing, so the formatted text on standard output is unchanged. Without `-v`, an in-place run stays quiet.
+With `-v` or `--verbose` and `-i`, and without `--dry-run`, each file's path is written to standard error before that file is formatted. The path is one line, in the order given, exactly as it appears on the command line. A name is printed whether or not the text changes, and also when that file fails. Standard output stays empty on success. Without `-i`, or with `--dry-run` (which wins over `-i`), `-v` prints nothing. Without `-v`, an in-place run stays quiet.
 
-`make format` rewrites sources with `-i`. It does not pass `--dry-run`.
+`cmake --build <build-dir> --target format` rewrites sources with `-i`. It does not pass `--dry-run`. `scripts/setup` configures that target in `build/`. There is no Makefile in the repository root.
 
 ### Standard input
 
@@ -42,7 +42,7 @@ A file named `-` reads the source from standard input and writes the formatted t
 
 ### `--dry-run`
 
-`--dry-run` compares each file with the text the formatter would write. When they differ, the tool writes `path:1:1: code should be cwhip-formatted` to standard error and that file counts as a failure. When they match, that file succeeds. The formatted text is not printed, and the file is not changed. Combined with `-i`, the dry run wins and the file stays as it is. A source the formatter cannot group is still exit 1 with the usual diagnostic, not the dry-run message. The same is true of a missing file.
+`--dry-run` compares each file with the text the formatter would write. When they differ, the tool writes `path:1:1: code should be cwhip-formatted` to standard error and that file counts as a failure. When they match, that file succeeds. The formatted text is not printed, and the file is not changed. Combined with `-i`, the dry run wins and the file stays as it is. A source the formatter cannot group is still exit 1 with the usual diagnostic, not the dry-run message, and the original text is not copied to standard output. A missing file is the same: the usual diagnostic, and no standard output. `-v` does not print the path on a dry run.
 
 ### `--lines`
 
@@ -82,7 +82,7 @@ A command the tool cannot parse goes to standard error, then the same usage text
 
 A file the tool cannot read or format is reported on standard error as `path:line:column: message`. The process keeps going through the rest of the list. The exit status is 1 if any file failed, and 0 if every file succeeded.
 
-On a format failure, `-i` leaves that file unchanged. Without `-i`, the tool writes that file's original text to standard output after the message. A missing or unreadable source file produces no output for that path. A bad `.cwhip-format` is reported on standard error and produces no output for the file being processed.
+On a format failure, `-i` leaves that file unchanged. Without `-i` and without `--dry-run`, the tool writes that file's original text to standard output after the message. `--dry-run` does not write that text. A missing or unreadable source file produces no output for that path. A bad `.cwhip-format` is reported on standard error and produces no output for the file being processed.
 
 ## The configuration file
 
@@ -199,7 +199,7 @@ These spaces are always normalized. There is no style key for them.
 - One space before `{` when `{` shares the line. A `{` at the start of a line is only indented.
 - Trailing spaces are removed. Spaces inside an inline C body stay, because that body is one lexeme.
 
-The space before `(` is copied unless `SpaceBeforeParens` is set. `:` and `.` are copied too.
+The space before `(` is copied unless `SpaceBeforeParens` is set. The word `not` is the exception: it keeps one space before `(`, so `not(ready)` becomes `not (ready)`. `!(ready)`, `print (`, and `if (` stay as written when the key is unset. `:` and `.` are copied too.
 
 ### One-line blocks
 
@@ -374,8 +374,8 @@ These four keys are valid in `.cwhip-format` and absent from `--dump-config`. Un
 
 **BreakBeforeBinaryOperators** — unset. Set it when a parenthesized expression past `ColumnLimit` should break at an operator.
 
-- `NonAssignment` breaks before `&&`, `and`, and the other non-assignment operators. The operator starts the next line at the continuation indent.
-- `None` and `false` break after the operator.
+- `NonAssignment` breaks before `and`, `or`, `&&`, `||`, `+`, `-`, `*`, `/`, `%`, `&`, `|`, `^`, `==`, `!=`, `<=`, `>=`, `..`, `is`, and `in`. The operator starts the next line at the continuation indent. `<`, `>`, `<<`, and `>>` do not break.
+- `None` and `false` break after those same operators. `<`, `>`, `<<`, and `>>` do not break under either value.
 
 The break is inside `()` or `[]`. Operators outside those, and operators the formatter is not allowed to wrap, stay on their line. With the key unset, a long condition stays on one line.
 
@@ -384,7 +384,7 @@ The break is inside `()` or `[]`. Operators outside those, and operators the for
 - `Never` removes that space, so `if (` becomes `if(` and `print (` becomes `print(`.
 - `ControlStatements` puts one space between `if`, `while`, `for`, or `switch` and `(`. It removes a space before `(` after a name, `)`, `]`, `>`, or a string, so a call written `longCall (` becomes `longCall(`. It leaves the space after `print`, `return`, `raise`, and `except` as written.
 
-Unset, `if (` and `print (` both stay as they were written.
+Unset, `if (` and `print (` both stay as they were written. The space after `not` is still inserted before `(`.
 
 **CommentPragmas** — unset. A quoted regular expression. A `#` or `//` comment whose text matches is not reflowed, and the source line that holds it is copied unchanged, code included. The match runs on the comment after the `#` or `//` marker and one optional space, so `'^test:'` protects `// test: ...`. `''` and `""` protect nothing. The value must be quoted. A pattern the tool cannot compile is `invalid CommentPragmas pattern`.
 

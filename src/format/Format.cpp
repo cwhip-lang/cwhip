@@ -191,7 +191,7 @@ int64_t formatOne(const std::string& path, const std::string& stylePath, bool in
         return 1;
     }
     const auto formatted =
-        formatSourceRange(original, loaded.style, path == "-" ? "-.cw" : path, firstLine, lastLine);
+        formatSourceRange(original, loaded.style, path, firstLine, lastLine);
     if (!formatted.ok) {
         writeStderr(formatted.diagnostic);
         if (!inPlace && !dryRun) {
