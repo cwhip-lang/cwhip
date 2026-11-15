@@ -273,6 +273,7 @@ private:
         breaks.wrap.assign(tokens_.size(), false);
         breaks.attach.assign(tokens_.size(), false);
         planShortBlocks(breaks);
+        planCloseBraces(breaks);
         planBraceNewlines(breaks);
         planBraces(breaks);
         planWraps(breaks);
@@ -326,14 +327,34 @@ private:
         if (expandBlock(note(open).blockKind, style_)) return false;
         const auto close = matchingBrace(tokens_, open);
         if (close >= tokens_.size()) return false;
-        if (tokens_[open].location.line != tokens_[close].location.line) return false;
+        bool brokeBeforeClose = false;
         for (std::size_t cursor = open + 1; cursor < close; ++cursor) {
-            if (tokens_[cursor].type == TokenType::Newline) return false;
+            if (tokens_[cursor].type != TokenType::Newline) continue;
+            // NewlineBeforeCloseBrace may already have put '}' on the next
+            // line. That break is not a split body, so a second format keeps
+            // the statement on the '{' line.
+            if (style_.newlineBeforeCloseBrace && cursor + 1 == close && !brokeBeforeClose) {
+                brokeBeforeClose = true;
+                continue;
+            }
+            return false;
         }
         return true;
     }
 
     bool clauseStays(TokenType type) const { return type == TokenType::While; }
+
+    /// NewlineBeforeCloseBrace puts '}' on the next line, including a short
+    /// block whose '}' would otherwise stay at the end of the line. False
+    /// leaves the breaks planShortBlocks and planBraceNewlines already chose.
+    void planCloseBraces(Breaks& breaks) const {
+        if (!style_.newlineBeforeCloseBrace) return;
+        for (std::size_t index = 0; index < tokens_.size(); ++index) {
+            if (!note(index).isCloseBrace) continue;
+            if (!codePrecedesOnThisLine(index)) continue;
+            breaks.before[index] = true;
+        }
+    }
 
     void planBraceNewlines(Breaks& breaks) const {
         for (std::size_t index = 0; index < tokens_.size(); ++index) {

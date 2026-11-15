@@ -57,7 +57,7 @@ class FormatCommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, "")
         lines = result.stdout.splitlines()
-        self.assertEqual(len(lines), 84)
+        self.assertEqual(len(lines), 86)
         self.assertEqual(len(lines) % 2, 0)
         self.assertTrue(result.stdout.endswith("\n"))
         keys = []
@@ -80,6 +80,11 @@ class FormatCommandTests(unittest.TestCase):
         self.assertIn("NewlineBeforeOpenBrace: false", keys)
         self.assertIn("NewlineAfterOpenBrace: true", keys)
         self.assertIn("NewlineAfterCloseBrace: true", keys)
+        self.assertIn("NewlineBeforeCloseBrace: true", keys)
+        self.assertIn(
+            "# Put } on its own line. False leaves it at the end of the line.",
+            result.stdout.splitlines(),
+        )
         self.assertIn("NewlineBeforeElse: true", keys)
         self.assertIn("NewlineBeforeExcept: true", keys)
         for key in (

@@ -28,6 +28,8 @@ NewlineBeforeOpenBrace: false
 NewlineAfterOpenBrace: true
 # Put the token after } on the next line.
 NewlineAfterCloseBrace: true
+# Put } on its own line. False leaves it at the end of the line.
+NewlineBeforeCloseBrace: true
 # Put else on the line after }. False leaves it on the } line.
 NewlineBeforeElse: true
 # Put except on the line after }. Also applies to finally. False leaves it on the } line.

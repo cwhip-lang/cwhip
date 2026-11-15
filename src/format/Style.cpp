@@ -105,6 +105,7 @@ const std::unordered_set<std::string>& knownKeys() {
         "NewlineBeforeOpenBrace",
         "NewlineAfterOpenBrace",
         "NewlineAfterCloseBrace",
+        "NewlineBeforeCloseBrace",
         "NewlineBeforeElse",
         "NewlineBeforeExcept",
         "WrapLongParenthesizedList",
@@ -149,6 +150,7 @@ bool isBoolKey(const std::string& key) {
         "NewlineBeforeOpenBrace",
         "NewlineAfterOpenBrace",
         "NewlineAfterCloseBrace",
+        "NewlineBeforeCloseBrace",
         "NewlineBeforeElse",
         "NewlineBeforeExcept",
         "BinPackParameters",
@@ -217,6 +219,7 @@ bool applyEntry(Style& style, const RawEntry& entry, const std::string& file,
         else if (key == "NewlineBeforeOpenBrace") style.newlineBeforeOpenBrace = flag;
         else if (key == "NewlineAfterOpenBrace") style.newlineAfterOpenBrace = flag;
         else if (key == "NewlineAfterCloseBrace") style.newlineAfterCloseBrace = flag;
+        else if (key == "NewlineBeforeCloseBrace") style.newlineBeforeCloseBrace = flag;
         else if (key == "NewlineBeforeElse") style.newlineBeforeElse = flag;
         else if (key == "NewlineBeforeExcept") style.newlineBeforeExcept = flag;
         else if (key == "BlankLinesAroundLongControlStatement")
@@ -389,6 +392,8 @@ std::string builtinConfigText() {
          "Put the token after { on the next line.");
     emit("NewlineAfterCloseBrace", boolText(style.newlineAfterCloseBrace),
          "Put the token after } on the next line.");
+    emit("NewlineBeforeCloseBrace", boolText(style.newlineBeforeCloseBrace),
+         "Put } on its own line. False leaves it at the end of the line.");
     emit("NewlineBeforeElse", boolText(style.newlineBeforeElse),
          "Put else on the line after }. False leaves it on the } line.");
     emit("NewlineBeforeExcept", boolText(style.newlineBeforeExcept),
