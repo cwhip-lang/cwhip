@@ -1,11 +1,13 @@
 /**
  * @file LspServer.cpp
  * @brief Stdio language server for Cwhip. Speaks a small Language Server Protocol subset:
- * initialize, shutdown, exit, and full-document open/change/save/close with
- * textDocument/publishDiagnostics.
+ * initialize, shutdown, exit, full-document open/change/save/close with
+ * textDocument/publishDiagnostics, and textDocument/formatting plus
+ * textDocument/rangeFormatting.
  */
 #include "cwhip/Diagnostic.hpp"
 #include "cwhip/SourceCheck.hpp"
+#include "cwhip/format/Format.hpp"
 
 #include <cctype>
 #include <cstdint>
@@ -306,6 +308,88 @@ std::string changedText(const Json& message) {
     return text != nullptr && text->kind == Json::Kind::String ? text->text : std::string();
 }
 
+int jsonInt(const Json* value, int fallback) {
+    if (value == nullptr || value->kind != Json::Kind::Number) return fallback;
+    return std::atoi(value->text.c_str());
+}
+
+std::string requestId(const Json* id) {
+    if (id == nullptr) return "null";
+    if (id->kind == Json::Kind::Number) return id->text;
+    if (id->kind == Json::Kind::String) return jsonString(id->text);
+    return "null";
+}
+
+void replyError(const Json* id, int code, const std::string& message) {
+    send("{\"jsonrpc\":\"2.0\",\"id\":" + requestId(id) + ",\"error\":{\"code\":" +
+         std::to_string(code) + ",\"message\":" + jsonString(message) + "}}");
+}
+
+std::string wholeEdit(const std::string& original, const std::string& formatted) {
+    if (original == formatted) return "[]";
+    int line = 0;
+    int character = 0;
+    for (char value : original) {
+        if (value == '\n') {
+            ++line;
+            character = 0;
+        } else {
+            ++character;
+        }
+    }
+    return "[{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":" +
+           std::to_string(line) + ",\"character\":" + std::to_string(character) +
+           "}},\"newText\":" + jsonString(formatted) + "}]";
+}
+
+void replyFormatting(const Json& message, bool ranged) {
+    const Json* id = message.field("id");
+    const Json* document = documentOf(message);
+    if (document == nullptr) {
+        replyError(id, -32602, "document not open");
+        return;
+    }
+    const std::string uri = document->stringField("uri");
+    const auto found = documents.find(uri);
+    if (found == documents.end()) {
+        replyError(id, -32602, "document not open");
+        return;
+    }
+    cwhip::Style style = cwhip::builtinStyle();
+    std::error_code failure;
+    const auto directory = std::filesystem::current_path(failure);
+    if (!failure) {
+        const auto loaded = cwhip::loadStyleAt(directory.string());
+        if (!loaded.ok) {
+            replyError(id, -32603, loaded.diagnostic);
+            return;
+        }
+        style = loaded.style;
+    }
+    int firstLine = 0;
+    int lastLine = 0;
+    if (ranged) {
+        const Json* params = message.field("params");
+        const Json* range = params == nullptr ? nullptr : params->field("range");
+        const Json* start = range == nullptr ? nullptr : range->field("start");
+        const Json* end = range == nullptr ? nullptr : range->field("end");
+        const int startLine = jsonInt(start == nullptr ? nullptr : start->field("line"), 0);
+        const int endLine = jsonInt(end == nullptr ? nullptr : end->field("line"), startLine);
+        const int endCharacter = jsonInt(end == nullptr ? nullptr : end->field("character"), 0);
+        firstLine = startLine + 1;
+        lastLine = endCharacter == 0 && endLine > startLine ? endLine : endLine + 1;
+        if (lastLine < firstLine) lastLine = firstLine;
+    }
+    const auto formatted = cwhip::formatSourceRange(found->second.text, style, uriPath(uri).string(),
+                                                    firstLine, lastLine);
+    if (!formatted.ok) {
+        replyError(id, -32603, formatted.diagnostic);
+        return;
+    }
+    send("{\"jsonrpc\":\"2.0\",\"id\":" + requestId(id) + ",\"result\":" +
+         wholeEdit(found->second.text, formatted.text) + "}");
+}
+
 void handle(const Json& message) {
     const std::string method = message.stringField("method");
     const Json* id = message.field("id");
@@ -314,7 +398,8 @@ void handle(const Json& message) {
         send("{\"jsonrpc\":\"2.0\",\"id\":" + (id != nullptr && id->kind == Json::Kind::Number
                                                    ? id->text
                                                    : std::string("null")) +
-             ",\"result\":{\"capabilities\":{\"textDocumentSync\":1}}}");
+             ",\"result\":{\"capabilities\":{\"textDocumentSync\":1,"
+             "\"documentFormattingProvider\":true,\"documentRangeFormattingProvider\":true}}}");
         return;
     }
     if (method == "shutdown") {
@@ -382,8 +467,12 @@ void handle(const Json& message) {
         }
         return;
     }
+    if (method == "textDocument/formatting" || method == "textDocument/rangeFormatting") {
+        if (request) replyFormatting(message, method == "textDocument/rangeFormatting");
+        return;
+    }
     if (request) {
-        send("{\"jsonrpc\":\"2.0\",\"id\":" + id->text +
+        send("{\"jsonrpc\":\"2.0\",\"id\":" + requestId(id) +
              ",\"error\":{\"code\":-32601,\"message\":\"method not found\"}}");
     }
 }

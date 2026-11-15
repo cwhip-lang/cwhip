@@ -35,13 +35,13 @@ A request carries a numeric `id`. `initialize` and `shutdown` copy that number i
 
 The server handles one message at a time. It finishes that message, including a diagnostic notification, before it reads the next one.
 
-`initialize` answers with one capability:
+`initialize` answers with these capabilities:
 
 ```json
-{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1}}}
+{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1,"documentFormattingProvider":true,"documentRangeFormattingProvider":true}}}
 ```
 
-`textDocumentSync` is `1`, full-document sync. On open and on change, the client sends the whole text of the document. The result lists no other capability. `initialize` does not read its parameters, so a workspace folder or a root URI in that request does not choose the project. The project comes from the document path, described under Diagnostics.
+`textDocumentSync` is `1`, full-document sync. On open and on change, the client sends the whole text of the document. `documentFormattingProvider` and `documentRangeFormattingProvider` advertise `textDocument/formatting` and `textDocument/rangeFormatting`. `initialize` does not read its parameters, so a workspace folder or a root URI in that request does not choose the project. The project comes from the document path, described under Diagnostics. The formatter reads its style from the server's current directory, not from that project.
 
 A request for any other method is answered with error code `-32601` and the message `method not found`:
 
@@ -55,7 +55,9 @@ The `id` in that error is the request's numeric id. A notification for a method 
 
 | Method | Role | What the server does |
 |---|---|---|
-| `initialize` | request | Returns `textDocumentSync` `1`. Parameters are ignored. |
+| `initialize` | request | Returns `textDocumentSync` `1` and both formatting providers. Parameters are ignored. |
+| `textDocument/formatting` | request | Formats the stored document. |
+| `textDocument/rangeFormatting` | request | Formats the statements in the stored document that the range touches. |
 | `initialized` | notification | No reply. |
 | `shutdown` | request | Returns `result` `null` and records that shutdown was requested. |
 | `exit` | notification | Ends the process. See the status table above. |
@@ -68,6 +70,16 @@ The `id` in that error is the request's numeric id. A notification for a method 
 `shutdown` records shutdown and answers even when the caller sent no `id`. The response `id` is `null` in that case. Until `exit`, or until standard input ends, a later request is handled the same way as before `shutdown`. The flag only chooses the exit status.
 
 A normal session is `initialize`, then `initialized`, then document notifications, then `shutdown`, then `exit`. The server still accepts a document notification that arrives before `initialize`.
+
+### Formatting
+
+`textDocument/formatting` and `textDocument/rangeFormatting` format the text stored for `params.textDocument.uri`. They do not read that file from disk. The style is the one `cwhip-format` would use in the server's current directory. A style file that cannot be loaded is error `-32603`, and the message is that diagnostic.
+
+A uri that is not open, or a request with no `textDocument`, is error `-32602` and the message `document not open`. Source the formatter cannot group is error `-32603`, and the message is the diagnostic (`path:line:column: message`).
+
+On success the result is one text edit covering the original document, from line 0 character 0 through the end of that text, with `newText` set to the formatted document. When the formatted text is the same, the result is `[]`.
+
+`textDocument/rangeFormatting` reads `params.range`. Lines are 0-based. The formatted lines run from `start.line + 1` through `end.line` when `end.character` is 0 and `end.line` is past `start.line`, and through `end.line + 1` otherwise. A statement those lines touch is formatted as a whole. The result is still one whole-document edit. Bytes outside those statements are unchanged.
 
 ### Open
 

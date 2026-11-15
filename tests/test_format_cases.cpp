@@ -407,7 +407,7 @@ const TestGroupRegistration registration{50, {
              "}\n"
              "\n"
              "int64 Box.value()\n"
-             "    from \"box_value\"\n");
+             "from \"box_value\"\n");
          expectSame(
              "start {\n"
              "    if (ready) {\n"
@@ -490,16 +490,48 @@ const TestGroupRegistration registration{50, {
          const auto genericLine = generic.substr(generic.find('\n') + 1);
          require(genericLine.find('\n') > 80, "generic line is short");
          expectSame(generic);
-         const std::string assigned =
-             "start {\n"
-             "    int64 value = call(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, lambda, mu)\n"
-             "}\n";
-         expectSame(assigned);
-         const std::string field =
-             "class Box {\n"
-             "    int64 value = call(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, lambda, mu)\n"
-             "}\n";
-         expectSame(field);
+        const std::string assigned =
+            "start {\n"
+            "    int64 value = call(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, lambda, mu)\n"
+            "}\n";
+        const std::string assignedWrapped =
+            "start {\n"
+            "    int64 value = call(\n"
+            "            alpha,\n"
+            "            beta,\n"
+            "            gamma,\n"
+            "            delta,\n"
+            "            epsilon,\n"
+            "            zeta,\n"
+            "            eta,\n"
+            "            theta,\n"
+            "            iota,\n"
+            "            kappa,\n"
+            "            lambda,\n"
+            "            mu)\n"
+            "}\n";
+        require(formatted(assigned) == assignedWrapped, formatted(assigned));
+        const std::string field =
+            "class Box {\n"
+            "    int64 value = call(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, lambda, mu)\n"
+            "}\n";
+        const std::string fieldWrapped =
+            "class Box {\n"
+            "    int64 value = call(\n"
+            "            alpha,\n"
+            "            beta,\n"
+            "            gamma,\n"
+            "            delta,\n"
+            "            epsilon,\n"
+            "            zeta,\n"
+            "            eta,\n"
+            "            theta,\n"
+            "            iota,\n"
+            "            kappa,\n"
+            "            lambda,\n"
+            "            mu)\n"
+            "}\n";
+        require(formatted(field) == fieldWrapped, formatted(field));
          const std::string base =
              "class Child: VeryLongBaseName, AnotherVeryLongBaseName, ThirdVeryLongBaseName, FourthVeryLongBaseName {\n"
              "    int64 value\n"
@@ -2242,7 +2274,8 @@ const TestGroupRegistration registration{50, {
              "    int64 value = call(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, "
              "kappa, lambda, mu)\n"
              "}\n";
-         expectSame(assigned, locked.style);
+         require(formatted(assigned, locked.style) == formatted(assigned),
+                 formatted(assigned, locked.style));
          const std::string generic =
              "start {\n"
              "    dict<VeryLongTypeNameThatPushesThisGenericWellPastTheColumnLimit, "
@@ -2389,6 +2422,245 @@ const TestGroupRegistration registration{50, {
                     lost.diagnostic);
         }
          std::filesystem::remove_all(root);
+     }},
+    {"spacing normalizes operators commas braces and delimiter padding", [] {
+         require(formatted("start {\n    value=1+2\n}\n") ==
+                     "start {\n    value = 1 + 2\n}\n",
+                 formatted("start {\n    value=1+2\n}\n"));
+         expectSame("start {\n    value = 1 + 2\n}\n");
+         require(formatted("start {\n    value  =   1   +   2\n}\n") ==
+                     "start {\n    value = 1 + 2\n}\n",
+                 "extra operator spaces were kept");
+         require(formatted("start {\n    print( 1 ,2 )\n}\n") == "start {\n    print(1, 2)\n}\n",
+                 formatted("start {\n    print( 1 ,2 )\n}\n"));
+         expectSame("start {\n    print(1, 2)\n}\n");
+         require(formatted("start {\n    print(1,)\n}\n") == "start {\n    print(1,)\n}\n",
+                 "trailing comma gained a space");
+         require(formatted("class Box {\n    dict< int64,String > name\n}\n") ==
+                     "class Box {\n    dict<int64, String> name\n}\n",
+                 formatted("class Box {\n    dict< int64,String > name\n}\n"));
+         expectSame("class Box {\n    dict<int64, String> name\n}\n");
+         require(formatted("class Box {\n    dict<int64,String>name\n}\n") ==
+                     "class Box {\n    dict<int64, String>name\n}\n",
+                 "a space was inserted after '>'");
+         require(formatted("start {\n    if (ready){\n        print(1)\n    }\n}\n") ==
+                     "start {\n    if (ready) {\n        print(1)\n    }\n}\n",
+                 "missing brace space");
+         expectSame("start {\n    if (ready) {\n        print(1)\n    }\n}\n");
+         require(formatted("start {\n    print(1 .. 20)\n}\n") == "start {\n    print(1..20)\n}\n",
+                 formatted("start {\n    print(1 .. 20)\n}\n"));
+         expectSame("start {\n    print(1..20)\n}\n");
+         require(formatted("start {\n    if (! ready) {\n        print(1)\n    }\n}\n") ==
+                     "start {\n    if (!ready) {\n        print(1)\n    }\n}\n",
+                 "unary bang gained no space");
+         require(formatted("start {\n    if (not  ready) {\n        print(1)\n    }\n}\n") ==
+                     "start {\n    if (not ready) {\n        print(1)\n    }\n}\n",
+                 formatted("start {\n    if (not  ready) {\n        print(1)\n    }\n}\n"));
+         expectSame("start {\n    if (not ready) {\n        print(1)\n    }\n}\n");
+         require(formatted("start {\n    print (1)\n}\n") == "start {\n    print (1)\n}\n",
+                 "unset SpaceBeforeParens changed a call");
+         require(formatted("start {\n    if(ready) {\n        print(1)\n    }\n}\n") ==
+                     "start {\n    if(ready) {\n        print(1)\n    }\n}\n",
+                 "unset SpaceBeforeParens changed if");
+         const std::string trailed = "start {\n    print(1)   \n}\n";
+         require(formatted(trailed) == "start {\n    print(1)\n}\n", formatted(trailed));
+         const std::string once = formatted("start {\n    value=1+2\n    print( 1 , 2 )\n}\n");
+         require(formatted(once) == once, "spacing was not stable");
+     }},
+    {"wrapping reformats broken calls assignment lists and from", [] {
+         const std::string broken =
+             "start {\n"
+             "    print(\n"
+             "        alpha,\n"
+             "            beta,\n"
+             "    gamma,\n"
+             "            delta,\n"
+             "            epsilon,\n"
+             "            zeta,\n"
+             "            eta,\n"
+             "            theta,\n"
+             "            iota,\n"
+             "            kappa,\n"
+             "            lambda,\n"
+             "            mu)\n"
+             "}\n";
+         require(formatted(broken) == kWrappedCall, formatted(broken));
+         require(formatted(kWrappedCall) == kWrappedCall, "canonical wrap was not stable");
+         const std::string shortBroken =
+             "start {\n"
+             "    print(\n"
+             "        alpha,\n"
+             "            beta)\n"
+             "}\n";
+         require(formatted(shortBroken) == "start {\n    print(alpha, beta)\n}\n",
+                 formatted(shortBroken));
+         expectSame("start {\n    print(alpha, beta)\n}\n");
+         const std::string commented =
+             "start {\n"
+             "    print(alpha, // keep\n"
+             "            beta)\n"
+             "}\n";
+         const auto commentedText = formatted(commented);
+         require(commentedText.find("// keep\n") != std::string::npos, commentedText);
+         require(commentedText.find("beta)") != std::string::npos, commentedText);
+         require(formatted(commentedText) == commentedText, "commented list was not stable");
+         const std::string dict =
+             "start {\n"
+             "    Dict items = [\"alpha\": 1, \"beta\": 2, \"gamma\": 3, \"delta\": 4, \"epsilon\": 5, \"zeta\": 6, \"eta\": 7, \"theta\": 8]\n"
+             "}\n";
+         const std::string dictWrapped =
+             "start {\n"
+             "    Dict items = [\n"
+             "            \"alpha\": 1,\n"
+             "            \"beta\": 2,\n"
+             "            \"gamma\": 3,\n"
+             "            \"delta\": 4,\n"
+             "            \"epsilon\": 5,\n"
+             "            \"zeta\": 6,\n"
+             "            \"eta\": 7,\n"
+             "            \"theta\": 8]\n"
+             "}\n";
+         require(formatted(dict) == dictWrapped, formatted(dict));
+         expectSame("start {\n    Dict items = [\"alpha\": 1, \"beta\": 2]\n}\n");
+         const std::string sum =
+             "start {\n"
+             "    int64 value = alpha + beta + gamma + delta + epsilon + zeta + eta + theta + iota\n"
+             "}\n";
+         expectSame(sum);
+         auto unlimited = cwhip::builtinStyle();
+         unlimited.columnLimit = 0;
+         expectSame(kLongCall, unlimited);
+         expectSame(broken, unlimited);
+         const std::string method =
+             "String Name.method(int64 value) from \"cwhip_native_symbol_that_is_long_enough_to_pass_eighty_columns\"\n";
+         const std::string methodBroken =
+             "String Name.method(int64 value)\n"
+             "from \"cwhip_native_symbol_that_is_long_enough_to_pass_eighty_columns\"\n";
+         require(formatted(method) == methodBroken, formatted(method));
+         require(formatted(methodBroken) == methodBroken, "from break was not stable");
+         expectSame("String Name.method(int64 value) from \"short\"\n");
+         const std::string indentedFrom =
+             "namespace Gui {\n"
+             "    String Name.method(int64 value)\n"
+             "            from \"short\"\n"
+             "}\n";
+         require(formatted(indentedFrom) ==
+                     "namespace Gui {\n"
+                     "    String Name.method(int64 value)\n"
+                     "    from \"short\"\n"
+                     "}\n",
+                 formatted(indentedFrom));
+     }},
+    {"block indent replaces the source column for comments cases and clauses", [] {
+         const std::string comment =
+             "start {\n"
+             "# note\n"
+             "    print(1)\n"
+             "}\n";
+         require(formatted(comment) ==
+                     "start {\n"
+                     "    # note\n"
+                     "    print(1)\n"
+                     "}\n",
+                 formatted(comment));
+         expectSame("start {\n    # note\n    print(1)\n}\n");
+         const std::string switched =
+             "start {\n"
+             "    switch (value) {\n"
+             "case (1) {\n"
+             "            print(1)\n"
+             "        }\n"
+             "  default {\n"
+             "            print(0)\n"
+             "        }\n"
+             "    }\n"
+             "}\n";
+         const std::string switchedIndented =
+             "start {\n"
+             "    switch (value) {\n"
+             "        case (1) {\n"
+             "            print(1)\n"
+             "        }\n"
+             "        default {\n"
+             "            print(0)\n"
+             "        }\n"
+             "    }\n"
+             "}\n";
+         require(formatted(switched) == switchedIndented, formatted(switched));
+         expectSame(switchedIndented);
+         const std::string brace =
+             "start {\n"
+             "if (ready)\n"
+             "{\n"
+             "        print(1)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(brace) ==
+                     "start {\n"
+                     "    if (ready)\n"
+                     "    {\n"
+                     "        print(1)\n"
+                     "    }\n"
+                     "}\n",
+                 formatted(brace));
+         const std::string handlers =
+             "start {\n"
+             "    try {\n"
+             "        print(1)\n"
+             "    }\n"
+             "        except(Exception) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "            finally {\n"
+             "        print(3)\n"
+             "    }\n"
+             "}\n";
+         const std::string handlersIndented =
+             "start {\n"
+             "    try {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    except(Exception) {\n"
+             "        print(2)\n"
+             "    }\n"
+             "    finally {\n"
+             "        print(3)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(handlers) == handlersIndented, formatted(handlers));
+         expectSame(handlersIndented);
+         const std::string methodFrom =
+             "int64 Box.value()\n"
+             "    from \"box_value\"\n";
+         require(formatted(methodFrom) == "int64 Box.value()\nfrom \"box_value\"\n",
+                 formatted(methodFrom));
+         expectSame("int64 Box.value()\nfrom \"box_value\"\n");
+     }},
+    {"a line range formats the selected statement and leaves the rest", [] {
+         const std::string source =
+             "start {\n"
+             "    value=1\n"
+             "    other=2\n"
+             "}\n";
+         const auto middle = cwhip::formatSourceRange(source, cwhip::builtinStyle(), "range.cw", 3, 3);
+         require(middle.ok, middle.diagnostic);
+         require(middle.text ==
+                     "start {\n"
+                     "    value=1\n"
+                     "    other = 2\n"
+                     "}\n",
+                 middle.text);
+         const auto outside = cwhip::formatSourceRange(source, cwhip::builtinStyle(), "range.cw", 2, 2);
+         require(outside.ok, outside.diagnostic);
+         require(outside.text ==
+                     "start {\n"
+                     "    value = 1\n"
+                     "    other=2\n"
+                     "}\n",
+                 outside.text);
+         const auto all = cwhip::formatSourceRange(source, cwhip::builtinStyle(), "range.cw", 0, 0);
+         require(all.ok && all.text == formatted(source), all.text);
+         require(formatted(all.text) == all.text, "ranged full format was not stable");
      }},
 }};
 

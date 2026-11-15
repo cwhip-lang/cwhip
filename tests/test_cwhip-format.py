@@ -39,6 +39,13 @@ class FormatCommandTests(unittest.TestCase):
             self.assertIn(
                 "-v, --verbose\tPrint each file name when rewriting in place",
                 result.stdout)
+            self.assertIn(
+                "      --dry-run\tExit non-zero when a file would change, and do not write",
+                result.stdout)
+            self.assertIn(
+                "      --lines <value>\tFormat only these 1-based lines, START:END",
+                result.stdout)
+            self.assertNotIn("-n, --dry-run", result.stdout)
             self.assertIn("      --dump-config\tWrite the built-in default configuration",
                           result.stdout)
             self.assertNotIn("-d, --dump-config", result.stdout)
@@ -440,6 +447,126 @@ class FormatCommandTests(unittest.TestCase):
             self.assertIn(str(path), result.stderr)
             self.assertEqual(path.read_text(encoding="utf-8"), original)
             self.assertEqual(path.stat().st_mode, mode)
+
+    def run_tool_input(self, text, *args, cwd=None):
+        return subprocess.run(
+            [str(self.args.cwhip_format), *args],
+            input=text,
+            text=True,
+            capture_output=True,
+            check=False,
+            cwd=cwd,
+        )
+
+    def test_dry_run_exits_nonzero_only_when_text_would_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "sample.cw"
+            original = "start { print(1) }\n"
+            path.write_text(original, encoding="utf-8")
+            before = path.stat().st_mtime_ns
+            dirty = self.run_tool("--dry-run", str(path))
+            self.assertEqual(dirty.returncode, 1)
+            self.assertEqual(dirty.stdout, "")
+            self.assertEqual(dirty.stderr, f"{path}:1:1: code should be cwhip-formatted\n")
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            self.assertEqual(path.stat().st_mtime_ns, before)
+            held = self.run_tool("-i", "--dry-run", str(path))
+            self.assertEqual(held.returncode, 1)
+            self.assertEqual(held.stdout, "")
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            rewritten = self.run_tool("-i", str(path))
+            self.assertEqual(rewritten.returncode, 0, rewritten.stderr)
+            formatted = path.read_text(encoding="utf-8")
+            self.assertNotEqual(formatted, original)
+            clean = self.run_tool("--dry-run", str(path))
+            self.assertEqual(clean.returncode, 0, clean.stderr)
+            self.assertEqual(clean.stdout, "")
+            self.assertEqual(clean.stderr, "")
+            self.assertEqual(path.read_text(encoding="utf-8"), formatted)
+            failed = self.run_tool("--dry-run", str(Path(directory) / "bad.cw"))
+            bad = Path(directory) / "joined.cw"
+            bad.write_text("start {\n    print(1) print(2)\n}\n", encoding="utf-8")
+            grouped = self.run_tool("--dry-run", str(bad))
+            self.assertEqual(grouped.returncode, 1)
+            self.assertEqual(grouped.stdout, "")
+            self.assertIn("expected newline after statement", grouped.stderr)
+            self.assertNotIn("code should be cwhip-formatted", grouped.stderr)
+            self.assertEqual(bad.read_text(encoding="utf-8"), "start {\n    print(1) print(2)\n}\n")
+            self.assertEqual(failed.returncode, 1)
+            self.assertIn("cannot read file", failed.stderr)
+
+    def test_stdin_formats_and_refuses_in_place(self):
+        original = "start { print(1) }\n"
+        formatted = "start {\n    print(1)\n}\n"
+        result = self.run_tool_input(original, "-")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, formatted)
+        self.assertEqual(result.stderr, "")
+        again = self.run_tool_input(formatted, "-")
+        self.assertEqual(again.returncode, 0, again.stderr)
+        self.assertEqual(again.stdout, formatted)
+        refused = self.run_tool_input(original, "-i", "-")
+        self.assertEqual(refused.returncode, 1)
+        self.assertEqual(refused.stdout, "")
+        self.assertEqual(refused.stderr, "-:1:1: cannot rewrite standard input in place\n")
+        dry = self.run_tool_input(original, "--dry-run", "-")
+        self.assertEqual(dry.returncode, 1)
+        self.assertEqual(dry.stdout, "")
+        self.assertEqual(dry.stderr, "-:1:1: code should be cwhip-formatted\n")
+        clean = self.run_tool_input(formatted, "--dry-run", "-")
+        self.assertEqual(clean.returncode, 0, clean.stderr)
+        self.assertEqual(clean.stdout, "")
+        self.assertEqual(clean.stderr, "")
+
+    def test_line_range_formats_only_the_selected_statement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "sample.cw"
+            original = "start {\n    value=1\n    other=2\n}\n"
+            path.write_text(original, encoding="utf-8")
+            middle = self.run_tool("--lines", "3:3", str(path))
+            self.assertEqual(middle.returncode, 0, middle.stderr)
+            self.assertEqual(middle.stdout, "start {\n    value=1\n    other = 2\n}\n")
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            first = self.run_tool("--lines", "2:2", str(path))
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertEqual(first.stdout, "start {\n    value = 1\n    other=2\n}\n")
+            header = self.run_tool("--lines", "1:1", str(path))
+            self.assertEqual(header.returncode, 0, header.stderr)
+            self.assertEqual(header.stdout, original)
+            invalid = self.run_tool("--lines", "3:1", str(path))
+            self.assertEqual(invalid.returncode, 2)
+            self.assertEqual(invalid.stdout, "")
+            self.assertEqual(invalid.stderr, "invalid line range: 3:1\n")
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            missing = self.run_tool("--lines", "2", str(path))
+            self.assertEqual(missing.returncode, 2)
+            self.assertIn("invalid line range: 2\n", missing.stderr)
+            long_call = (
+                "start {\n"
+                "    print(alpha, beta, gamma, delta, epsilon, zeta, eta, theta, iota, kappa, "
+                "lambda, mu)\n"
+                "    value=1\n"
+                "}\n"
+            )
+            path.write_text(long_call, encoding="utf-8")
+            call = self.run_tool("--lines", "2:2", str(path))
+            self.assertEqual(call.returncode, 0, call.stderr)
+            self.assertIn("\n            alpha,\n", call.stdout)
+            self.assertIn("    value=1\n", call.stdout)
+            self.assertNotIn("value = 1", call.stdout)
+            assignment = self.run_tool("--lines", "3:3", str(path))
+            self.assertEqual(assignment.returncode, 0, assignment.stderr)
+            self.assertIn("print(alpha, beta, gamma", assignment.stdout)
+            self.assertIn("    value = 1\n", assignment.stdout)
+            self.assertNotIn("\n            alpha,\n", assignment.stdout)
+            dry_clean = self.run_tool("--dry-run", "--lines", "1:1", str(path))
+            self.assertEqual(dry_clean.returncode, 0, dry_clean.stderr)
+            self.assertEqual(dry_clean.stdout, "")
+            dry_dirty = self.run_tool("--dry-run", "--lines", "3:3", str(path))
+            self.assertEqual(dry_dirty.returncode, 1)
+            self.assertEqual(dry_dirty.stdout, "")
+            self.assertEqual(dry_dirty.stderr, f"{path}:1:1: code should be cwhip-formatted\n")
+            self.assertEqual(path.read_text(encoding="utf-8"), long_call)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,8 @@
  * @brief Reprint, then indent, short blocks, column wrapping, and long-control blanks.
  *
  * An unset open key does not insert or remove a break, a brace newline, a space
- * before '(', or a comment-pragma exemption.
+ * before '(', or a comment-pragma exemption. Spacing around operators, commas,
+ * '{', and the inside of '()', '[]', and '<>' is normalized on every file.
  */
 #include "cwhip/format/Style.hpp"
 #include "cwhip/format/UnwrappedLine.hpp"
@@ -219,8 +220,9 @@ std::size_t matchingBrace(const std::vector<FormatToken>& tokens, std::size_t op
 class Printer {
 public:
     Printer(std::string_view sourceText, const std::vector<FormatToken>& tokenList,
-            const UnwrapResult& parsed, const Style& active)
-        : source_(sourceText), tokens_(tokenList), unwrapped_(parsed), style_(active) {
+            const UnwrapResult& parsed, const Style& active, int firstLine, int lastLine)
+        : source_(sourceText), tokens_(tokenList), unwrapped_(parsed), style_(active),
+          firstLine_(firstLine), lastLine_(lastLine) {
         if (style_.commentPragmas && !style_.commentPragmas->empty()) {
             try {
                 pragma_ = std::regex(*style_.commentPragmas);
@@ -231,6 +233,7 @@ public:
     }
 
     std::string run() const {
+        selectLines();
         Breaks breaks;
         plan(breaks);
         auto lines = emit(breaks);
@@ -249,9 +252,51 @@ private:
     const std::vector<FormatToken>& tokens_;
     const UnwrapResult& unwrapped_;
     const Style& style_;
+    int firstLine_ = 0;
+    int lastLine_ = 0;
+    /// Empty means every token. Otherwise 1 marks a token the range reformats.
+    mutable std::vector<char> selected_;
     std::optional<std::regex> pragma_;
 
     const TokenAnnotation& note(std::size_t index) const { return unwrapped_.annotations[index]; }
+
+    void selectLines() const {
+        selected_.clear();
+        if (firstLine_ <= 0 || lastLine_ < firstLine_) return;
+        selected_.assign(tokens_.size(), 0);
+        // A token sits in every enclosing unwrapped line. The statement to
+        // reformat is the innermost one that intersects the range.
+        std::vector<int> owner(tokens_.size(), -1);
+        for (std::size_t lineIndex = 0; lineIndex < unwrapped_.lines.size(); ++lineIndex) {
+            const auto& line = unwrapped_.lines[lineIndex];
+            const auto span = line.end > line.begin ? line.end - line.begin : 0;
+            for (std::size_t index = line.begin; index < line.end && index < owner.size(); ++index) {
+                if (owner[index] < 0) {
+                    owner[index] = static_cast<int>(lineIndex);
+                    continue;
+                }
+                const auto& current = unwrapped_.lines[static_cast<std::size_t>(owner[index])];
+                const auto currentSpan = current.end - current.begin;
+                if (span < currentSpan) owner[index] = static_cast<int>(lineIndex);
+            }
+        }
+        std::vector<char> lineHit(unwrapped_.lines.size(), 0);
+        for (std::size_t index = 0; index < tokens_.size(); ++index) {
+            const int line = static_cast<int>(tokens_[index].location.line);
+            if (line < firstLine_ || line > lastLine_) continue;
+            if (owner[index] >= 0) lineHit[static_cast<std::size_t>(owner[index])] = 1;
+            else selected_[index] = 1;
+        }
+        for (std::size_t index = 0; index < tokens_.size(); ++index) {
+            if (owner[index] >= 0 && lineHit[static_cast<std::size_t>(owner[index])]) {
+                selected_[index] = 1;
+            }
+        }
+    }
+
+    bool inRange(std::size_t index) const {
+        return selected_.empty() || (index < selected_.size() && selected_[index] != 0);
+    }
 
     bool pragmaMatches(std::string_view comment) const {
         if (!pragma_) return false;
@@ -437,6 +482,7 @@ private:
             if (lineWidth(start, index, breaks) <= limit) continue;
             if (breakList(start, index, breaks, limit)) return true;
             if (breakOperator(start, index, breaks, limit)) return true;
+            if (breakBeforeFrom(start, index, breaks)) return true;
         }
         return false;
     }
@@ -446,34 +492,7 @@ private:
         bool first = true;
         for (std::size_t index = begin; index < end; ++index) {
             if (tokens_[index].type == TokenType::Newline) continue;
-            if (!first && breaks.attach[index]) {
-                column += 1;
-                std::size_t trivia = 0;
-                while (trivia < tokens_[index].leading.size() &&
-                       horizontal(tokens_[index].leading[trivia].kind)) {
-                    ++trivia;
-                }
-                for (; trivia < tokens_[index].leading.size(); ++trivia) {
-                    column += columns(tokens_[index].leading[trivia].text);
-                }
-            } else if (!first) {
-                for (const auto& trivia : tokens_[index].leading) column += columns(trivia.text);
-            } else {
-                const bool skip = !note(index).rawLine && !note(index).preserveIndent &&
-                                  (note(index).reindent || breaks.before[index] ||
-                                   note(index).isCloseBrace || note(index).isOpenBrace ||
-                                   breaks.wrap[index]);
-                std::size_t trivia = 0;
-                if (skip) {
-                    while (trivia < tokens_[index].leading.size() &&
-                           horizontal(tokens_[index].leading[trivia].kind)) {
-                        ++trivia;
-                    }
-                }
-                for (; trivia < tokens_[index].leading.size(); ++trivia) {
-                    column += columns(tokens_[index].leading[trivia].text);
-                }
-            }
+            column += beforeLexemeColumns(index, first, !first && breaks.attach[index]);
             first = false;
             if (tokens_[index].type == TokenType::InlineBody) column += 2;
             column += columns(tokens_[index].lexeme);
@@ -520,12 +539,7 @@ private:
         std::vector<std::size_t> at(tokens_.size(), 0);
         for (std::size_t index = begin; index < end; ++index) {
             if (tokens_[index].type == TokenType::Newline) continue;
-            if (!first) {
-                if (breaks.attach[index]) column += 1;
-                else {
-                    for (const auto& trivia : tokens_[index].leading) column += columns(trivia.text);
-                }
-            }
+            column += beforeLexemeColumns(index, first, !first && breaks.attach[index]);
             first = false;
             at[index] = column;
             if (tokens_[index].type == TokenType::InlineBody) column += 2;
@@ -594,9 +608,7 @@ private:
         bool first = true;
         for (std::size_t index = begin; index < end; ++index) {
             if (tokens_[index].type == TokenType::Newline) continue;
-            if (!first) {
-                for (const auto& trivia : tokens_[index].leading) column += columns(trivia.text);
-            }
+            column += beforeLexemeColumns(index, first, false);
             first = false;
             const bool op = note(index).binaryOperator && note(index).parenDepthBefore > 0 &&
                             !note(index).forbidWrap;
@@ -624,6 +636,17 @@ private:
         return true;
     }
 
+    bool breakBeforeFrom(std::size_t begin, std::size_t end, Breaks& breaks) const {
+        for (std::size_t index = begin; index < end; ++index) {
+            if (tokens_[index].type != TokenType::From) continue;
+            if (note(index).parenDepthBefore != 0 || note(index).forbidWrap) continue;
+            if (breaks.before[index]) return false;
+            breaks.before[index] = true;
+            return true;
+        }
+        return false;
+    }
+
     std::vector<OutLine> emit(const Breaks& breaks) const {
         std::vector<OutLine> lines;
         std::string current;
@@ -632,6 +655,8 @@ private:
         bool atLineStart = true;
         bool sourceLineStart = true;
         std::size_t lineByte = 0;
+        std::size_t rawCursor = 0;
+        const bool ranged = !selected_.empty();
         BlockCursor cursor;
         auto finish = [&](bool terminated) {
             OutLine line;
@@ -648,9 +673,40 @@ private:
         auto releaseCursor = [&](std::size_t index) {
             if (cursor.active && index == cursor.endToken) cursor.active = false;
         };
+        auto copyOriginal = [&](std::size_t index) {
+            const auto& token = tokens_[index];
+            const auto end = token.type == TokenType::End ? source_.size() : token.end;
+            if (end < rawCursor || rawCursor > source_.size()) return;
+            const auto stop = std::min(end, source_.size());
+            const std::string chunk(source_.substr(rawCursor, stop - rawCursor));
+            rawCursor = stop;
+            std::size_t start = 0;
+            for (std::size_t cursor = 0; cursor < chunk.size(); ++cursor) {
+                if (chunk[cursor] != '\n') continue;
+                current.append(chunk, start, cursor - start);
+                if (first == kNone) first = index;
+                last = index;
+                finish(true);
+                start = cursor + 1;
+            }
+            if (start < chunk.size()) {
+                current.append(chunk, start, chunk.size() - start);
+                if (first == kNone) first = index;
+                last = index;
+                atLineStart = false;
+            }
+            sourceLineStart = atLineStart;
+        };
         for (std::size_t index = 0; index < tokens_.size(); ++index) {
             if (cursor.active && index < cursor.endToken) continue;
             const auto& token = tokens_[index];
+            if (ranged && !inRange(index)) {
+                copyOriginal(index);
+                if (token.type == TokenType::End) break;
+                if (token.type == TokenType::Newline) lineByte = token.end;
+                continue;
+            }
+            if (ranged) rawCursor = token.type == TokenType::End ? source_.size() : token.end;
             if (token.type == TokenType::End) {
                 appendTrivia(current, index, false, false, breaks, cursor);
                 break;
@@ -667,8 +723,10 @@ private:
                 finish(terminated);
                 if (terminated) {
                     lineByte = tokens_[newline].end;
+                    rawCursor = lineByte;
                     index = newline;
                 } else {
+                    rawCursor = source_.size();
                     index = tokens_.size() - 1;
                 }
                 sourceLineStart = true;
@@ -789,6 +847,176 @@ private:
         return true;
     }
 
+    std::size_t previousCodeIndex(std::size_t index) const {
+        while (index > 0) {
+            --index;
+            if (tokens_[index].type != TokenType::Newline && tokens_[index].type != TokenType::End) {
+                return index;
+            }
+        }
+        return kNone;
+    }
+
+    bool operandBefore(std::size_t index) const {
+        const auto previous = previousCodeIndex(index);
+        if (previous == kNone) return false;
+        switch (tokens_[previous].type) {
+        case TokenType::Identifier:
+        case TokenType::Integer:
+        case TokenType::UnsignedInteger:
+        case TokenType::Float:
+        case TokenType::String:
+        case TokenType::True:
+        case TokenType::False:
+        case TokenType::Null:
+        case TokenType::RightParen:
+        case TokenType::RightBracket:
+        case TokenType::RightBrace:
+            return true;
+        case TokenType::Greater:
+        case TokenType::ShiftRight:
+            return note(previous).genericDelimiter;
+        default:
+            return false;
+        }
+    }
+
+    bool wordNot(std::size_t index) const {
+        return tokens_[index].type == TokenType::Bang && tokens_[index].lexeme == "not";
+    }
+
+    bool tightUnary(std::size_t index) const {
+        const auto type = tokens_[index].type;
+        if (type == TokenType::Tilde) return true;
+        if (type == TokenType::Bang && tokens_[index].lexeme != "not") return true;
+        if ((type == TokenType::Plus || type == TokenType::Minus) && !operandBefore(index)) return true;
+        return false;
+    }
+
+    bool spacedOperator(std::size_t index) const {
+        if (note(index).genericDelimiter) return false;
+        switch (tokens_[index].type) {
+        case TokenType::Equal:
+        case TokenType::PlusEqual:
+        case TokenType::MinusEqual:
+        case TokenType::StarEqual:
+        case TokenType::SlashEqual:
+        case TokenType::PercentEqual:
+        case TokenType::AmpersandEqual:
+        case TokenType::PipeEqual:
+        case TokenType::CaretEqual:
+        case TokenType::ShiftLeftEqual:
+        case TokenType::ShiftRightEqual:
+        case TokenType::EqualEqual:
+        case TokenType::BangEqual:
+        case TokenType::LessEqual:
+        case TokenType::GreaterEqual:
+        case TokenType::Star:
+        case TokenType::Slash:
+        case TokenType::Percent:
+        case TokenType::Ampersand:
+        case TokenType::Pipe:
+        case TokenType::Caret:
+        case TokenType::ShiftLeft:
+        case TokenType::ShiftRight:
+        case TokenType::AndAnd:
+        case TokenType::OrOr:
+        case TokenType::And:
+        case TokenType::Or:
+        case TokenType::In:
+        case TokenType::Is:
+            return true;
+        case TokenType::Plus:
+        case TokenType::Minus:
+        case TokenType::Less:
+        case TokenType::Greater:
+            return operandBefore(index);
+        default:
+            return false;
+        }
+    }
+
+    /// -1 keeps the source gap. Zero or more replaces it.
+    int forcedGap(std::size_t index) const {
+        const auto previous = previousCodeIndex(index);
+        if (previous == kNone) return -1;
+        const auto current = tokens_[index].type;
+        const auto prior = tokens_[previous].type;
+        if (current == TokenType::RightParen || current == TokenType::RightBracket) return 0;
+        if (note(index).genericDelimiter) return 0;
+        if (prior == TokenType::LeftParen || prior == TokenType::LeftBracket) return 0;
+        if (note(previous).genericDelimiter && prior == TokenType::Less) return 0;
+        if (current == TokenType::Comma) return 0;
+        if (prior == TokenType::Comma) {
+            if (current == TokenType::RightParen || current == TokenType::RightBracket ||
+                note(index).genericDelimiter) {
+                return 0;
+            }
+            return 1;
+        }
+        if (current == TokenType::LeftBrace) return 1;
+        if (current == TokenType::DotDot || prior == TokenType::DotDot) return 0;
+        if (spacedOperator(index) || spacedOperator(previous)) return 1;
+        if (wordNot(previous) ) return 1;
+        if (tightUnary(previous)) return 0;
+        return -1;
+    }
+
+    bool commentAfter(const std::vector<FormatTrivia>& leading, std::size_t trivia) const {
+        for (std::size_t index = trivia + 1; index < leading.size(); ++index) {
+            const auto kind = leading[index].kind;
+            if (kind == FormatTriviaKind::LineComment || kind == FormatTriviaKind::BlockComment) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool hasComment(const std::vector<FormatTrivia>& leading) const {
+        return commentAfter(leading, static_cast<std::size_t>(-1));
+    }
+
+    std::size_t beforeLexemeColumns(std::size_t index, bool atLineStart, bool attach) const {
+        const int gap = atLineStart ? -1 : forcedGap(index);
+        bool force = gap >= 0 && !attach;
+        std::size_t total = attach ? 1 : (force ? static_cast<std::size_t>(gap) : 0);
+        bool skippingGap = force || atLineStart;
+        bool skippingIndent = false;
+        bool sawComment = false;
+        bool countedSourceGap = false;
+        for (const auto& trivia : tokens_[index].leading) {
+            if (trivia.kind == FormatTriviaKind::Newline) {
+                if (style_.columnLimit > 0) {
+                    skippingIndent = true;
+                    continue;
+                }
+                total += columns(trivia.text);
+                skippingGap = false;
+                force = false;
+                continue;
+            }
+            if (skippingIndent && horizontal(trivia.kind)) continue;
+            skippingIndent = false;
+            if (!sawComment && horizontal(trivia.kind)) {
+                if (skippingGap || force) continue;
+                if (!countedSourceGap && !atLineStart && !attach) {
+                    total += columns(trivia.text);
+                    countedSourceGap = true;
+                }
+                continue;
+            }
+            if (!horizontal(trivia.kind)) {
+                sawComment = true;
+                skippingGap = false;
+                total += columns(trivia.text);
+                continue;
+            }
+            if (force && !sawComment) continue;
+            total += columns(trivia.text);
+        }
+        return total;
+    }
+
     void appendTrivia(std::string& current, std::size_t index, bool atLineStart, bool wrap,
                       const Breaks& breaks, BlockCursor& cursor) const {
         const auto& token = tokens_[index];
@@ -799,20 +1027,9 @@ private:
                              !annotation.preserveIndent &&
                              (annotation.reindent || breaks.before[index] || annotation.isCloseBrace ||
                               annotation.isOpenBrace || wrap);
-        std::size_t triviaIndex = 0;
-        if (replace || attach) {
-            while (triviaIndex < token.leading.size() && horizontal(token.leading[triviaIndex].kind)) {
-                ++triviaIndex;
-            }
-        }
-        if (replace) {
-            const bool commentFirst = triviaIndex == 0 && triviaIndex < token.leading.size() &&
-                                      token.leading[triviaIndex].kind == FormatTriviaKind::BlockComment;
-            if (!commentFirst) current.append(static_cast<std::size_t>(indentSpaces(index, wrap)), ' ');
-        } else if (attach) {
-            if (current.empty() || current.back() != ' ') current.push_back(' ');
-        }
-
+        const bool commentLine = atLineStart && token.type == TokenType::Newline &&
+                                 !annotation.rawLine && !annotation.preserveIndent &&
+                                 hasComment(token.leading);
         const bool adjust = token.type == TokenType::LeftParen && style_.spaceBeforeParens &&
                             !atLineStart && !attach;
         enum class ParenSpace { Keep, Drop, Force };
@@ -825,19 +1042,59 @@ private:
             else if (isCallLike(previous)) paren = ParenSpace::Drop;
             else if (leaveParenSpace(previous)) paren = ParenSpace::Keep;
         }
+        int gap = forcedGap(index);
+        // A requested paren space wins over the space an operator would take.
+        if (paren == ParenSpace::Drop) gap = 0;
+        const bool force = gap >= 0 && !atLineStart && !attach && token.type != TokenType::Newline &&
+                           token.type != TokenType::End;
+        std::size_t triviaIndex = 0;
+        if (replace || attach || commentLine || force) {
+            while (triviaIndex < token.leading.size() && horizontal(token.leading[triviaIndex].kind)) {
+                ++triviaIndex;
+            }
+        }
+        if (replace || commentLine) {
+            const bool commentFirst = !commentLine && triviaIndex < token.leading.size() &&
+                                      token.leading[triviaIndex].kind == FormatTriviaKind::BlockComment;
+            if (!commentFirst) {
+                current.append(static_cast<std::size_t>(indentSpaces(index, wrap && !commentLine)), ' ');
+            }
+        } else if (attach) {
+            if (current.empty() || current.back() != ' ') current.push_back(' ');
+        }
 
+        bool skippingIndent = false;
+        bool sawComment = false;
+        bool brokeLine = false;
         for (; triviaIndex < token.leading.size(); ++triviaIndex) {
             if (cursor.active && index < cursor.endToken) continue;
             if (cursor.active && index == cursor.endToken && triviaIndex <= cursor.endTrivia) {
                 continue;
             }
             const auto& trivia = token.leading[triviaIndex];
+            if (trivia.kind == FormatTriviaKind::Newline && style_.columnLimit > 0) {
+                skippingIndent = true;
+                if (sawComment) {
+                    current.push_back('\n');
+                    const bool cont = wrap || annotation.parenDepthBefore > 0;
+                    current.append(static_cast<std::size_t>(indentSpaces(index, cont)), ' ');
+                    brokeLine = true;
+                }
+                continue;
+            }
+            if (skippingIndent && horizontal(trivia.kind)) continue;
+            skippingIndent = false;
             if (paren != ParenSpace::Keep && horizontal(trivia.kind)) continue;
+            if ((token.type == TokenType::Newline || token.type == TokenType::End) &&
+                horizontal(trivia.kind) && !commentAfter(token.leading, triviaIndex)) {
+                continue;
+            }
             if (trivia.kind == FormatTriviaKind::LineComment && !pragmaMatches(trivia.text) &&
                 style_.reflowComments && style_.columnLimit > 0) {
                 const auto used = columns(current) + columns(trivia.text);
                 if (used > static_cast<std::size_t>(style_.columnLimit)) {
                     reflow(current, trivia.text, atLineStart);
+                    sawComment = true;
                     continue;
                 }
             }
@@ -848,10 +1105,24 @@ private:
                     cursor.active = true;
                     cursor.endToken = range.endToken;
                     cursor.endTrivia = range.endTrivia;
+                    sawComment = true;
                     continue;
                 }
             }
+            if (trivia.kind == FormatTriviaKind::LineComment ||
+                trivia.kind == FormatTriviaKind::BlockComment) {
+                sawComment = true;
+            }
             current += trivia.text;
+            if (trivia.kind == FormatTriviaKind::Newline) brokeLine = true;
+        }
+        // A comment keeps the space that follows it. A newline keeps the
+        // indent after it. Otherwise the forced gap replaces the source gap.
+        if (force && !brokeLine && !sawComment) {
+            while (!current.empty() && current.back() == ' ') current.pop_back();
+            if (gap > 0) current.append(static_cast<std::size_t>(gap), ' ');
+        } else if (sawComment && gap > 0 && (current.empty() || current.back() != ' ')) {
+            current.push_back(' ');
         }
         if (paren == ParenSpace::Force && (current.empty() || current.back() != ' ')) {
             current.push_back(' ');
@@ -1011,8 +1282,9 @@ private:
 } // namespace
 
 std::string printFormatted(std::string_view source, const std::vector<FormatToken>& tokens,
-                           const UnwrapResult& unwrapped, const Style& style) {
-    return Printer(source, tokens, unwrapped, style).run();
+                           const UnwrapResult& unwrapped, const Style& style, int firstLine,
+                           int lastLine) {
+    return Printer(source, tokens, unwrapped, style, firstLine, lastLine).run();
 }
 
 } // namespace cwhip

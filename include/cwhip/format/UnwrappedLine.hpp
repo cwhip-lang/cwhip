@@ -41,6 +41,9 @@ struct TokenAnnotation {
     bool rawLine = false;
     bool listOpen = false;
     bool forbidWrap = false;
+    /// This `<`, `>`, or `>>` closes or opens a type argument list.
+    /// Comparisons use the same tokens and are not marked.
+    bool genericDelimiter = false;
     /// Parenthesis depth before this token. () and [] count together.
     int parenDepthBefore = 0;
     bool binaryOperator = false;
