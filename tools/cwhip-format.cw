@@ -7,6 +7,7 @@
  * Changelog:
  *   2026-11-13  Initial file.
  *   2026-11-15  Apply the Cwhip coding standard.
+ *   2026-11-15  Print in-place file names with -v.
  */
 
 import cli as Cli
@@ -84,6 +85,13 @@ start {
     inPlace.description = "Rewrite each file in place"
     command.addOption(inPlace)
 
+    Cli.Option verbose = Cli.Option()
+    verbose.shortName = "v"
+    verbose.longName = "verbose"
+    verbose.name = "verbose"
+    verbose.description = "Print each file name when rewriting in place"
+    command.addOption(verbose)
+
     Cli.Option dumpConfig = Cli.Option()
     dumpConfig.longName = "dump-config"
     dumpConfig.name = "dump-config"
@@ -122,16 +130,21 @@ start {
     }
 
     bool rewrite = command.switchValue("in-place")
+    bool showNames = command.switchValue("verbose")
     list files = command.allPositionalValues()
     int64 index = 0
     int64 status = 0
     while (index < files.length) {
         String path = files[index] as String
+        if (rewrite and showNames) {
+            Sys.System().io().writeErrorLine(path)
+        }
         int64 result = tool.formatFile(path, "", rewrite)
         if (result != 0) {
             status = 1
         }
         index = index + 1
     }
+
     Sys.System().exit(status)
 }

@@ -36,6 +36,9 @@ class FormatCommandTests(unittest.TestCase):
                 result.stdout.startswith("Usage: cwhip-format [options] <file...>"),
                 result.stdout)
             self.assertIn("-i, --in-place", result.stdout)
+            self.assertIn(
+                "-v, --verbose\tPrint each file name when rewriting in place",
+                result.stdout)
             self.assertIn("      --dump-config\tWrite the built-in default configuration",
                           result.stdout)
             self.assertNotIn("-d, --dump-config", result.stdout)
@@ -155,6 +158,50 @@ class FormatCommandTests(unittest.TestCase):
             self.assertEqual(result.stdout, "start {\n    print(1)\n}\nstart {\n    print(2)\n}\n")
             self.assertEqual((first.read_bytes(), second.read_bytes()), before)
             self.assertEqual((first.stat().st_mtime_ns, second.stat().st_mtime_ns), mtimes)
+
+    def test_verbose_prints_in_place_names(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first = Path(directory) / "first.cw"
+            second = Path(directory) / "second.cw"
+            first.write_text("start { print(1) }\n", encoding="utf-8")
+            second.write_text("start { print(2) }\n", encoding="utf-8")
+            quiet = self.run_tool("-i", str(first), str(second))
+            self.assertEqual(quiet.returncode, 0, quiet.stderr)
+            self.assertEqual(quiet.stdout, "")
+            self.assertEqual(quiet.stderr, "")
+            self.assertNotIn("first.cw", quiet.stdout)
+            self.assertNotIn("second.cw", quiet.stdout)
+            self.assertEqual(
+                first.read_text(encoding="utf-8"),
+                "start {\n    print(1)\n}\n")
+            self.assertEqual(
+                second.read_text(encoding="utf-8"),
+                "start {\n    print(2)\n}\n")
+            loud = self.run_tool("-v", "--in-place", str(first), str(second))
+            self.assertEqual(loud.returncode, 0, loud.stderr)
+            self.assertEqual(loud.stdout, "")
+            self.assertEqual(loud.stderr, f"{first}\n{second}\n")
+            self.assertEqual(
+                first.read_text(encoding="utf-8"),
+                "start {\n    print(1)\n}\n")
+            long_form = self.run_tool("--verbose", "-i", str(first))
+            self.assertEqual(long_form.returncode, 0, long_form.stderr)
+            self.assertEqual(long_form.stdout, "")
+            self.assertEqual(long_form.stderr, f"{first}\n")
+            shown = self.run_tool("-v", str(first), str(second))
+            self.assertEqual(shown.returncode, 0, shown.stderr)
+            self.assertEqual(shown.stderr, "")
+            self.assertNotIn(str(first), shown.stdout)
+            self.assertNotIn("first.cw", shown.stdout)
+            self.assertEqual(
+                shown.stdout,
+                "start {\n    print(1)\n}\nstart {\n    print(2)\n}\n")
+            missing = Path(directory) / "missing.cw"
+            failed = self.run_tool("-v", "-i", str(missing))
+            self.assertEqual(failed.returncode, 1)
+            self.assertEqual(failed.stdout, "")
+            self.assertTrue(failed.stderr.startswith(f"{missing}\n"), failed.stderr)
+            self.assertIn("cannot read file", failed.stderr)
 
     def test_in_place_rewrites_once(self):
         with tempfile.TemporaryDirectory() as directory:

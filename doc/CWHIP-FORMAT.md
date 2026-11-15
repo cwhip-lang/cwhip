@@ -17,6 +17,7 @@ cwhip-format [options] <file...>
 | `-h`, `--help` | Print the usage text to standard output and exit 0. |
 | `-V`, `--version` | Print `cwhip-format: v` plus the version, and exit 0. The version is the one `cwhip --version` prints after `cwhip: v`. |
 | `-i`, `--in-place` | Rewrite each file in place. |
+| `-v`, `--verbose` | With `-i`, print each file's name to standard error. Without `-i`, print nothing. |
 | `--dump-config` | Write the built-in configuration to standard output and exit 0. There is no short name. |
 
 `--help` and `--version` stop the command at that flag, so a file list is not required. `--dump-config` still reads the rest of the command line: an unknown option is an error, and any file names are not opened.
@@ -28,6 +29,8 @@ With no action flag, at least one file is required.
 Without `-i`, the tool writes the formatted text of each file to standard output, in the order given, with nothing added between files. The source files stay as they are, including their modification times.
 
 With `-i` or `--in-place`, standard output stays empty on success and each file is replaced with its formatted text. A file whose formatted text is already the same as its contents is left untouched, so its modification time does not change. A file that does change is written to `path.cwhip-format-tmp` and then renamed onto `path`. That temporary file is removed after a successful replace, and also if the write or the rename fails. A failed replace leaves the original file in place.
+
+With `-v` or `--verbose` and `-i`, each file's path is written to standard error before that file is formatted. The path is one line, in the order given, exactly as it appears on the command line. A name is printed whether or not the text changes, and also when that file fails. Standard output stays empty on success. Without `-i`, `-v` prints nothing, so the formatted text on standard output is unchanged. Without `-v`, an in-place run stays quiet.
 
 ### `--dump-config`
 
@@ -50,6 +53,7 @@ Options:
   -h, --help	Print this helpful information
   -V, --version	Show the program version
   -i, --in-place	Rewrite each file in place
+  -v, --verbose	Print each file name when rewriting in place
       --dump-config	Write the built-in default configuration
   file	Cwhip source file (required)
 ```
