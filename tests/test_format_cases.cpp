@@ -965,6 +965,83 @@ const TestGroupRegistration registration{50, {
                      "NewlineBeforeElse: true\n") != std::string::npos,
                  "dump comment");
      }},
+    {"an else clause resets indent", [] {
+         const std::string flat =
+             "start {\n"
+             "    if (left) { print(1) }\n"
+             "    else { if (middle) { print(2) }\n"
+             "    else { if (right) { print(3) }\n"
+             "    else { print(4) } } }\n"
+             "}\n";
+         const std::string reset =
+             "start {\n"
+             "    if (left) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    else {\n"
+             "        if (middle) {\n"
+             "            print(2)\n"
+             "        }\n"
+             "        else {\n"
+             "            if (right) {\n"
+             "                print(3)\n"
+             "            }\n"
+             "            else {\n"
+             "                print(4)\n"
+             "            }\n"
+             "        }\n"
+             "    }\n"
+             "}\n";
+         auto quiet = cwhip::builtinStyle();
+         quiet.blankLinesAroundLongControlStatement = false;
+         require(formatted(flat, quiet) == reset, formatted(flat, quiet));
+         expectSame(reset, quiet);
+         const std::string withBlanks =
+             "start {\n"
+             "\n"
+             "    if (left) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    else {\n"
+             "\n"
+             "        if (middle) {\n"
+             "            print(2)\n"
+             "        }\n"
+             "        else {\n"
+             "            if (right) {\n"
+             "                print(3)\n"
+             "            }\n"
+             "            else {\n"
+             "                print(4)\n"
+             "            }\n"
+             "        }\n"
+             "\n"
+             "    }\n"
+             "\n"
+             "}\n";
+         require(formatted(flat) == withBlanks, formatted(flat));
+         expectSame(withBlanks);
+         const std::string over =
+             "start {\n"
+             "    if (left) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "            else {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         const std::string aligned =
+             "start {\n"
+             "    if (left) {\n"
+             "        print(1)\n"
+             "    }\n"
+             "    else {\n"
+             "        print(2)\n"
+             "    }\n"
+             "}\n";
+         require(formatted(over) == aligned, formatted(over));
+         expectSame(aligned);
+     }},
     {"newline before except follows its own key", [] {
          const std::string chain =
              "start {\n"

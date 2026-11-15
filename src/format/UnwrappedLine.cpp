@@ -421,15 +421,15 @@ private:
             std::size_t look = index_;
             while (look < tokens_.size() && tokens_[look].type == TokenType::Newline) ++look;
             if (look >= tokens_.size() || tokens_[look].type != TokenType::Else) break;
-            int between = 0;
             while (is(TokenType::Newline)) {
-                ++between;
                 markNewline(NewlineKind::Free);
                 advance();
             }
+            // Else takes the block indent of its if. Keeping the source column
+            // leaves a nested else in place while the next if adds another indent.
             annotations_[index_].isElse = true;
-            annotations_[index_].preserveIndent = between > 0;
-            annotations_[index_].reindent = between == 0;
+            annotations_[index_].preserveIndent = false;
+            annotations_[index_].reindent = true;
             advance();
             if (is(TokenType::If)) {
                 fail("else if is not a statement");
