@@ -1,19 +1,73 @@
+/*
+ * tests/functional/positive/positive_inline_fields.cw — Checks inline fields.
+ *
+ * Created: 2026-10-04
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-04  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Primary is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Primary {
     protected:
     int64 primary
     public:
-    Primary() { primary = 10 }
+    /*
+     * Constructs a Primary and stores primary.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Primary.
+     */
+    Primary() {
+        primary = 10
+    }
 }
 
+/*
+ * Secondary is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, updateSecondary.
+ */
 class Secondary {
     public:
     int64 secondary
-    Secondary() { secondary = 20 }
+
+    /*
+     * Constructs a Secondary and stores secondary.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Secondary.
+     */
+    Secondary() {
+        secondary = 20
+    }
+
+    /*
+     * Runs inline C while handling update secondary.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void updateSecondary() {
         inline (int64 secondary) { *secondary += 1; }
     }
 }
 
+/*
+ * Fields is a class derived from Primary, Secondary, used as a fixture by this
+ * test.
+ *
+ * Its methods include constructor, update, read, shadowLocal, store.
+ */
 class Fields : Primary, Secondary {
     private:
     int64 own
@@ -21,6 +75,13 @@ class Fields : Primary, Secondary {
     buffer bytes
     Root saved
     public:
+    /*
+     * Constructs a Fields and stores own, text, bytes.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Fields.
+     */
     Fields() {
         super Primary()
         super Secondary()
@@ -30,6 +91,15 @@ class Fields : Primary, Secondary {
             *bytes = cwhip_random_bytes(NULL, 2);
         }
     }
+
+    /*
+     * Runs inline C while handling update.
+     *
+     * Parameters:
+     *   own — int64 own.
+     *
+     * Does not return a value.
+     */
     void update(int64 own) {
         inline (int64 own) { *own += 2; }
         print(own)
@@ -43,36 +113,121 @@ class Fields : Primary, Secondary {
         print(Primary.primary)
         print(Secondary.secondary)
     }
-    int64 read() { return(own)}
+
+    /*
+     * Returns the stored own.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
+    int64 read() {
+        return(own)
+    }
+
+    /*
+     * Runs inline C while handling shadow local.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void shadowLocal() {
         int64 own = 200
         inline (int64 own) { *own += 2; }
         print(own)
     }
+
+    /*
+     * Runs inline C while handling store.
+     *
+     * Parameters:
+     *   input — Root input.
+     *
+     * Does not return a value.
+     */
     void store(Root input) {
         inline (Root saved, Root input) { *saved = *input; }
         buffer trigger = buffer(1)
         print(saved.shared)
     }
+
+    /*
+     * Destroys this object and runs the cleanup owned by the instance.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     destroy {
         inline (int64 own) { *own += 7; }
         print(own)
     }
 }
 
+/*
+ * Root is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, updateRoot.
+ */
 class Root {
     public:
     int64 shared
     list values
-    Root() { shared = 40 }
+
+    /*
+     * Constructs a Root and stores shared.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Root.
+     */
+    Root() {
+        shared = 40
+    }
+
+    /*
+     * Runs inline C while handling update root.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void updateRoot() {
         inline (int64 shared) { *shared += 1; }
     }
 }
-class Left : virtual Root {}
-class Right : virtual Root {}
+
+/*
+ * Left is a class derived from Root, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Left : virtual Root {
+}
+
+/*
+ * Right is a class derived from Root, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Right : virtual Root {
+}
+
+/*
+ * Diamond is a class derived from Left, Right, used as a fixture by this test.
+ *
+ * Its methods include update.
+ */
 class Diamond : Left, Right {
     public:
+    /*
+     * Runs inline C while handling update.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void update() {
         inline (int64 shared) { *shared += 2; }
         inline (int64 Right.Root.shared) { *shared += 3; }
@@ -80,11 +235,46 @@ class Diamond : Left, Right {
     }
 }
 
-class RepeatedRoot { public: int64 value }
-class First : RepeatedRoot {}
-class Second : RepeatedRoot {}
+/*
+ * RepeatedRoot is a class, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class RepeatedRoot {
+    public: int64 value
+}
+
+/*
+ * First is a class derived from RepeatedRoot, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class First : RepeatedRoot {
+}
+
+/*
+ * Second is a class derived from RepeatedRoot, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Second : RepeatedRoot {
+}
+
+/*
+ * Repeated is a class derived from First, Second, used as a fixture by this
+ * test.
+ *
+ * Its methods include update.
+ */
 class Repeated : First, Second {
     public:
+    /*
+     * Runs inline C while handling update.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void update() {
         inline (int64 First.RepeatedRoot.value) { *value = 51; }
         inline (int64 Second.RepeatedRoot.value) { *value = 61; }

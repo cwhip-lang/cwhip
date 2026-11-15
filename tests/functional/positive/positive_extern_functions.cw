@@ -1,32 +1,153 @@
-# Exercises C-bound methods across scalar and reference types alongside an ordinary out-of-line method.
+/*
+ * tests/functional/positive/positive_extern_functions.cw
+ *
+ * Exercises C-bound methods across scalar and reference types alongside an
+ * ordinary out-of-line method.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Native is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, absolute, stringLength, stringIdentity,
+ * identityArray, identityMap, and 2 more.
+ */
 class Native {
     public:
     int64 marker
 
+    /*
+     * Constructs a Native and stores marker.
+     *
+     * Parameters:
+     *   initialMarker — int64 initial marker.
+     *
+     * Returns the constructed Native.
+     */
     Native(int64 initialMarker) {
         marker = initialMarker
     }
 
+    /*
+     * Handles absolute for this Native by calling the native function
+     * cwhip_method_demo_abs.
+     *
+     * Parameters:
+     *   value — int64 value.
+     *
+     * Returns int64.
+     */
     int64 absolute(int64 value)
+
+    /*
+     * Handles string length for this Native by calling the native function
+     * cwhip_method_demo_string_length.
+     *
+     * Parameters:
+     *   text — strg text.
+     *
+     * Returns int64.
+     */
     int64 stringLength(strg text)
+
+    /*
+     * Handles string identity for this Native by calling the native function
+     * cwhip_method_demo_string_identity.
+     *
+     * Parameters:
+     *   text — strg text.
+     *
+     * Returns strg.
+     */
     strg stringIdentity(strg text)
+
+    /*
+     * Handles identity array for this Native by calling the native function
+     * cwhip_method_demo_identity.
+     *
+     * Parameters:
+     *   items — list items.
+     *
+     * Returns list.
+     */
     list identityArray(list items)
+
+    /*
+     * Handles identity map for this Native by calling the native function
+     * cwhip_method_demo_identity.
+     *
+     * Parameters:
+     *   items — dict items.
+     *
+     * Returns dict.
+     */
     dict identityMap(dict items)
+
+    /*
+     * Handles identity counter for this Native by calling the native function
+     * cwhip_method_demo_identity.
+     *
+     * Parameters:
+     *   value — Counter value.
+     *
+     * Returns Counter.
+     */
     Counter identityCounter(Counter value)
+
+    /*
+     * Handles ignore for this Native by calling the native function
+     * cwhip_method_demo_ignore.
+     *
+     * Parameters:
+     *   value — int64 value.
+     *
+     * Does not return a value.
+     */
     void ignore(int64 value)
 }
 
+/*
+ * Doubler is a class, used as a fixture by this test.
+ *
+ * Its methods include compute.
+ */
 class Doubler {
     public:
+    /*
+     * Handles compute for this Doubler.
+     *
+     * Parameters:
+     *   x — int64 input value.
+     *
+     * Returns int64.
+     */
     int64 compute(int64 x)
 }
 
-# Counter is deliberately declared after Native: signatures resolve across
-# the whole source unit, including native-bound reference parameters/results.
+/*
+ * Counter is a class, used as a fixture by this test.
+ *
+ * Counter is deliberately declared after Native: signatures resolve across the
+ * whole source unit, including native-bound reference parameters/results.
+ */
 class Counter {
     public:
     int64 value
 
+    /*
+     * Constructs a Counter and stores value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Counter.
+     */
     Counter(int64 initial) {
         value = initial
     }

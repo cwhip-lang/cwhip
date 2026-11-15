@@ -1,18 +1,68 @@
-# Exercises heterogeneous list values, mutation, slicing, list aliases, typed extraction, retained references, and bounds exceptions.
+/*
+ * tests/functional/positive/positive_arrays.cw
+ *
+ * Exercises heterogeneous list values, mutation, slicing, list aliases, typed
+ * extraction, retained references, and bounds exceptions.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Node is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Node {
     public:
     int64 value
+
+    /*
+     * Constructs a Node and stores value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Node.
+     */
     Node(int64 initial) {
         value = initial
     }
 }
 
+/*
+ * Holder is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, copyNodes.
+ */
 class Holder {
     public:
     list nodes
+
+    /*
+     * Constructs a Holder and stores nodes.
+     *
+     * Parameters:
+     *   initial — list initial.
+     *
+     * Returns the constructed Holder.
+     */
     Holder(list initial) {
         nodes = initial
     }
+
+    /*
+     * Returns source[0:2].
+     *
+     * Parameters:
+     *   source — list source.
+     *
+     * Returns list.
+     */
     list copyNodes(list source) {
         return(source[0:2])
     }
@@ -77,7 +127,8 @@ start {
 
     try {
         print(items[-5])
-    } except() as error {
+    }
+    except() as error {
         print(error)
     }
     list invalid = items[3:2]

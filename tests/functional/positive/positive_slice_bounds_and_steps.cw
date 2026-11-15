@@ -1,4 +1,16 @@
-# Covers omitted slice bounds for arrays, maps, and buffers plus list steps.
+/*
+ * tests/functional/positive/positive_slice_bounds_and_steps.cw
+ *
+ * Covers omitted slice bounds for arrays, maps, and buffers plus list steps.
+ *
+ * Created: 2026-09-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 start {
     list values = [int64(0), int64(1), int64(2), int64(3), int64(4), int64(5)]
     print(values[-1])
@@ -10,13 +22,15 @@ start {
     try {
         int64 invalidIndex = values[-values.length - 1]
         print("unreachable")
-    } except(Exception) as error {
+    }
+    except(Exception) as error {
         print(error.message)
     }
     try {
         int64 boundaryIndex = values[-6]
         print(boundaryIndex)
-    } except(Exception) {
+    }
+    except(Exception) {
         print("negative length should be valid")
     }
 
@@ -69,7 +83,8 @@ start {
     try {
         list invalid = values[1:5:zero]
         print("unreachable")
-    } except(Exception) as error {
+    }
+    except(Exception) as error {
         print(error.message)
     }
 
@@ -106,7 +121,8 @@ start {
     try {
         uint64 invalidIndex = bytes[-bytes.length - 1]
         print("unreachable")
-    } except(Exception) as error {
+    }
+    except(Exception) as error {
         print(error.message)
     }
     buffer firstBytes = bytes[:2]

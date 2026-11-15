@@ -1,32 +1,96 @@
-# Explicit buffer literals evaluate their integer elements once from left to right.
+/*
+ * tests/functional/positive/positive_buffer_literals.cw
+ *
+ * Explicit buffer literals evaluate their integer elements once from left to
+ * right.
+ *
+ * Created: 2026-10-04
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-04  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Builder is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, next, nextUnsigned, count, identity, fail.
+ */
 class Builder {
     public:
     int64 calls
 
+    /*
+     * Constructs a Builder and stores calls.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Builder.
+     */
     Builder() {
         calls = 0
     }
 
+    /*
+     * Handles next for this Builder.
+     *
+     * Parameters:
+     *   value — int64 value.
+     *
+     * Returns int64.
+     */
     int64 next(int64 value) {
         calls = calls + 1
         print(calls)
         return(value)
     }
 
+    /*
+     * Handles next unsigned for this Builder.
+     *
+     * Parameters:
+     *   value — uint64 value.
+     *
+     * Returns uint64.
+     */
     uint64 nextUnsigned(uint64 value) {
         calls = calls + 1
         print(calls)
         return(value)
     }
 
+    /*
+     * Returns the stored calls.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 count() {
         return(calls)
     }
 
+    /*
+     * Returns the stored value.
+     *
+     * Parameters:
+     *   value — buffer value.
+     *
+     * Returns buffer.
+     */
     buffer identity(buffer value) {
         return(value)
     }
 
+    /*
+     * Handles fail for this Builder. Raises Exception when the call is not
+     * valid (buffer literal stopped).
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 fail() {
         raise(Exception("buffer literal stopped"))
     }
@@ -73,7 +137,8 @@ start {
             builder.fail(),
             builder.next(88)
         ]
-    } except() {
+    }
+    except() {
         print("caught")
     }
     print(builder.count())

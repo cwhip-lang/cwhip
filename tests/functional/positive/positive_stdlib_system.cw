@@ -1,3 +1,14 @@
+/*
+ * tests/functional/positive/positive_stdlib_system.cw — Checks stdlib system.
+ *
+ * Created: 2026-10-01
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-01  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import system as Sys
 
 start {
@@ -11,7 +22,8 @@ start {
     bool fileRaised = false
     try {
         Sys.File file = Sys.File("sample.txt", "r")
-    } except(Exception) {
+    }
+    except(Exception) {
         fileRaised = true
     }
     print(fileRaised)
@@ -38,7 +50,8 @@ start {
     bool openedRaised = false
     try {
         Sys.File opened = system.open("sample.txt", "r")
-    } except(Exception) {
+    }
+    except(Exception) {
         openedRaised = true
     }
     print(openedRaised)

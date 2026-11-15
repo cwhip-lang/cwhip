@@ -1,8 +1,23 @@
+/*
+ * examples/scale.cw — Demonstrates scale.
+ *
+ * Created: 2026-11-07
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-11-07  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import gtk
 import system
 
-// Demonstrates Gtk.Scale: range/step configure, get/set value, and
-// value-changed callbacks for horizontal and vertical sliders.
+/*
+ * Demo is a class, used by this example.
+ *
+ * Demonstrates Gtk.Scale: range/step configure, get/set value, and
+ * value-changed callbacks for horizontal and vertical sliders.
+ */
 class Demo {
     public:
     Gtk.Window window
@@ -16,26 +31,70 @@ class Demo {
     void<fp64> verticalAction
     void<> testAction
 
+    /*
+     * Updates readout for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void updateReadout() {
-        readout.setText(format("H={}  V={}  changes={}",
-            lastHorizontal, lastVertical, changes))
+        readout.setText(format(
+                "H={}  V={}  changes={}",
+            lastHorizontal,
+                lastVertical,
+                changes))
     }
+
+    /*
+     * Handles horizontal moved for this Demo.
+     *
+     * Parameters:
+     *   value — fp64 value.
+     *
+     * Does not return a value.
+     */
     void horizontalMoved(fp64 value) {
         lastHorizontal = value
         changes = changes + 1
         updateReadout()
     }
+
+    /*
+     * Handles vertical moved for this Demo.
+     *
+     * Parameters:
+     *   value — fp64 value.
+     *
+     * Does not return a value.
+     */
     void verticalMoved(fp64 value) {
         lastVertical = value
         changes = changes + 1
         updateReadout()
     }
+
+    /*
+     * Handles test for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void test() {
         horizontal.setValue(25.0f64)
         vertical.setValue(7.0f64)
         print("Hello Scale")
         window.close()
     }
+
+    /*
+     * Handles activate for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         window = Gtk.Window("Cwhip GTK Scale")
         window.setDefaultSize(420, 220)

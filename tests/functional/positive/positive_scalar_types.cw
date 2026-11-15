@@ -1,20 +1,72 @@
-# Exercises distinct bool, double-backed float, and uint64 unsigned semantics.
+/*
+ * tests/functional/positive/positive_scalar_types.cw
+ *
+ * Exercises distinct bool, double-backed float, and uint64 unsigned semantics.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * ScalarBox is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, isEnabled, getAmount, getCount.
+ */
 class ScalarBox {
     public:
     bool enabled
     fp64 amount
     uint64 count
+
+    /*
+     * Constructs a ScalarBox and stores enabled, amount, count.
+     *
+     * Parameters:
+     *   enabledValue — bool enabled value.
+     *   amountValue — fp64 amount value.
+     *   countValue — uint64 count value.
+     *
+     * Returns the constructed ScalarBox.
+     */
     ScalarBox(bool enabledValue, fp64 amountValue, uint64 countValue) {
         enabled = enabledValue
         amount = amountValue
         count = countValue
     }
+
+    /*
+     * Returns the stored enabled.
+     *
+     * Takes no parameters.
+     *
+     * Returns bool.
+     */
     bool isEnabled() {
         return(enabled)
     }
+
+    /*
+     * Returns the stored amount.
+     *
+     * Takes no parameters.
+     *
+     * Returns fp64.
+     */
     fp64 getAmount() {
         return(amount)
     }
+
+    /*
+     * Returns the stored count.
+     *
+     * Takes no parameters.
+     *
+     * Returns uint64.
+     */
     uint64 getCount() {
         return(count)
     }

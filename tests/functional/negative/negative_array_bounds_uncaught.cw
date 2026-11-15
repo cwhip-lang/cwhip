@@ -1,4 +1,17 @@
-# Raises an uncaught runtime error when reading the list index equal to its length.
+/*
+ * tests/functional/negative/negative_array_bounds_uncaught.cw
+ *
+ * Raises an uncaught runtime error when reading the list index equal to its
+ * length.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 start {
     list values = [1, 2]
     print(values[2])

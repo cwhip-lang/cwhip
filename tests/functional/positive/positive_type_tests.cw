@@ -1,11 +1,58 @@
-# Exercises static and dynamic type tests, subclass matching, and bool conditions.
-class Root {}
-class Middle : Root {}
-class Leaf : Middle {}
-class Other {}
+/*
+ * tests/functional/positive/positive_type_tests.cw
+ *
+ * Exercises static and dynamic type tests, subclass matching, and bool
+ * conditions.
+ *
+ * Created: 2026-09-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Root is a class, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Root {
+}
+
+/*
+ * Middle is a class derived from Root, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Middle : Root {
+}
+
+/*
+ * Leaf is a class derived from Middle, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Leaf : Middle {
+}
+
+/*
+ * Other is a class, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Other {
+}
 
 namespace shapes {
-    class Named {}
+
+    /*
+     * Named is a class, used as a fixture by this test.
+     *
+     * It groups the data used by the surrounding program.
+     */
+    class Named {
+    }
 }
 
 start {

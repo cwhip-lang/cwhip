@@ -1,16 +1,62 @@
+/*
+ * tests/functional/positive/positive_array_resize.cw — Checks array resize.
+ *
+ * Created: 2026-09-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Node is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, read.
+ */
 class Node {
     public:
     int64 value
+
+    /*
+     * Constructs a Node and stores value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Node.
+     */
     Node(int64 initial) {
         value = initial
     }
+
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 read() {
         return(value)
     }
 }
 
+/*
+ * Grower is a class, used as a fixture by this test.
+ *
+ * Its methods include grow.
+ */
 class Grower {
     public:
+    /*
+     * Handles grow for this Grower.
+     *
+     * Parameters:
+     *   values — list values.
+     *
+     * Returns int64.
+     */
     int64 grow(list values) {
         values.resize(12)
         return(7)
@@ -44,7 +90,8 @@ start {
     print(values[0])
     try {
         values.resize(-1)
-    } except() as error {
+    }
+    except() as error {
         print(error)
     }
     list refs = []

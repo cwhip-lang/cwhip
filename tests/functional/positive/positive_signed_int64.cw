@@ -1,28 +1,89 @@
+/*
+ * tests/functional/positive/positive_signed_int64.cw — Checks signed int64.
+ *
+ * Created: 2026-10-01
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-01  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * IntBox is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, get, echo.
+ */
 class IntBox {
     public:
     int64 value
 
+    /*
+     * Constructs a IntBox and stores value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed IntBox.
+     */
     IntBox(int64 initial) {
         value = initial
     }
 
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 get() {
         return(value)
     }
 
+    /*
+     * Returns the stored argument.
+     *
+     * Parameters:
+     *   argument — int64 argument.
+     *
+     * Returns int64.
+     */
     int64 echo(int64 argument) {
         return(argument)
     }
 }
 
+/*
+ * Native is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, absolute.
+ */
 class Native {
     public:
     int64 marker
 
+    /*
+     * Constructs a Native and stores marker.
+     *
+     * Parameters:
+     *   initialMarker — int64 initial marker.
+     *
+     * Returns the constructed Native.
+     */
     Native(int64 initialMarker) {
         marker = initialMarker
     }
 
+    /*
+     * Handles absolute for this Native by calling the native function
+     * cwhip_method_demo_abs.
+     *
+     * Parameters:
+     *   value — int64 value.
+     *
+     * Returns int64.
+     */
     int64 absolute(int64 value)
 }
 
@@ -59,7 +120,8 @@ start {
     try {
         int64 invalidIndex = values[4294967296]
         print("unexpected list index")
-    } except(Exception) as error {
+    }
+    except(Exception) as error {
         print(error.message)
     }
 
@@ -75,14 +137,16 @@ start {
     try {
         strg aboveMaxText = "9223372036854775808"
         print(aboveMaxText.toInt64())
-    } except() as error {
+    }
+    except() as error {
         print(error)
     }
 
     try {
         strg belowMinText = "-9223372036854775809"
         print(belowMinText.toInt64())
-    } except() as error {
+    }
+    except() as error {
         print(error)
     }
 }

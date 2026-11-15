@@ -1,34 +1,96 @@
+/*
+ * tests/functional/positive/positive_stdlib_async_process_input.cw
+ *
+ * Checks stdlib async process input.
+ *
+ * Created: 2026-10-13
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-13  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import process as P
 import time as T
 
+/*
+ * Thread is a class, used as a fixture by this test.
+ *
+ * Its methods include launch, join.
+ */
 class Thread {
     public:
+    /*
+     * Handles launch for this Thread by calling the native function
+     * cwhip_thread_start.
+     *
+     * Takes no parameters.
+     *
+     * Returns handle.
+     */
     handle launch()
+
+    /*
+     * Handles join for this Thread by calling the native function
+     * cwhip_thread_join.
+     *
+     * Parameters:
+     *   worker — handle worker.
+     *
+     * Does not return a value.
+     */
     void join(handle worker)
 }
 
 handle Thread.launch() from "cwhip_thread_start"
 void Thread.join(handle worker) from "cwhip_thread_join"
 
+/*
+ * Check is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, that.
+ */
 class Check {
     public:
     int64 failures
 
+    /*
+     * Constructs a Check and stores failures.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Check.
+     */
     Check() {
         failures = 0
     }
 
+    /*
+     * Handles that for this Check.
+     *
+     * Parameters:
+     *   label — String label.
+     *   ok — bool input value.
+     *
+     * Does not return a value.
+     */
     void that(String label, bool ok) {
         if (ok) {
             print(true)
-        } else {
+        }
+        else {
             failures = failures + 1
             print(format("\nFAIL:{}\n", label))
         }
     }
 }
 
-# Pulls events until `expected` stdout bytes arrived or the child completed.
+/*
+ * Reader is a class, used as a fixture by this test.
+ *
+ * Pulls events until `expected` stdout bytes arrived or the child completed.
+ */
 class Reader {
     public:
     String out
@@ -37,6 +99,13 @@ class Reader {
     bool completed
     P.OutputDecoder decoder
 
+    /*
+     * Constructs a Reader and stores out, err, outBytes, completed.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Reader.
+     */
     Reader() {
         out = ""
         err = ""
@@ -45,6 +114,14 @@ class Reader {
         decoder = P.OutputDecoder()
     }
 
+    /*
+     * Handles take for this Reader.
+     *
+     * Parameters:
+     *   event — P.ProcessEvent event.
+     *
+     * Does not return a value.
+     */
     void take(P.ProcessEvent event) {
         if (event.isStdout()) {
             outBytes = outBytes + event.data().length
@@ -59,6 +136,15 @@ class Reader {
         }
     }
 
+    /*
+     * Handles until for this Reader.
+     *
+     * Parameters:
+     *   child — P.AsyncProcess child.
+     *   expected — String expected.
+     *
+     * Returns bool.
+     */
     bool until(P.AsyncProcess child, String expected) {
         while (!completed && !out.contains(expected)) {
             P.ProcessEvent event = child.next(10000)
@@ -70,6 +156,14 @@ class Reader {
         return(out.contains(expected))
     }
 
+    /*
+     * Handles drain for this Reader.
+     *
+     * Parameters:
+     *   child — P.AsyncProcess child.
+     *
+     * Returns bool.
+     */
     bool drain(P.AsyncProcess child) {
         while (!completed) {
             P.ProcessEvent event = child.next(10000)
@@ -81,7 +175,14 @@ class Reader {
         return(true)
     }
 
-    # Polls without blocking, like a GTK idle/timeout handler would.
+    /*
+     * Polls without blocking, like a GTK idle/timeout handler would.
+     *
+     * Parameters:
+     *   child — P.AsyncProcess child.
+     *
+     * Does not return a value.
+     */
     void poll(P.AsyncProcess child) {
         P.ProcessEvent event = child.next(0)
         while (event != null) {
@@ -91,19 +192,39 @@ class Reader {
     }
 }
 
-# Writes numbered lines from another Cwhip thread while the main thread reads.
+/*
+ * LineWriter is a class derived from Thread, used as a fixture by this test.
+ *
+ * Writes numbered lines from another Cwhip thread while the main thread reads.
+ */
 class LineWriter : Thread {
     public:
     P.AsyncProcess child
     int64 count
     bool ok
 
+    /*
+     * Constructs a LineWriter and stores child, count, ok.
+     *
+     * Parameters:
+     *   target — P.AsyncProcess target.
+     *   lines — int64 lines.
+     *
+     * Returns the constructed LineWriter.
+     */
     LineWriter(P.AsyncProcess target, int64 lines) {
         child = target
         count = lines
         ok = true
     }
 
+    /*
+     * Handles run for this LineWriter.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void run() {
         int64 index = 0
         while (index < count) {
@@ -118,16 +239,36 @@ class LineWriter : Thread {
     }
 }
 
+/*
+ * Counter is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, take, poll, drain.
+ */
 class Counter {
     public:
     int64 bytes
     bool completed
 
+    /*
+     * Constructs a Counter and stores bytes, completed.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Counter.
+     */
     Counter() {
         bytes = 0
         completed = false
     }
 
+    /*
+     * Handles take for this Counter.
+     *
+     * Parameters:
+     *   event — P.ProcessEvent event.
+     *
+     * Does not return a value.
+     */
     void take(P.ProcessEvent event) {
         if (event.isStdout()) {
             bytes = bytes + event.data().length
@@ -137,6 +278,16 @@ class Counter {
         }
     }
 
+    /*
+     * Handles poll for this Counter.
+     *
+     * Parameters:
+     *   child — P.AsyncProcess child.
+     *   timeoutMilliseconds — int64 timeout
+     *     milliseconds.
+     *
+     * Does not return a value.
+     */
     void poll(P.AsyncProcess child, int64 timeoutMilliseconds) {
         P.ProcessEvent event = child.next(timeoutMilliseconds)
         while (event != null) {
@@ -145,6 +296,14 @@ class Counter {
         }
     }
 
+    /*
+     * Handles drain for this Counter.
+     *
+     * Parameters:
+     *   child — P.AsyncProcess child.
+     *
+     * Does not return a value.
+     */
     void drain(P.AsyncProcess child) {
         while (!completed) {
             P.ProcessEvent event = child.next(10000)
@@ -183,12 +342,14 @@ start {
     check.that("shell exited", shell.state() == P.AsyncProcess.EXITED)
     check.that("shell exit 0", shell.exitCode() == 0)
     check.that("write after closeInput", shell.write("late\n") == false)
-    check.that("closeInput message", shell.inputError().contains("closed by closeInput"))
+    check.that("closeInput message", shell.inputError().contains(
+            "closed by closeInput"))
     check.that("pending zero", shell.pendingInput() == 0)
     shell.close()
     check.that("write after close", shell.write("x") == false)
     check.that("closeInput after close", shell.closeInput())
-    check.that("cached input error", shell.inputError().contains("closed by closeInput"))
+    check.that("cached input error", shell.inputError().contains(
+            "closed by closeInput"))
 
     # Data queued before closeInput is delivered in full before end of file.
     P.AsyncProcess cat = P.AsyncProcess("/bin/cat", [], null, true)
@@ -200,14 +361,16 @@ start {
     check.that("cat exit", cat.exitCode() == 0)
     cat.close()
 
-    # Existing constructors keep stdin at /dev/null and reject writes explicitly.
+    # Existing constructors keep stdin at /dev/null and reject writes
+    # explicitly.
     P.AsyncProcess plain = P.AsyncProcess("/bin/cat", [])
     check.that("plain eof", plain.wait(10000))
     check.that("plain exit", plain.exitCode() == 0)
     check.that("plain not interactive", plain.interactive() == false)
     check.that("plain write rejected", plain.write("x") == false)
     check.that("plain write message",
-        plain.inputError().startsWith("process was not started with interactive input"))
+        plain.inputError().startsWith(
+            "process was not started with interactive input"))
     check.that("plain closeInput rejected", plain.closeInput() == false)
     plain.close()
     P.AsyncProcess optedOut = P.AsyncProcess("/bin/cat", [], "/", false)
@@ -220,7 +383,8 @@ start {
     check.that("missing not started", missing.started() == false)
     check.that("missing not interactive", missing.interactive() == false)
     check.that("missing write", missing.write("x") == false)
-    check.that("missing message", missing.inputError().startsWith("process did not start"))
+    check.that("missing message", missing.inputError().startsWith(
+            "process did not start"))
     check.that("missing closeInput", missing.closeInput() == false)
     missing.close()
 
@@ -232,6 +396,7 @@ start {
         String copy = block[0..block.length - 1]
         block.append(copy)
     }
+
     P.AsyncProcess pipe = P.AsyncProcess("/bin/cat", [], null, true)
     Counter pipeOut = Counter()
     int64 sent = 0
@@ -240,7 +405,8 @@ start {
     while (sent < blocks) {
         if (pipe.write(block)) {
             sent = sent + 1
-        } else {
+        }
+        else {
             rejected = rejected + 1
             if (!pipe.inputError().startsWith("stdin queue is full")) {
                 sent = blocks + 1
@@ -248,6 +414,7 @@ start {
             pipeOut.poll(pipe, 5)
         }
     }
+
     check.that("all blocks queued", sent == blocks)
     check.that("pending bounded", pipe.pendingInput() <= 1048576)
     check.that("pipe closeInput", pipe.closeInput())
@@ -265,16 +432,19 @@ start {
     while (!full && accepted < 64) {
         if (stalled.write(block)) {
             accepted = accepted + 1
-        } else {
+        }
+        else {
             full = true
         }
     }
     check.that("queue fills", full)
-    check.that("full message", stalled.inputError().startsWith("stdin queue is full"))
+    check.that("full message", stalled.inputError().startsWith(
+            "stdin queue is full"))
     int64 pending = stalled.pendingInput()
     check.that("pending positive", pending > 0)
     check.that("pending within limit", pending <= 1048576)
-    check.that("small write still fits", pending + 1 > 1048576 || stalled.write("z"))
+    check.that("small write still fits", pending + 1 > 1048576 || stalled.write(
+            "z"))
     String oversized = block[0..block.length - 1]
     int64 grow = 0
     while (grow < 5) {
@@ -283,15 +453,20 @@ start {
         grow = grow + 1
     }
     check.that("oversized rejected", stalled.write(oversized) == false)
-    check.that("oversized message", stalled.inputError().startsWith("stdin text exceeds"))
-    check.that("stalled still running", stalled.state() == P.AsyncProcess.RUNNING)
+    check.that("oversized message", stalled.inputError().startsWith(
+            "stdin text exceeds"))
+    check.that(
+            "stalled still running",
+            stalled.state() == P.AsyncProcess.RUNNING)
     check.that("cancel stalled", stalled.cancel(0))
     check.that("write after cancel", stalled.write("x") == false)
-    check.that("cancel message", stalled.inputError().startsWith("process was cancelled"))
+    check.that("cancel message", stalled.inputError().startsWith(
+            "process was cancelled"))
     check.that("stalled completes", stalled.wait(10000))
     check.that("stalled cancelled", stalled.state() == P.AsyncProcess.CANCELLED)
     check.that("stalled pending discarded", stalled.pendingInput() == 0)
-    check.that("stalled discard reported", stalled.inputError().contains("discarded"))
+    check.that("stalled discard reported", stalled.inputError().contains(
+            "discarded"))
     stalled.close()
 
     # Cancellation is reported even after the killed child's broken stdin pipe
@@ -304,20 +479,26 @@ start {
     check.that("killed full queued", killedFullQueued && killedFull.pendingInput() > 0)
     check.that("killed full cancel", killedFull.cancel(0))
     check.that("killed full completes", killedFull.wait(10000))
-    check.that("killed full message", killedFull.inputError().startsWith("process was cancelled"))
-    check.that("killed full discard", killedFull.inputError().contains("discarded"))
+    check.that("killed full message", killedFull.inputError().startsWith(
+            "process was cancelled"))
+    check.that("killed full discard", killedFull.inputError().contains(
+            "discarded"))
     check.that("killed full write", killedFull.write("x") == false)
     check.that("killed full write message",
-        killedFull.inputError().startsWith("process was cancelled"))
+        killedFull.inputError().startsWith(
+            "process was cancelled"))
     check.that("killed full pending", killedFull.pendingInput() == 0)
     killedFull.close()
 
     P.AsyncProcess killedIdle = P.AsyncProcess("/bin/cat", [], null, true)
     check.that("killed idle cancel", killedIdle.cancel(0))
     check.that("killed idle completes", killedIdle.wait(10000))
-    check.that("killed idle cancelled", killedIdle.state() == P.AsyncProcess.CANCELLED)
+    check.that(
+            "killed idle cancelled",
+            killedIdle.state() == P.AsyncProcess.CANCELLED)
     check.that("killed idle write", killedIdle.write("x") == false)
-    check.that("killed idle message", killedIdle.inputError().startsWith("process was cancelled"))
+    check.that("killed idle message", killedIdle.inputError().startsWith(
+            "process was cancelled"))
     check.that("killed idle closeInput", killedIdle.closeInput())
     killedIdle.close()
 
@@ -331,15 +512,18 @@ start {
     while (!broken && attempts < 400) {
         if (!closer.write("data\n")) {
             broken = true
-        } else {
+        }
+        else {
             T.Clock().sleepMilliseconds(5u)
         }
         attempts = attempts + 1
     }
     check.that("broken pipe detected", broken)
-    check.that("broken pipe message", closer.inputError().startsWith("stdin closed by the child"))
+    check.that("broken pipe message", closer.inputError().startsWith(
+            "stdin closed by the child"))
     check.that("broken pipe sticky", closer.write("again\n") == false)
-    check.that("broken pipe message kept", closer.inputError().startsWith("stdin closed by the child"))
+    check.that("broken pipe message kept", closer.inputError().startsWith(
+            "stdin closed by the child"))
     check.that("closer still running", closer.state() == P.AsyncProcess.RUNNING)
     check.that("closer closeInput ok", closer.closeInput())
     closer.close()
@@ -375,7 +559,9 @@ start {
     check.that("abandoned write", abandoned.write(block))
     check.that("abandoned write 2", abandoned.write(block))
     abandoned.close()
-    check.that("abandoned cancelled", abandoned.state() == P.AsyncProcess.CANCELLED)
+    check.that(
+            "abandoned cancelled",
+            abandoned.state() == P.AsyncProcess.CANCELLED)
     check.that("abandoned pending", abandoned.pendingInput() == 0)
     check.that("abandoned write rejected", abandoned.write("x") == false)
     abandoned.close()

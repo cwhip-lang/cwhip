@@ -1,20 +1,70 @@
+/*
+ * tests/functional/positive/positive_string_class.cw — Checks string class.
+ *
+ * Created: 2026-09-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Text is a class, used as a fixture by this test.
+ *
+ * Its methods include wrap.
+ */
 class Text {
     public:
+    /*
+     * Returns format("[{}]", value).
+     *
+     * Parameters:
+     *   value — strg value.
+     *
+     * Returns strg.
+     */
     strg wrap(strg value) {
         return(format("[{}]", value))
     }
 }
 
+/*
+ * ExtendedString is a class derived from String, used as a fixture by this
+ * test.
+ *
+ * Its methods include constructor.
+ */
 class ExtendedString : String {
     public:
+    /*
+     * Constructs a ExtendedString.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed ExtendedString.
+     */
     ExtendedString() {
         super String()
     }
 }
 
+/*
+ * Order is a class, used as a fixture by this test.
+ *
+ * Its methods include next.
+ */
 class Order {
     public:
     int64 count
+
+    /*
+     * Returns count + 1.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 next() {
         count = count + 1
         return(count)

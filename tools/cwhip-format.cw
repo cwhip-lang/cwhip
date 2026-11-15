@@ -1,10 +1,55 @@
+/*
+ * tools/cwhip-format.cw — Implementation of the cwhip-format tool.
+ *
+ * Created: 2026-11-13
+ * Author: Auto
+ *
+ * Changelog:
+ *   2026-11-13  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import cli as Cli
 import system as Sys
 
+/*
+ * FormatTool is a class.
+ *
+ * Its methods include version, builtinConfig, formatFile.
+ */
 class FormatTool {
     public:
+    /*
+     * Handles version for this FormatTool by calling the native function
+     * cwhip_format_version.
+     *
+     * Takes no parameters.
+     *
+     * Returns String.
+     */
     String version()
+
+    /*
+     * Handles builtin config for this FormatTool by calling the native
+     * function cwhip_format_builtin_config.
+     *
+     * Takes no parameters.
+     *
+     * Returns String.
+     */
     String builtinConfig()
+
+    /*
+     * Formats file for this FormatTool by calling the native function
+     * cwhip_format_file.
+     *
+     * Parameters:
+     *   path — String path.
+     *   stylePath — String style path.
+     *   inPlace — bool in place.
+     *
+     * Returns int64.
+     */
     int64 formatFile(String path, String stylePath, bool inPlace)
 }
 
@@ -55,7 +100,8 @@ start {
 
     try {
         command.parseArgv()
-    } except(Exception) as error {
+    }
+    except(Exception) as error {
         Sys.System().io().writeError(error.message)
         Sys.System().io().writeError("\n")
         Sys.System().io().writeError(command.helpText())

@@ -1,14 +1,51 @@
+/*
+ * tests/functional/positive/positive_format_specs.cw — Checks format specs.
+ *
+ * Created: 2026-10-04
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-04  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Counter is a class, used as a fixture by this test.
+ *
+ * Its methods include next.
+ */
 class Counter {
     public:
     int64 calls
+
+    /*
+     * Handles next for this Counter.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 next() {
         calls += 1
         return(calls)
     }
 }
 
+/*
+ * Formatter is a class, used as a fixture by this test.
+ *
+ * Its methods include message.
+ */
 class Formatter {
     public:
+    /*
+     * Returns format("[{:08X}]", value).
+     *
+     * Parameters:
+     *   value — int64 value.
+     *
+     * Returns strg.
+     */
     strg message(int64 value) {
         return(format("[{:08X}]", value))
     }
@@ -63,27 +100,32 @@ start {
     print("{:08X} {:x} {:>8}", values[0], values[1], values[2])
     try {
         print("NO PARTIAL OUTPUT {:c}", -1)
-    } except() as message {
+    }
+    except() as message {
         print(message)
     }
     try {
         print("NO PARTIAL OUTPUT {:c}", 128u)
-    } except() as message {
+    }
+    except() as message {
         print(message)
     }
     try {
         print("{:c}", values[3])
-    } except() as message {
+    }
+    except() as message {
         print(message)
     }
     try {
         print("{:x}", values[4])
-    } except() as message {
+    }
+    except() as message {
         print(message)
     }
     try {
         print("{:c}", 18446744073709551615u)
-    } except() as message {
+    }
+    except() as message {
         print(message)
     }
     print("after errors")

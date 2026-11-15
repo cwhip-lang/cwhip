@@ -1,11 +1,78 @@
-# All sixteen ordered scalar pairs, including identities.
+/*
+ * tests/functional/positive/positive_scalar_casts.cw
+ *
+ * All sixteen ordered scalar pairs, including identities.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Scalars is a class, used as a fixture by this test.
+ *
+ * Its methods include flag, signedValue, unsignedValue, fraction, fromBool.
+ */
 class Scalars {
     public:
-    bool flag() { return(true)}
-    int64 signedValue() { return(-7)}
-    uint64 unsignedValue() { return(12u)}
-    fp64 fraction() { return(3.75)}
-    int64 fromBool(bool value) { return(int64(value))}
+    /*
+     * Returns the stored true.
+     *
+     * Takes no parameters.
+     *
+     * Returns bool.
+     */
+    bool flag() {
+        return(true)
+    }
+
+    /*
+     * Returns -7.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
+    int64 signedValue() {
+        return(-7)
+    }
+
+    /*
+     * Returns 12u.
+     *
+     * Takes no parameters.
+     *
+     * Returns uint64.
+     */
+    uint64 unsignedValue() {
+        return(12u)
+    }
+
+    /*
+     * Returns 3.75.
+     *
+     * Takes no parameters.
+     *
+     * Returns fp64.
+     */
+    fp64 fraction() {
+        return(3.75)
+    }
+
+    /*
+     * Returns int64(value).
+     *
+     * Parameters:
+     *   value — bool value.
+     *
+     * Returns int64.
+     */
+    int64 fromBool(bool value) {
+        return(int64(value))
+    }
 }
 
 start {

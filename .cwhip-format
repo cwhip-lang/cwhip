@@ -1,0 +1,84 @@
+# Language of the file. Cwhip is the only accepted value.
+Language: Cwhip
+# Spaces for each indent level.
+IndentWidth: 4
+# Inserted indent uses spaces.
+UseTab: Never
+# Extra spaces past the block indent on a wrapped line.
+ContinuationIndentWidth: 8
+# Do not line up an operand with the operator.
+AlignOperands: DontAlign
+# Preferred line length. 0 means do not wrap.
+ColumnLimit: 80
+# Do not split a string literal across lines.
+BreakStringLiterals: false
+# Allow a function body on one line. None does not.
+AllowShortFunctionsOnASingleLine: None
+# Allow a block on one line. Never does not.
+AllowShortBlocksOnASingleLine: Never
+# Allow an if body on one line. Never does not.
+AllowShortIfStatementsOnASingleLine: Never
+# Allow a loop body on one line.
+AllowShortLoopsOnASingleLine: false
+# Allow an enum body on one line.
+AllowShortEnumsOnASingleLine: false
+# Put { on the next line. False keeps the source break.
+NewlineBeforeOpenBrace: false
+# Put the token after { on the next line.
+NewlineAfterOpenBrace: true
+# Put the token after } on the next line.
+NewlineAfterCloseBrace: true
+# Put else on the line after }. False leaves it on the } line.
+NewlineBeforeElse: true
+# Put except on the line after }. Also applies to finally. False leaves it on the } line.
+NewlineBeforeExcept: true
+# Break a long parenthesized list after the opening parenthesis.
+WrapLongParenthesizedList: BreakAfterOpenParen
+# Pack wrapped parameters onto one line.
+BinPackParameters: false
+# Pack wrapped arguments onto one line.
+BinPackArguments: false
+# Insert a blank line around a long control statement.
+BlankLinesAroundLongControlStatement: true
+# A control statement longer than this many lines is long.
+LongControlStatementLines: 10
+# Reflow hash and slash comments to the column limit.
+ReflowComments: true
+# Reflow block comments to the column limit.
+ReflowBlockComments: false
+# A newline ends a statement.
+StatementTerminator: Newline
+# Do not insert semicolons.
+InsertSemicolons: false
+# Allow more than one statement on a line.
+AllowMultipleStatementsPerLine: false
+# Wrap only inside parentheses and brackets.
+WrapOnlyInsideParensAndBrackets: true
+# Keep else and its parenthesis on one line.
+KeepElseParenOnSameLine: true
+# Do not write else if.
+ForbidElseIf: true
+# Keep and, or, and not as written.
+PreserveLogicalSpelling: true
+# Keep keyword capitalization as written.
+PreserveKeywordCase: true
+# Keep int, strg, and other type spellings as written.
+PreserveTypeAliasSpelling: true
+# Keep numeric spellings as written.
+PreserveNumericSpelling: true
+# Copy string text without re-escaping.
+PreserveStringLexeme: true
+# Keep parentheses that are in the source.
+PreserveParentheses: true
+# Do not split the .. operator.
+SplitDotDot: false
+# Do not split the >> operator.
+SplitShiftRight: false
+# Do not expand include directives.
+ExpandIncludes: false
+# Do not reorder include directives.
+ReorderIncludes: false
+# Do not format an inline C body.
+FormatInlineC: false
+# Keep newlines inside block comments.
+PreserveBlockCommentNewlines: true

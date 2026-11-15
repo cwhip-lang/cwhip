@@ -1,14 +1,56 @@
-# Verifies do-while, loop transfers, logical aliases, precedence, short-circuiting, and finally.
+/*
+ * tests/functional/positive/positive_loop_logic.cw
+ *
+ * Verifies do-while, loop transfers, logical aliases, precedence,
+ * short-circuiting, and finally.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Probe is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, touch, read.
+ */
 class Probe {
     public:
     int64 calls
+
+    /*
+     * Constructs a Probe and stores calls.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Probe.
+     */
     Probe() {
         calls = 0
     }
+
+    /*
+     * Handles touch for this Probe.
+     *
+     * Takes no parameters.
+     *
+     * Returns bool.
+     */
     bool touch() {
         calls = calls + 1
         return(true)
     }
+
+    /*
+     * Returns the stored calls.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 read() {
         return(calls)
     }
@@ -110,25 +152,31 @@ start {
     while (true) {
         try {
             break
-        } finally {
+        }
+        finally {
             cleanupCount = cleanupCount + 1
         }
     }
+
     while (true) {
         try {
             raise(Exception("break from handler"))
-        } except() {
+        }
+        except() {
             break
-        } finally {
+        }
+        finally {
             cleanupCount = cleanupCount + 1
         }
     }
+
     int64 turns = 0
     while (turns < 2) {
         turns = turns + 1
         try {
             continue
-        } finally {
+        }
+        finally {
             cleanupCount = cleanupCount + 1
         }
     }
@@ -140,7 +188,8 @@ start {
         finalTurns = finalTurns + 1
         try {
             print(0)
-        } finally {
+        }
+        finally {
             finalContinues = finalContinues + 1
             continue
         }
@@ -151,7 +200,8 @@ start {
     while (true) {
         try {
             print(5)
-        } finally {
+        }
+        finally {
             finalBreaks = finalBreaks + 1
             break
         }

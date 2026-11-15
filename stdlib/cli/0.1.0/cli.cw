@@ -1,51 +1,34 @@
-# Registration-based command-line option parsing for Cwhip applications.
-# Mirrors the compiler's C++ CommandLine, with multiple named positionals and
-# optional capture of argv after `--` into remainderValues().
+/*
+ * stdlib/cli/0.1.0/cli.cw
+ *
+ * Registration-based command-line option parsing for Cwhip applications.
+ * Mirrors the compiler's C++ CommandLine, with multiple named positionals and
+ * optional capture of argv after `--` into remainderValues().
+ *
+ * Created: 2026-10-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ *   2026-11-15  Split into one class per file.
+ */
+
 import system as Sys
 
+
+include "value_type.cw"
+include "action.cw"
+include "option.cw"
+include "positional.cw"
+
 namespace Cli {
-    class ValueType {
-        public:
-        int64 FLAG = 0
-        int64 COUNTER = 1
-        int64 STRING = 2
-        int64 NUMBER = 3
-    }
-
-    class Action {
-        public:
-        int64 NONE = 0
-        int64 HELP = 1
-        int64 VERSION = 2
-        # Help and version stop parsing. Any other action keeps parsing so
-        # later flags are still checked, and required arguments are not
-        # enforced once an action is set.
-        int64 DUMP_CONFIG = 3
-    }
-
-    class Option {
-        public:
-        String shortName = ""
-        String longName = ""
-        String name = ""
-        String description = ""
-        int64 valueType = 0
-        bool isList = false
-        String listSeparator = ":"
-        bool required = false
-        bool hasDefault = false
-        String defaultValue = ""
-        int64 action = 0
-    }
-
-    class Positional {
-        public:
-        String name = ""
-        String description = ""
-        bool required = false
-        bool isList = false
-    }
-
+    /*
+     * CommandLine is a class in this standard-library package.
+     *
+     * Its methods include constructor, setCaptureRemainder, addOption,
+     * addPositional, parseArgv, parse, and 21 more.
+     */
     class CommandLine {
         public:
         String programName
@@ -64,6 +47,17 @@ namespace Cli {
         bool positionalOnly
         int64 nextPositional
 
+        /*
+         * Constructs a CommandLine and stores programName, description,
+         * version, options.
+         *
+         * Parameters:
+         *   program — String program.
+         *   summary — String summary.
+         *   ver — String ver.
+         *
+         * Returns the constructed CommandLine.
+         */
         CommandLine(String program, String summary, String ver) {
             programName = program
             description = summary
@@ -82,45 +76,85 @@ namespace Cli {
             nextPositional = 0
         }
 
+        /*
+         * Stores enabled in captureRemainder.
+         *
+         * Parameters:
+         *   enabled — bool enabled.
+         *
+         * Does not return a value.
+         */
         void setCaptureRemainder(bool enabled) {
             captureRemainder = enabled
         }
 
+        /*
+         * Adds option for this CommandLine. Raises Exception when the call is
+         * not valid (command-line options need a value name and an option
+         * name; command-line short option names must be one character; switch
+         * options cannot accept list values).
+         *
+         * Parameters:
+         *   option — Option option.
+         *
+         * Does not return a value.
+         */
         void addOption(Option option) {
-            if (option.name.equals("") or (option.longName.equals("") and option.shortName.equals(""))) {
-                raise(Exception("command-line options need a value name and an option name"))
+            if (option.name.equals("") or (option.longName.equals("") and option.shortName.equals(
+                    ""))) {
+                raise(Exception(
+                        "command-line options need a value name and an option name"))
             }
             if (option.shortName.length > 1) {
-                raise(Exception("command-line short option names must be one character"))
+                raise(Exception(
+                        "command-line short option names must be one character"))
             }
-            bool takesValue = option.valueType == ValueType().STRING or option.valueType == ValueType().NUMBER
+            bool takesValue = (
+                    option.valueType == ValueType().STRING
+                    or option.valueType == ValueType().NUMBER)
             if (not takesValue and option.isList) {
                 raise(Exception("switch options cannot accept list values"))
             }
             if (option.isList and option.listSeparator.equals("")) {
                 raise(Exception("list options need a list separator"))
             }
+
             int64 index = 0
             while (index < options.length) {
                 Option current = options[index] as Option
                 if (current.name.equals(option.name)) {
                     raise(Exception("duplicate command-line option"))
                 }
-                if (not option.longName.equals("") and current.longName.equals(option.longName)) {
+                if (not option.longName.equals("") and current.longName.equals(
+                        option.longName)) {
                     raise(Exception("duplicate command-line option"))
                 }
-                if (not option.shortName.equals("") and current.shortName.equals(option.shortName)) {
+                if (not option.shortName.equals("") and current.shortName.equals(
+                        option.shortName)) {
                     raise(Exception("duplicate command-line option"))
                 }
                 index = index + 1
             }
+
             options.append(option)
         }
 
+        /*
+         * Adds positional for this CommandLine. Raises Exception when the call
+         * is not valid (positional arguments need a value name; duplicate
+         * positional argument; only the last positional argument may be a
+         * list).
+         *
+         * Parameters:
+         *   positional — Positional positional.
+         *
+         * Does not return a value.
+         */
         void addPositional(Positional positional) {
             if (positional.name.equals("")) {
                 raise(Exception("positional arguments need a value name"))
             }
+
             int64 index = 0
             while (index < positionals.length) {
                 Positional current = positionals[index] as Positional
@@ -128,13 +162,22 @@ namespace Cli {
                     raise(Exception("duplicate positional argument"))
                 }
                 if (current.isList) {
-                    raise(Exception("only the last positional argument may be a list"))
+                    raise(Exception(
+                            "only the last positional argument may be a list"))
                 }
                 index = index + 1
             }
+
             positionals.append(positional)
         }
 
+        /*
+         * Parses argv for this CommandLine.
+         *
+         * Takes no parameters.
+         *
+         * Does not return a value.
+         */
         void parseArgv() {
             list arguments = []
             Sys.Process process = Sys.Process()
@@ -146,6 +189,16 @@ namespace Cli {
             parse(arguments)
         }
 
+        /*
+         * Parses the CommandLine state. Raises Exception when the call is not
+         * valid (unknown option: --{}; unknown option: -{}; required option
+         * not found: {}).
+         *
+         * Parameters:
+         *   arguments — list arguments.
+         *
+         * Does not return a value.
+         */
         void parse(list arguments) {
             values = [:]
             provided = [:]
@@ -167,24 +220,33 @@ namespace Cli {
 
             int64 index = 0
             while (index < arguments.length) {
+
                 String argument = arguments[index] as String
-                if (not positionalOnly and not remainderMode and argument.equals("--")) {
+                if (not positionalOnly
+                        and not remainderMode
+                        and argument.equals("--")) {
                     if (captureRemainder) {
                         remainderMode = true
-                    } else {
+                    }
+                    else {
                         positionalOnly = true
                     }
                     index = index + 1
                     continue
                 }
-                if (not positionalOnly and not remainderMode and argument.length > 1 and argument.startsWith("--")) {
+
+                if (not positionalOnly
+                        and not remainderMode
+                        and argument.length > 1
+                        and argument.startsWith("--")) {
                     int64 separator = argument.find("=")
                     String name = ""
                     String attached = ""
                     bool hasAttached = false
                     if (separator < 0) {
                         name = argument[2..argument.length - 1]
-                    } else {
+                    }
+                    else {
                         name = argument[2..separator - 1]
                         attached = argument[separator + 1..argument.length - 1]
                         hasAttached = true
@@ -193,32 +255,52 @@ namespace Cli {
                     if (option == null) {
                         raise(Exception(format("unknown option: --{}", name)))
                     }
-                    int64 consumed = applyOption(option, hasAttached, attached, arguments, index)
+                    int64 consumed = applyOption(
+                            option,
+                            hasAttached,
+                            attached,
+                            arguments,
+                            index)
                     if (consumed < 0) {
                         return
                     }
                     index = index + 1 + consumed
                     continue
                 }
-                if (not positionalOnly and not remainderMode and argument.length > 1 and argument.startsWith("-")) {
+
+                if (not positionalOnly
+                        and not remainderMode
+                        and argument.length > 1
+                        and argument.startsWith("-")) {
+
                     int64 offset = 1
                     int64 consumedExtra = 0
                     while (offset < argument.length) {
                         String shortName = argument[offset..offset]
                         Option option = findShortOption(shortName)
                         if (option == null) {
-                            raise(Exception(format("unknown option: -{}", shortName)))
+                            raise(Exception(format(
+                                    "unknown option: -{}",
+                                    shortName)))
                         }
-                        if ((option.valueType == ValueType().FLAG or option.valueType == ValueType().COUNTER) and option.action == Action().NONE) {
+
+                        if ((option.valueType == ValueType().FLAG
+                                or option.valueType == ValueType().COUNTER)
+                                and option.action == Action().NONE) {
                             bool attachedValue = offset + 1 < argument.length and argument[offset + 1..offset + 1].equals("=")
                             String attached = ""
                             bool hasAttached = false
                             if (attachedValue) {
-                                attached = argument[offset + 2..argument.length - 1]
+                                attached = argument[
+                                        offset + 2..argument.length - 1]
                                 hasAttached = true
                             }
-                            int64 consumed = applyOption(option, hasAttached, attached,
-                                                         arguments, index)
+                            int64 consumed = applyOption(
+                                    option,
+                                    hasAttached,
+                                    attached,
+                                    arguments,
+                                    index)
                             if (consumed < 0) {
                                 return
                             }
@@ -228,6 +310,7 @@ namespace Cli {
                             offset = offset + 1
                             continue
                         }
+
                         String attached = ""
                         bool hasAttached = false
                         if (offset + 1 < argument.length) {
@@ -236,24 +319,33 @@ namespace Cli {
                                 valueStart = valueStart + 1
                             }
                             if (valueStart < argument.length) {
-                                attached = argument[valueStart..argument.length - 1]
+                                attached = argument[
+                                        valueStart..argument.length - 1]
                                 hasAttached = true
-                            } else {
+                            }
+                            else {
                                 attached = ""
                                 hasAttached = true
                             }
                         }
-                        int64 consumed = applyOption(option, hasAttached, attached,
-                                                     arguments, index)
+
+                        int64 consumed = applyOption(
+                                option,
+                                hasAttached,
+                                attached,
+                                arguments,
+                                index)
                         if (consumed < 0) {
                             return
                         }
                         consumedExtra = consumed
                         break
                     }
+
                     index = index + 1 + consumedExtra
                     continue
                 }
+
                 recordPositional(argument)
                 index = index + 1
             }
@@ -267,30 +359,49 @@ namespace Cli {
                 Option option = options[optionIndex] as Option
                 if (option.required and not wasProvided(option.name)) {
                     raise(Exception(format("required option not found: {}",
-                                           displayName(option))))
+                                           displayName(
+                            option))))
                 }
                 optionIndex = optionIndex + 1
             }
+
             int64 requiredSlots = 0
             int64 positionalIndex = 0
             while (positionalIndex < positionals.length) {
-                Positional positional = positionals[positionalIndex] as Positional
+                Positional positional = positionals[
+                        positionalIndex] as Positional
                 if (positional.required and not positional.isList) {
                     requiredSlots = requiredSlots + 1
                 }
-                if (positional.required and positional.isList and positionalIndex >= positionalValues.length) {
-                    raise(Exception(format("required argument not found: {}",
+                if (positional.required
+                        and positional.isList
+                        and positionalIndex >= positionalValues.length) {
+                    raise(Exception(format(
+                            "required argument not found: {}",
                                            positional.name)))
                 }
                 positionalIndex = positionalIndex + 1
             }
+
             if (requiredSlots > positionalValues.length) {
-                Positional missing = positionals[positionalValues.length] as Positional
-                raise(Exception(format("required argument not found: {}", missing.name)))
+                Positional missing = positionals[
+                        positionalValues.length] as Positional
+                raise(Exception(format(
+                        "required argument not found: {}",
+                        missing.name)))
             }
         }
 
 
+        /*
+         * Reports whether this object has key for this CommandLine.
+         *
+         * Parameters:
+         *   table — dict table.
+         *   name — String name.
+         *
+         * Returns bool.
+         */
         bool hasKey(dict table, String name) {
             for (key, value in table) {
                 if ((key as String).equals(name)) {
@@ -300,6 +411,14 @@ namespace Cli {
             return(false)
         }
 
+        /*
+         * Handles was provided for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns bool.
+         */
         bool wasProvided(String name) {
             if (hasKey(provided, name) == false) {
                 return(false)
@@ -307,10 +426,26 @@ namespace Cli {
             return(provided[name] as bool)
         }
 
+        /*
+         * Returns wasProvided(name).
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns bool.
+         */
         bool switchValue(String name) {
             return(wasProvided(name))
         }
 
+        /*
+         * Handles count for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns int64.
+         */
         int64 count(String name) {
             if (hasKey(counts, name) == false) {
                 return(0)
@@ -318,6 +453,14 @@ namespace Cli {
             return(counts[name] as int64)
         }
 
+        /*
+         * Reports whether this object has value for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns bool.
+         */
         bool hasValue(String name) {
             if (hasKey(values, name) == false) {
                 return(false)
@@ -326,6 +469,14 @@ namespace Cli {
             return(items.length > 0)
         }
 
+        /*
+         * Handles value for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns String.
+         */
         String value(String name) {
             if (not hasValue(name)) {
                 return("")
@@ -334,6 +485,14 @@ namespace Cli {
             return(items[items.length - 1] as String)
         }
 
+        /*
+         * Handles values for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns list.
+         */
         list valuesFor(String name) {
             if (hasKey(values, name) == false) {
                 list empty = []
@@ -342,6 +501,15 @@ namespace Cli {
             return(values[name] as list)
         }
 
+        /*
+         * Handles contains item for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *   item — String item.
+         *
+         * Returns bool.
+         */
         bool containsItem(String name, String item) {
             list items = valuesFor(name)
             int64 index = 0
@@ -354,19 +522,48 @@ namespace Cli {
             return(false)
         }
 
+        /*
+         * Returns the stored positionalValues.
+         *
+         * Takes no parameters.
+         *
+         * Returns list.
+         */
         list allPositionalValues() {
             return(positionalValues)
         }
 
+        /*
+         * Returns the stored remainderValues.
+         *
+         * Takes no parameters.
+         *
+         * Returns list.
+         */
         list allRemainderValues() {
             return(remainderValues)
         }
 
+        /*
+         * Returns the stored action.
+         *
+         * Takes no parameters.
+         *
+         * Returns int64.
+         */
         int64 currentAction() {
             return(action)
         }
 
+        /*
+         * Handles help text for this CommandLine.
+         *
+         * Takes no parameters.
+         *
+         * Returns String.
+         */
         String helpText() {
+
             String output = format("Usage: {} [options]", programName)
             int64 index = 0
             while (index < positionals.length) {
@@ -384,31 +581,38 @@ namespace Cli {
                 output = format("{}{}{}{}{}", output, open, positional.name, suffix, close)
                 index = index + 1
             }
+
             if (captureRemainder) {
                 output = format("{} [-- <args>...]", output)
             }
             output = format("{}\n\n{}\n\nOptions:\n", output, description)
             index = 0
+
             while (index < options.length) {
                 Option option = options[index] as Option
                 String line = "  "
                 if (not option.shortName.equals("")) {
                     line = format("{}-{}", line, option.shortName)
-                } else {
+                }
+                else {
                     line = format("{}  ", line)
                 }
                 if (not option.longName.equals("")) {
                     if (not option.shortName.equals("")) {
                         line = format("{}, ", line)
-                    } else {
+                    }
+                    else {
                         line = format("{}  ", line)
                     }
                     line = format("{}--{}", line, option.longName)
                 }
-                if ((option.valueType == ValueType().STRING or option.valueType == ValueType().NUMBER) and option.action == Action().NONE) {
+                if ((option.valueType == ValueType().STRING
+                        or option.valueType == ValueType().NUMBER)
+                        and option.action == Action().NONE) {
                     if (option.isList) {
                         line = format("{} <value>...", line)
-                    } else {
+                    }
+                    else {
                         line = format("{} <value>", line)
                     }
                 }
@@ -425,6 +629,7 @@ namespace Cli {
                 output = format("{}{}\n", output, line)
                 index = index + 1
             }
+
             index = 0
             while (index < positionals.length) {
                 Positional positional = positionals[index] as Positional
@@ -438,15 +643,31 @@ namespace Cli {
             return(output)
         }
 
+        /*
+         * Returns format("{}: v{}\n", programName, version).
+         *
+         * Takes no parameters.
+         *
+         * Returns String.
+         */
         String versionText() {
             return(format("{}: v{}\n", programName, version))
         }
 
+        /*
+         * Finds long option for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns Option.
+         */
         Option findLongOption(String name) {
             int64 index = 0
             while (index < options.length) {
                 Option option = options[index] as Option
-                if (not option.longName.equals("") and option.longName.equals(name)) {
+                if (not option.longName.equals("") and option.longName.equals(
+                        name)) {
                     return(option)
                 }
                 index = index + 1
@@ -454,11 +675,20 @@ namespace Cli {
             return(null)
         }
 
+        /*
+         * Finds short option for this CommandLine.
+         *
+         * Parameters:
+         *   name — String name.
+         *
+         * Returns Option.
+         */
         Option findShortOption(String name) {
             int64 index = 0
             while (index < options.length) {
                 Option option = options[index] as Option
-                if (not option.shortName.equals("") and option.shortName.equals(name)) {
+                if (not option.shortName.equals("") and option.shortName.equals(
+                        name)) {
                     return(option)
                 }
                 index = index + 1
@@ -466,6 +696,14 @@ namespace Cli {
             return(null)
         }
 
+        /*
+         * Handles display name for this CommandLine.
+         *
+         * Parameters:
+         *   option — Option option.
+         *
+         * Returns String.
+         */
         String displayName(Option option) {
             if (option.longName.equals("")) {
                 return(format("-{}", option.shortName))
@@ -473,7 +711,17 @@ namespace Cli {
             return(format("--{}", option.longName))
         }
 
+        /*
+         * Handles split list value for this CommandLine.
+         *
+         * Parameters:
+         *   value — String value.
+         *   separator — String separator.
+         *
+         * Returns list.
+         */
         list splitListValue(String value, String separator) {
+
             list result = []
             int64 begin = 0
             while (begin <= value.length) {
@@ -495,7 +743,8 @@ namespace Cli {
                 }
                 if (end <= begin) {
                     result.append("")
-                } else {
+                }
+                else {
                     result.append(value[begin..end - 1])
                 }
                 if (separatorAt < 0 or separatorAt + 1 == value.length) {
@@ -503,9 +752,18 @@ namespace Cli {
                 }
                 begin = separatorAt + 1
             }
+
             return(result)
         }
 
+        /*
+         * Reports whether number for this CommandLine.
+         *
+         * Parameters:
+         *   item — String item.
+         *
+         * Returns bool.
+         */
         bool isNumber(String item) {
             if (item.equals("")) {
                 return(false)
@@ -513,11 +771,23 @@ namespace Cli {
             try {
                 item.toInt64()
                 return(true)
-            } except() {
+            }
+            except() {
                 return(false)
             }
         }
 
+        /*
+         * Handles record value for this CommandLine. Raises Exception when the
+         * call is not valid (option {} requires a number).
+         *
+         * Parameters:
+         *   option — Option option.
+         *   value — String value.
+         *   providedFlag — bool provided flag.
+         *
+         * Does not return a value.
+         */
         void recordValue(Option option, String value, bool providedFlag) {
             list destination = []
             if (hasKey(values, option.name) and option.isList) {
@@ -526,20 +796,24 @@ namespace Cli {
             list items = []
             if (option.isList) {
                 items = splitListValue(value, option.listSeparator)
-            } else {
+            }
+            else {
                 items.append(value)
             }
+
             if (option.valueType == ValueType().NUMBER) {
                 int64 itemIndex = 0
                 while (itemIndex < items.length) {
                     String item = items[itemIndex] as String
                     if (not isNumber(item)) {
                         raise(Exception(format("option {} requires a number",
-                                               displayName(option))))
+                                               displayName(
+                                option))))
                     }
                     itemIndex = itemIndex + 1
                 }
             }
+
             int64 itemIndex = 0
             while (itemIndex < items.length) {
                 destination.append(items[itemIndex])
@@ -551,22 +825,38 @@ namespace Cli {
             }
         }
 
+        /*
+         * Handles record positional for this CommandLine. Raises Exception
+         * when the call is not valid (unexpected positional argument: {}).
+         *
+         * Parameters:
+         *   value — String value.
+         *
+         * Does not return a value.
+         */
         void recordPositional(String value) {
             if (remainderMode) {
                 remainderValues.append(value)
                 return
             }
             if (positionals.length == 0) {
-                raise(Exception(format("unexpected positional argument: {}", value)))
+                raise(Exception(format(
+                        "unexpected positional argument: {}",
+                        value)))
             }
+
             if (nextPositional >= positionals.length) {
-                Positional last = positionals[positionals.length - 1] as Positional
+                Positional last = positionals[
+                        positionals.length - 1] as Positional
                 if (last.isList) {
                     positionalValues.append(value)
                     return
                 }
-                raise(Exception(format("unexpected positional argument: {}", value)))
+                raise(Exception(format(
+                        "unexpected positional argument: {}",
+                        value)))
             }
+
             Positional positional = positionals[nextPositional] as Positional
             positionalValues.append(value)
             if (not positional.isList) {
@@ -574,56 +864,84 @@ namespace Cli {
             }
         }
 
-        # Returns -1 to stop parsing (help/version), 0 if no following argv was
-        # consumed, or 1 if the next argv entry was taken as the option value.
-        int64 applyOption(Option option, bool hasAttached, String attached,
-                          list arguments, int64 index) {
-            if ((option.action == Action().HELP) or (option.action == Action().VERSION)) {
+        /*
+         * Returns -1 to stop parsing (help/version), 0 if no following argv
+         * was consumed, or 1 if the next argv entry was taken as the option
+         * value.
+         *
+         * Parameters:
+         *   option — Option option.
+         *   hasAttached — bool has attached.
+         *   attached — String attached.
+         *   arguments — list arguments.
+         *   index — int64 index.
+         *
+         * Returns int64.
+         */
+        int64 applyOption(
+                Option option,
+                bool hasAttached,
+                String attached,
+                          list arguments,
+                int64 index) {
+            if ((option.action == Action().HELP) or (
+                    option.action == Action().VERSION)) {
                 if (hasAttached) {
                     raise(Exception(format("option {} does not accept an argument",
-                                           displayName(option))))
+                                           displayName(
+                            option))))
                 }
                 action = option.action
                 return(-1)
             }
+
             if (option.action != Action().NONE) {
                 if (hasAttached) {
                     raise(Exception(format("option {} does not accept an argument",
-                                           displayName(option))))
+                                           displayName(
+                            option))))
                 }
                 action = option.action
                 provided[option.name] = true
                 return(0)
             }
+
             if (option.valueType == ValueType().FLAG) {
                 if (hasAttached) {
                     raise(Exception(format("option {} does not accept an argument",
-                                           displayName(option))))
+                                           displayName(
+                            option))))
                 }
                 provided[option.name] = true
                 return(0)
             }
+
             if (option.valueType == ValueType().COUNTER) {
                 if (hasAttached) {
                     raise(Exception(format("option {} does not accept an argument",
-                                           displayName(option))))
+                                           displayName(
+                            option))))
                 }
                 provided[option.name] = true
                 counts[option.name] = count(option.name) + 1
                 return(0)
             }
+
             String argument = ""
             int64 consumed = 0
             if (hasAttached) {
                 argument = attached
-            } else {
+            }
+            else {
                 if (index + 1 >= arguments.length) {
                     raise(Exception(format("option {} requires an argument",
-                                           displayName(option))))
+                                           displayName(
+                            option))))
                 }
                 argument = arguments[index + 1] as String
                 consumed = 1
             }
+
             recordValue(option, argument, true)
             return(consumed)
         }

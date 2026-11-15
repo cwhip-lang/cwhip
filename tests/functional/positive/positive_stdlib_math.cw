@@ -1,3 +1,14 @@
+/*
+ * tests/functional/positive/positive_stdlib_math.cw — Checks stdlib math.
+ *
+ * Created: 2026-10-01
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-01  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import math as Math
 
 start {

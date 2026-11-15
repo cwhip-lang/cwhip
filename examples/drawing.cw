@@ -1,9 +1,24 @@
+/*
+ * examples/drawing.cw — Demonstrates drawing.
+ *
+ * Created: 2026-11-07
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-11-07  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import gtk
 import system
 
-// Demonstrates DrawingArea view chrome: custom Scrollbars tied to pan/zoom
-// extents (path 2) plus ContextMenu owner/onPopup rebuild. Path 1
-// (ScrolledWindow + setContentSize) is documented in doc/GTK.md.
+/*
+ * Demo is a class, used by this example.
+ *
+ * Demonstrates DrawingArea view chrome: custom Scrollbars tied to pan/zoom
+ * extents (path 2) plus ContextMenu owner/onPopup rebuild. Path 1
+ * (ScrolledWindow + setContentSize) is documented in doc/GTK.md.
+ */
 class Demo {
     public:
     Gtk.DrawingArea area
@@ -36,6 +51,13 @@ class Demo {
     void<fp64> vScrollAction
     void<> jumpAction
 
+    /*
+     * Handles sync bars for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void syncBars() {
         fp64 world = 800.0f64 * zoom
         fp64 pageW = viewW
@@ -62,6 +84,15 @@ class Demo {
         syncingBars = false
     }
 
+    /*
+     * Handles paint for this Demo.
+     *
+     * Parameters:
+     *   width — int64 width.
+     *   height — int64 height.
+     *
+     * Does not return a value.
+     */
     void paint(int64 width, int64 height) {
         paints = paints + 1
         viewW = width
@@ -84,6 +115,16 @@ class Demo {
         syncBars()
     }
 
+    /*
+     * Handles clicked for this Demo.
+     *
+     * Parameters:
+     *   button — int64 button.
+     *   x — fp64 input value.
+     *   y — fp64 input value.
+     *
+     * Does not return a value.
+     */
     void clicked(int64 button, fp64 x, fp64 y) {
         if (button != Gtk.DrawingArea.BUTTON_PRIMARY) {
             return
@@ -94,7 +135,24 @@ class Demo {
         area.queueDraw()
     }
 
-    void dragged(int64 phase, fp64 startX, fp64 startY, fp64 offsetX, fp64 offsetY) {
+    /*
+     * Handles dragged for this Demo.
+     *
+     * Parameters:
+     *   phase — int64 phase.
+     *   startX — fp64 start x.
+     *   startY — fp64 start y.
+     *   offsetX — fp64 offset x.
+     *   offsetY — fp64 offset y.
+     *
+     * Does not return a value.
+     */
+    void dragged(
+            int64 phase,
+            fp64 startX,
+            fp64 startY,
+            fp64 offsetX,
+            fp64 offsetY) {
         if (phase == Gtk.DrawingArea.DRAG_BEGIN) {
             dragOriginX = panX
             dragOriginY = panY
@@ -107,6 +165,17 @@ class Demo {
         area.queueDraw()
     }
 
+    /*
+     * Handles scrolled for this Demo.
+     *
+     * Parameters:
+     *   x — fp64 input value.
+     *   y — fp64 input value.
+     *   dx — fp64 input value.
+     *   dy — fp64 input value.
+     *
+     * Does not return a value.
+     */
     void scrolled(fp64 x, fp64 y, fp64 dx, fp64 dy) {
         markX = x + dx
         markY = y
@@ -126,6 +195,14 @@ class Demo {
         area.queueDraw()
     }
 
+    /*
+     * Handles h scrolled for this Demo.
+     *
+     * Parameters:
+     *   value — fp64 value.
+     *
+     * Does not return a value.
+     */
     void hScrolled(fp64 value) {
         if (syncingBars) {
             return
@@ -134,6 +211,14 @@ class Demo {
         area.queueDraw()
     }
 
+    /*
+     * Handles v scrolled for this Demo.
+     *
+     * Parameters:
+     *   value — fp64 value.
+     *
+     * Does not return a value.
+     */
     void vScrolled(fp64 value) {
         if (syncingBars) {
             return
@@ -142,6 +227,13 @@ class Demo {
         area.queueDraw()
     }
 
+    /*
+     * Handles jump home for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void jumpHome() {
         menuActions = menuActions + 1
         panX = 0.0f64
@@ -150,6 +242,15 @@ class Demo {
         area.queueDraw()
     }
 
+    /*
+     * Handles prepare menu for this Demo.
+     *
+     * Parameters:
+     *   x — fp64 input value.
+     *   y — fp64 input value.
+     *
+     * Does not return a value.
+     */
     void prepareMenu(fp64 x, fp64 y) {
         popups = popups + 1
         markX = x
@@ -162,6 +263,13 @@ class Demo {
         menu.addItem(places, "Origin", jumpAction)
     }
 
+    /*
+     * Handles done for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void done() {
         if (paints < 1) {
             System.StandardIO().writeErrorLine("DrawingArea did not paint")
@@ -171,6 +279,13 @@ class Demo {
         Gtk.Application().quit()
     }
 
+    /*
+     * Handles activate for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         zoom = 1.0f64
         Gtk.Window window = Gtk.Window("DrawingArea demo")
@@ -197,7 +312,8 @@ class Demo {
         area.queueDraw()
         if (System.Process().arg(1).equals("--test")) {
             Gtk.Application().schedule(250, doneAction)
-        } else {
+        }
+        else {
             Gtk.Application().schedule(8000, doneAction)
         }
     }

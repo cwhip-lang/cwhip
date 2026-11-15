@@ -1,6 +1,18 @@
-# Shared sequence operations: String byte indexing and assignment, inclusive
-# removal, list insert/remove/clear with buffer and handle elements, buffer
-# insert/remove, and dict clear.
+/*
+ * tests/functional/positive/positive_sequence_operations.cw
+ *
+ * Shared sequence operations: String byte indexing and assignment, inclusive
+ * removal, list insert/remove/clear with buffer and handle elements, buffer
+ * insert/remove, and dict clear.
+ *
+ * Created: 2026-10-28
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-28  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 start {
     strg text = "abcd"
     print(text[0])
@@ -11,23 +23,27 @@ start {
     print(text)
     try {
         text[0] = 0xC3
-    } except() {
+    }
+    except() {
         print("high byte")
     }
     strg accented = "aéz"
     try {
         accented[1] = 65
-    } except() {
+    }
+    except() {
         print("split")
     }
     try {
         uint8 missing = text[4]
-    } except() {
+    }
+    except() {
         print("index bounds")
     }
     try {
         strg outside = text[0..4]
-    } except() {
+    }
+    except() {
         print("range bounds")
     }
 

@@ -1,35 +1,170 @@
+/*
+ * tests/functional/positive/positive_aliased_import_constructor_arguments.
+ * cw
+ *
+ * Checks aliased import constructor arguments.
+ *
+ * Created: 2026-10-12
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-12  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import system as sys
 
+/*
+ * Box is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, label, set, rebuild.
+ */
 class Box {
     public:
     String value
 
-    Box(String text) { value = text }
-    Box(int64 number) { value = "int" }
-    Box(bool flag) { value = "bool" }
+    /*
+     * Constructs a Box and stores value.
+     *
+     * Parameters:
+     *   text — String text.
+     *
+     * Returns the constructed Box.
+     */
+    Box(String text) {
+        value = text
+    }
 
-    String label() { return(value)}
-    void set(String text) { value = text }
-    void set(int64 number) { value = "int" }
+    /*
+     * Constructs a Box and stores value.
+     *
+     * Parameters:
+     *   number — int64 number.
+     *
+     * Returns the constructed Box.
+     */
+    Box(int64 number) {
+        value = "int"
+    }
 
-    Box rebuild() { return(Box(sys.FileSystem().basename("/m/method.txt")))}
+    /*
+     * Constructs a Box and stores value.
+     *
+     * Parameters:
+     *   flag — bool flag.
+     *
+     * Returns the constructed Box.
+     */
+    Box(bool flag) {
+        value = "bool"
+    }
+
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns String.
+     */
+    String label() {
+        return(value)
+    }
+
+    /*
+     * Stores text in value.
+     *
+     * Parameters:
+     *   text — String text.
+     *
+     * Does not return a value.
+     */
+    void set(String text) {
+        value = text
+    }
+
+    /*
+     * Stores "int" in value.
+     *
+     * Parameters:
+     *   number — int64 number.
+     *
+     * Does not return a value.
+     */
+    void set(int64 number) {
+        value = "int"
+    }
+
+    /*
+     * Returns Box(sys.FileSystem().basename("/m/method.txt")).
+     *
+     * Takes no parameters.
+     *
+     * Returns Box.
+     */
+    Box rebuild() {
+        return(Box(sys.FileSystem().basename("/m/method.txt")))
+    }
 }
 
+/*
+ * Pair is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Pair {
     public:
     Box inner
 
-    Pair(Box box) { inner = box }
+    /*
+     * Constructs a Pair and stores inner.
+     *
+     * Parameters:
+     *   box — Box box.
+     *
+     * Returns the constructed Pair.
+     */
+    Pair(Box box) {
+        inner = box
+    }
 }
 
+/*
+ * Derived is a class derived from Box, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Derived : Box {
     public:
-    Derived() { super Box(sys.FileSystem().basename("/d/derived.txt")) }
+    /*
+     * Constructs a Derived.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Derived.
+     */
+    Derived() {
+        super Box(sys.FileSystem().basename("/d/derived.txt"))
+    }
 }
 
+/*
+ * AliasError is a class derived from Exception, used as a fixture by this
+ * test.
+ *
+ * Its methods include constructor.
+ */
 class AliasError : Exception {
     public:
-    AliasError() { super Exception(sys.FileSystem().basename("/e/base.txt")) }
+    /*
+     * Constructs a AliasError.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed AliasError.
+     */
+    AliasError() {
+        super Exception(sys.FileSystem().basename("/e/base.txt"))
+    }
 }
 
 start {
@@ -37,14 +172,16 @@ start {
     try {
         sys.File missing("/definitely/not/a/cwhip/dir/file.txt", "r")
         opened = missing.isOpen()
-    } except(Exception) {
+    }
+    except(Exception) {
         opened = false
     }
     print(opened)
 
     try {
         raise(Exception(sys.System().lastError()))
-    } except() as message {
+    }
+    except() as message {
         print(message.length > 0)
     }
 
