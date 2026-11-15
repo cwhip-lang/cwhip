@@ -179,6 +179,10 @@ add_test(NAME cwhip_lsp
 add_test(NAME cwhip-format_cli
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_cwhip-format.py"
         --cwhip-format "${CWHIP_RUNTIME_OUTPUT_DIRECTORY}/cwhip-format")
+add_test(NAME cwhip_format_target
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_format_target.py"
+        --cmake "${CMAKE_COMMAND}"
+        --script "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/FormatSources.cmake")
 add_test(NAME cwhip_cli_diagnostics
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_cli_diagnostics.py"
         --compiler "$<TARGET_FILE:cwhip>"
