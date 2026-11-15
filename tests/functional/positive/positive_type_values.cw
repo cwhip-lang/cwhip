@@ -1,23 +1,82 @@
-# Exercises exact dynamic type names, type values, storage, and printing.
-class Base {}
-class Derived : Base {}
+/*
+ * tests/functional/positive/positive_type_values.cw
+ *
+ * Exercises exact dynamic type names, type values, storage, and printing.
+ *
+ * Created: 2026-09-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Base is a class, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Base {
+}
+
+/*
+ * Derived is a class derived from Base, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Derived : Base {
+}
+
+/*
+ * Native is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, create.
+ */
 class Native {
     public:
     int64 marker
     handle saved
 
+    /*
+     * Constructs a Native and stores marker.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Native.
+     */
     Native(int64 initial) {
         marker = initial
     }
 
+    /*
+     * Creates the Native state by calling the native function
+     * cwhip_method_demo_handle_create.
+     *
+     * Takes no parameters.
+     *
+     * Returns handle.
+     */
     handle create()
 }
 handle Native.create() from "cwhip_method_demo_handle_create"
 
 namespace ns {
-    class Thing {}
+
+    /*
+     * Thing is a class, used as a fixture by this test.
+     *
+     * It groups the data used by the surrounding program.
+     */
+    class Thing {
+    }
 }
 
+/*
+ * TypeHolder is a class, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
 class TypeHolder {
     public:
     type value

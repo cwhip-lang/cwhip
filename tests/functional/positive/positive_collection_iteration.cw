@@ -1,10 +1,45 @@
-# Exercises dict lookup and membership, key/value iteration, list iteration, and collection-held object references.
+/*
+ * tests/functional/positive/positive_collection_iteration.cw
+ *
+ * Exercises dict lookup and membership, key/value iteration, list iteration,
+ * and collection-held object references.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Node is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, read.
+ */
 class Node {
     public:
     int64 value
+
+    /*
+     * Constructs a Node and stores value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Node.
+     */
     Node(int64 initial) {
         value = initial
     }
+
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 read() {
         return(value)
     }

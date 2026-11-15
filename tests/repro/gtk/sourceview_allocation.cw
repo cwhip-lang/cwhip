@@ -1,4 +1,21 @@
+/*
+ * tests/repro/gtk/sourceview_allocation.cw — sourceview allocation.
+ *
+ * Created: 2026-10-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import sourceview
+
+/*
+ * UI is a class, used as a fixture by this test.
+ *
+ * Its methods include changed, cursor, activate, allocated, resized.
+ */
 class UI {
     public:
     Gtk.Window window
@@ -10,9 +27,36 @@ class UI {
     bool seenUndo
     bool seenRedo
     bool seenSelection
-    void changed() { seenUndo = view.canUndo()
+
+    /*
+     * Handles changed for this UI.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
+    void changed() {
+        seenUndo = view.canUndo()
         seenRedo = view.canRedo() }
-    void cursor() { seenSelection = view.hasSelection() }
+
+    /*
+     * Stores view.hasSelection() in seenSelection.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
+    void cursor() {
+        seenSelection = view.hasSelection()
+    }
+
+    /*
+     * Handles activate for this UI.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         window = Gtk.Window("Allocation bindings")
         window.setDefaultSize(640, 480)
@@ -51,12 +95,29 @@ class UI {
         view.focus()
         F().waitSize(view._widgetToken(), 500, 300, allocatedAction)
     }
+
+    /*
+     * Handles allocated for this UI.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void allocated() {
-        print(view.text().equals("one\\ntwo\\nthree\\nfour\\nfive\\nsix\\nseven\\neight\\n"))
+        print(view.text().equals(
+                "one\\ntwo\\nthree\\nfour\\nfive\\nsix\\nseven\\neight\\n"))
         print("multiline;")
         F().resize(window._widgetToken(), 900, 720)
         F().waitSize(view._widgetToken(), 760, 550, resizedAction)
     }
+
+    /*
+     * Handles resized for this UI.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void resized() {
         print("grew;")
         Gtk.Entry entry = Gtk.Entry("search")

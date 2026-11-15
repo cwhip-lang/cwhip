@@ -1,3 +1,14 @@
+/*
+ * tests/functional/positive/positive_stdlib_sqlite.cw — Checks stdlib sqlite.
+ *
+ * Created: 2026-10-06
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-06  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import sql as SQL
 import sqlite as SQLite
 import system as Sys
@@ -19,7 +30,8 @@ start {
     print(database.error().length > 0)
     print(sqlite.setBusyTimeout(1000))
     print(database.execute("PRAGMA foreign_keys = ON"))
-    print(database.execute("CREATE TABLE payload (n, i, r, text_value, blob_value)"))
+    print(database.execute(
+            "CREATE TABLE payload (n, i, r, text_value, blob_value)"))
     print(database.execute("CREATE TABLE affinity (value INTEGER)"))
     print(database.execute("INSERT INTO affinity VALUES (1.5)"))
 
@@ -98,7 +110,8 @@ start {
     bool mismatchCaught = false
     try {
         nullValue.asInteger()
-    } except() {
+    }
+    except() {
         mismatchCaught = true
     }
     print(mismatchCaught)
@@ -112,11 +125,13 @@ start {
     print(transaction.isActive() == false)
     print(transaction.commit() == false)
     print(transaction.rollback() == false)
-    print(database.execute("INSERT INTO payload VALUES (NULL, 7, 2.5, 'rollback', X'01')"))
+    print(database.execute(
+            "INSERT INTO payload VALUES (NULL, 7, 2.5, 'rollback', X'01')"))
     print(transaction.close())
     print(transaction.isActive() == false)
     SQL.Transaction committed = database.beginTransaction()
-    print(database.execute("INSERT INTO payload VALUES (NULL, 8, 3.5, 'commit', X'02')"))
+    print(database.execute(
+            "INSERT INTO payload VALUES (NULL, 8, 3.5, 'commit', X'02')"))
     print(committed.commit())
     print(committed.isActive() == false)
     SQL.Statement count = database.prepare("SELECT count(*) FROM payload")

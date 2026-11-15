@@ -1,7 +1,13 @@
-
 /*
-    Pedantic prime number filter
-*/
+ * examples/primes.cw — Pedantic prime number filter.
+ *
+ * Created: 2026-10-04
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-04  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
 
 start {
     int64 limit

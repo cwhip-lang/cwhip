@@ -1,5 +1,17 @@
-# Exercises String byte/range methods, search, splitting, replacement,
-# trimming, ASCII case conversion, UTF-8 boundary checks, and embedded NULs.
+/*
+ * tests/functional/positive/positive_string_methods.cw
+ *
+ * Exercises String byte/range methods, search, splitting, replacement,
+ * trimming, ASCII case conversion, UTF-8 boundary checks, and embedded NULs.
+ *
+ * Created: 2026-09-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 start {
     strg text = "a,b,,c,"
     print(text[0])
@@ -104,68 +116,81 @@ start {
 
     try {
         uint8 ignored = unicode[20]
-    } except() {
+    }
+    except() {
         print("byte bounds")
     }
     try {
         strg broken = unicode[2..3]
-    } except() {
+    }
+    except() {
         print("slice boundary")
     }
     try {
         unicode.insert(2, "x")
-    } except() {
+    }
+    except() {
         print("insert boundary")
     }
     try {
         unicode.remove(2..3)
-    } except() {
+    }
+    except() {
         print("remove boundary")
     }
     try {
         text.insert(20, "x")
-    } except() {
+    }
+    except() {
         print("insert bounds")
     }
     try {
         text.split("")
-    } except() {
+    }
+    except() {
         print("empty separator")
     }
     try {
         text.replace("", "x")
-    } except() {
+    }
+    except() {
         print("empty target")
     }
     try {
         text.find(null)
-    } except() {
+    }
+    except() {
         print("null needle")
     }
     try {
         text.startsWith(null)
-    } except() {
+    }
+    except() {
         print("null prefix")
     }
     try {
         text.endsWith(null)
-    } except() {
+    }
+    except() {
         print("null suffix")
     }
     try {
         text.split(null)
-    } except() {
+    }
+    except() {
         print("null separator")
     }
     try {
         text.replace("a", null)
-    } except() {
+    }
+    except() {
         print("null replacement")
     }
     try {
         strg missing = null
         missing.clear()
-    } except() {
+    }
+    except() {
         print("null receiver")
     }
 }

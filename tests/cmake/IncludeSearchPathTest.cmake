@@ -34,7 +34,7 @@ if(NOT stdout STREQUAL "")
     message(FATAL_ERROR "Missing-path compilation wrote unexpected stdout: '${stdout}'")
 endif()
 if(NOT stderr MATCHES
-   "^cwhip: error\\[CWHIP1001\\]: source compilation failed\n.*search\\.cw:1:9: error: cannot resolve included source 'search_target\\.cw'\n$")
+   "^cwhip: error\\[CWHIP1001\\]: source compilation failed\n.*search\\.cw:12:9: error: cannot resolve included source 'search_target\\.cw'\n$")
     message(FATAL_ERROR "Missing-path compilation wrote an unexpected diagnostic:\n${stderr}")
 endif()
 elseif(CASE STREQUAL "ordered")

@@ -1,21 +1,78 @@
-# Covers heterogeneous maps, aliases, string keys, nested collections, typed extraction, and retained references.
+/*
+ * tests/functional/positive/positive_maps.cw
+ *
+ * Covers heterogeneous maps, aliases, string keys, nested collections, typed
+ * extraction, and retained references.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Node is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, read.
+ */
 class Node {
     public:
     int64 value
+
+    /*
+     * Constructs a Node and stores value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Node.
+     */
     Node(int64 initial) {
         value = initial
     }
+
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 read() {
         return(value)
     }
 }
 
+/*
+ * Catalog is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, read.
+ */
 class Catalog {
     public:
     dict content
+
+    /*
+     * Constructs a Catalog and stores content.
+     *
+     * Parameters:
+     *   initial — dict initial.
+     *
+     * Returns the constructed Catalog.
+     */
     Catalog(dict initial) {
         content = initial
     }
+
+    /*
+     * Returns the stored content.
+     *
+     * Takes no parameters.
+     *
+     * Returns dict.
+     */
     dict read() {
         return(content)
     }
@@ -65,7 +122,8 @@ start {
 
     try {
         dict absent = table["absent"]
-    } except() as error {
+    }
+    except() as error {
         print(error)
     }
 }

@@ -1,24 +1,104 @@
-# Exercises byte buffers, opaque native handles, dynamic values, collections, and inline capture.
+/*
+ * tests/functional/positive/positive_buffer_handle.cw
+ *
+ * Exercises byte buffers, opaque native handles, dynamic values, collections,
+ * and inline capture.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Native is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, save, recall, create, consume, identity,
+ * and 1 more.
+ */
 class Native {
     public:
     int64 marker
     handle saved
 
+    /*
+     * Constructs a Native and stores marker.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Native.
+     */
     Native(int64 initial) {
         marker = initial
     }
 
+    /*
+     * Stores value in saved.
+     *
+     * Parameters:
+     *   value — handle value.
+     *
+     * Does not return a value.
+     */
     void save(handle value) {
         saved = value
     }
 
+    /*
+     * Returns the stored saved.
+     *
+     * Takes no parameters.
+     *
+     * Returns handle.
+     */
     handle recall() {
         return(saved)
     }
 
+    /*
+     * Creates the Native state by calling the native function
+     * cwhip_method_demo_handle_create.
+     *
+     * Takes no parameters.
+     *
+     * Returns handle.
+     */
     handle create()
+
+    /*
+     * Handles consume for this Native by calling the native function
+     * cwhip_method_demo_handle_consume.
+     *
+     * Parameters:
+     *   value — handle value.
+     *
+     * Does not return a value.
+     */
     void consume(handle value)
+
+    /*
+     * Handles identity for this Native by calling the native function
+     * cwhip_method_demo_handle_identity.
+     *
+     * Parameters:
+     *   value — handle value.
+     *
+     * Returns handle.
+     */
     handle identity(handle value)
+
+    /*
+     * Handles identity buffer for this Native by calling the native function
+     * cwhip_method_demo_identity.
+     *
+     * Parameters:
+     *   value — buffer value.
+     *
+     * Returns buffer.
+     */
     buffer identityBuffer(buffer value)
 }
 
@@ -63,7 +143,8 @@ start {
     print(bytes.length)
     try {
         uint64 missing = bytes[0]
-    } except() as message {
+    }
+    except() as message {
         print(message)
     }
 

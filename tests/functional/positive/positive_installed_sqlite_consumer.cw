@@ -1,3 +1,16 @@
+/*
+ * tests/functional/positive/positive_installed_sqlite_consumer.cw
+ *
+ * Checks installed sqlite consumer.
+ *
+ * Created: 2026-10-06
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-06  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import sql as SQL
 import sqlite as SQLite
 import system as Sys

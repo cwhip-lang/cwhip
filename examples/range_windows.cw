@@ -1,11 +1,47 @@
+/*
+ * examples/range_windows.cw — Demonstrates range windows.
+ *
+ * Created: 2026-10-24
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-24  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Window is a class, used by this example.
+ *
+ * Its methods include reversed, total.
+ */
 class Window {
     public:
+    /*
+     * Returns last..first.
+     *
+     * Parameters:
+     *   first — int64 first.
+     *   last — int64 last.
+     *
+     * Returns range<int64>.
+     */
     range<int64> reversed(int64 first, int64 last) {
         return(last..first)
     }
+
+    /*
+     * Handles total for this Window.
+     *
+     * Parameters:
+     *   values — range<int64> values.
+     *
+     * Returns int64.
+     */
     int64 total(range<int64> values) {
         int64 sum = 0
-        for (value in values) { sum += value }
+        for (value in values) {
+            sum += value
+        }
         return(sum)
     }
 }

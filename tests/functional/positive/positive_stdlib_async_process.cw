@@ -1,17 +1,58 @@
+/*
+ * tests/functional/positive/positive_stdlib_async_process.cw
+ *
+ * Checks stdlib async process.
+ *
+ * Created: 2026-10-06
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-06  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import process as P
 import system as Sys
 import time as T
 
+/*
+ * Thread is a class, used as a fixture by this test.
+ *
+ * Its methods include launch, join.
+ */
 class Thread {
     public:
+    /*
+     * Handles launch for this Thread by calling the native function
+     * cwhip_thread_start.
+     *
+     * Takes no parameters.
+     *
+     * Returns handle.
+     */
     handle launch()
+
+    /*
+     * Handles join for this Thread by calling the native function
+     * cwhip_thread_join.
+     *
+     * Parameters:
+     *   worker — handle worker.
+     *
+     * Does not return a value.
+     */
     void join(handle worker)
 }
 
 handle Thread.launch() from "cwhip_thread_start"
 void Thread.join(handle worker) from "cwhip_thread_join"
 
-# Drains every event until the single completion event, keeping bytes lossless.
+/*
+ * Collector is a class, used as a fixture by this test.
+ *
+ * Drains every event until the single completion event, keeping bytes
+ * lossless.
+ */
 class Collector {
     public:
     buffer out
@@ -23,6 +64,13 @@ class Collector {
     P.OutputDecoder outDecoder
     P.OutputDecoder errDecoder
 
+    /*
+     * Constructs a Collector and stores outDecoder, errDecoder, out, err.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Collector.
+     */
     Collector() {
         outDecoder = P.OutputDecoder()
         errDecoder = P.OutputDecoder()
@@ -34,6 +82,15 @@ class Collector {
         events = 0
     }
 
+    /*
+     * Adds the Collector state.
+     *
+     * Parameters:
+     *   target — buffer target.
+     *   chunk — buffer chunk.
+     *
+     * Does not return a value.
+     */
     void add(buffer target, buffer chunk) {
         int64 index = 0
         while (index < chunk.length) {
@@ -42,14 +99,25 @@ class Collector {
         }
     }
 
+    /*
+     * Handles drain for this Collector.
+     *
+     * Parameters:
+     *   child — P.AsyncProcess child.
+     *
+     * Does not return a value.
+     */
     void drain(P.AsyncProcess child) {
+
         bool done = false
         while (!done) {
+
             P.ProcessEvent event = child.next(10000)
             if (event == null) {
                 print("unexpected timeout")
                 done = true
-            } else {
+            }
+            else {
                 events = events + 1
                 if (event.isStdout()) {
                     add(out, event.data())
@@ -66,27 +134,44 @@ class Collector {
                     done = true
                 }
             }
+
         }
+
     }
 }
 
-# Counts byte totals only, for output much larger than a pipe's capacity.
+/*
+ * Counter is a class, used as a fixture by this test.
+ *
+ * Counts byte totals only, for output much larger than a pipe's capacity.
+ */
 class Counter {
     public:
     int64 outBytes
     int64 errBytes
     int64 outChunks
 
+    /*
+     * Handles drain for this Counter.
+     *
+     * Parameters:
+     *   child — P.AsyncProcess child.
+     *
+     * Does not return a value.
+     */
     void drain(P.AsyncProcess child) {
         outBytes = 0
         errBytes = 0
         outChunks = 0
+
         bool done = false
         while (!done) {
+
             P.ProcessEvent event = child.next(10000)
             if (event == null) {
                 done = true
-            } else {
+            }
+            else {
                 if (event.isStdout()) {
                     outBytes = outBytes + event.data().length
                     outChunks = outChunks + 1
@@ -98,20 +183,41 @@ class Counter {
                     done = true
                 }
             }
+
         }
+
     }
 }
 
+/*
+ * Ticker is a class derived from Thread, used as a fixture by this test.
+ *
+ * Its methods include constructor, run.
+ */
 class Ticker : Thread {
     public:
     int64 ticks
     bool stop
 
+    /*
+     * Constructs a Ticker and stores ticks, stop.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Ticker.
+     */
     Ticker() {
         ticks = 0
         stop = false
     }
 
+    /*
+     * Handles run for this Ticker.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void run() {
         while (!stop) {
             ticks = ticks + 1
@@ -120,22 +226,45 @@ class Ticker : Thread {
     }
 }
 
+/*
+ * BlockedReader is a class derived from Thread, used as a fixture by this
+ * test.
+ *
+ * Its methods include constructor, run.
+ */
 class BlockedReader : Thread {
     public:
     P.AsyncProcess child
     bool returned
     bool useWait
 
+    /*
+     * Constructs a BlockedReader and stores child, returned, useWait.
+     *
+     * Parameters:
+     *   target — P.AsyncProcess target.
+     *   waitInstead — bool wait instead.
+     *
+     * Returns the constructed BlockedReader.
+     */
     BlockedReader(P.AsyncProcess target, bool waitInstead) {
         child = target
         returned = false
         useWait = waitInstead
     }
 
+    /*
+     * Handles run for this BlockedReader.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void run() {
         if (useWait) {
             child.wait(-1)
-        } else {
+        }
+        else {
             child.next(-1)
             child.next(-1)
         }
@@ -143,21 +272,42 @@ class BlockedReader : Thread {
     }
 }
 
+/*
+ * Closer is a class derived from Thread, used as a fixture by this test.
+ *
+ * Its methods include constructor, run.
+ */
 class Closer : Thread {
     public:
     P.AsyncProcess child
 
+    /*
+     * Constructs a Closer and stores child.
+     *
+     * Parameters:
+     *   target — P.AsyncProcess target.
+     *
+     * Returns the constructed Closer.
+     */
     Closer(P.AsyncProcess target) {
         child = target
     }
 
+    /*
+     * Handles run for this Closer.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void run() {
         child.close()
     }
 }
 
 start {
-    # argv is passed verbatim: spaces and shell metacharacters are not interpreted.
+    # argv is passed verbatim: spaces and shell metacharacters are not
+    # interpreted.
     P.AsyncProcess quoted = P.AsyncProcess("/usr/bin/printf",
         ["[%s]", "a b", "$(echo x)", ";|&<>", "'q'", "*", ""])
     print(quoted.started())
@@ -207,7 +357,8 @@ start {
     print(large.exitCode() == 0)
     large.close()
 
-    # Binary output is delivered byte-for-byte, including NUL and non-UTF-8 bytes.
+    # Binary output is delivered byte-for-byte, including NUL and non-UTF-8
+    # bytes.
     P.AsyncProcess binary = P.AsyncProcess("/usr/bin/printf", ["\\000\\377\\200A\\n"])
     Collector binaryOutput = Collector()
     binaryOutput.drain(binary)
@@ -247,7 +398,8 @@ start {
     print(missing.started() == false)
     print(Sys.System().lastError().length > 0)
     print(missing.state() == P.AsyncProcess.LAUNCH_FAILED)
-    print(missing.error().startsWith("cannot start '/definitely/not/a/cwhip-command'"))
+    print(missing.error().startsWith(
+            "cannot start '/definitely/not/a/cwhip-command'"))
     print(missing.finished())
     P.ProcessEvent failedEvent = missing.next(-1)
     print(failedEvent.isCompleted())

@@ -1,3 +1,14 @@
+/*
+ * tests/functional/positive/positive_inline_stdlib.cw — Checks inline stdlib.
+ *
+ * Created: 2026-10-09
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-09  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import math as M
 import system as Sys
 
@@ -23,11 +34,28 @@ start {
     strg childOutput
     strg missing = "/this/path/does/not/exist"
     bool failed = false
-    inline (fp64 root, uint64 clock, bool ok, strg path, strg mode,
-            strg message, strg result, strg error, strg pattern, list matches,
-            buffer bytes, handle file, handle mutex, handle condition, handle semaphore,
-            handle child, strg executable, list arguments, strg childOutput,
-            strg missing, bool failed) {
+    inline (
+            fp64 root,
+            uint64 clock,
+            bool ok,
+            strg path,
+            strg mode,
+            strg message,
+            strg result,
+            strg error,
+            strg pattern,
+            list matches,
+            buffer bytes,
+            handle file,
+            handle mutex,
+            handle condition,
+            handle semaphore,
+            handle child,
+            strg executable,
+            list arguments,
+            strg childOutput,
+            strg missing,
+            bool failed) {
         *root = cwhip_math_sqrt(NULL, 9.0);
         *clock = cwhip_time_monotonic_milliseconds(NULL);
         *path = cwhip_fs_temp_file(NULL);

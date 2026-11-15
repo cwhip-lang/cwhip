@@ -1,19 +1,67 @@
-# A finalizer rewrites a live string during a range copy, trim, and split.
-# Each result must be the bytes observed at the start of that call.
+/*
+ * tests/functional/positive/positive_string_bytes_across_collection.cw
+ *
+ * A finalizer rewrites a live string during a range copy, trim, and split.
+ * Each result must be the bytes observed at the start of that call.
+ *
+ * Created: 2026-10-28
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-28  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Box is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Box {
     public:
     strg text
+
+    /*
+     * Constructs a Box and stores text.
+     *
+     * Parameters:
+     *   value — strg value.
+     *
+     * Returns the constructed Box.
+     */
     Box(strg value) {
         text = value
     }
 }
 
+/*
+ * Mutator is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Mutator {
     public:
     Box box
+
+    /*
+     * Constructs a Mutator and stores box.
+     *
+     * Parameters:
+     *   target — Box target.
+     *
+     * Returns the constructed Mutator.
+     */
     Mutator(Box target) {
         box = target
     }
+
+    /*
+     * Destroys this object and runs the cleanup owned by the instance.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     destroy {
         strg text = box.text
         text.clear()
@@ -24,8 +72,21 @@ class Mutator {
     }
 }
 
+/*
+ * Maker is a class, used as a fixture by this test.
+ *
+ * Its methods include abandon.
+ */
 class Maker {
     public:
+    /*
+     * Handles abandon for this Maker.
+     *
+     * Parameters:
+     *   box — Box box.
+     *
+     * Does not return a value.
+     */
     void abandon(Box box) {
         Mutator gone = Mutator(box)
     }

@@ -1,7 +1,25 @@
-# Exercises the stdlib cli package: attached shorts, list separators, defaults,
-# help/version actions, counters, multiple positionals, and remainder capture.
+/*
+ * tests/functional/positive/positive_stdlib_cli.cw
+ *
+ * Exercises the stdlib cli package: attached shorts, list separators,
+ * defaults, help/version actions, counters, multiple positionals, and
+ * remainder capture.
+ *
+ * Created: 2026-10-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import cli as Cli
 
+/*
+ * Fixture is a class, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
 class Fixture {
     public:
     Cli.CommandLine makeParser() {
@@ -93,7 +111,8 @@ start {
     try {
         list onlySource = ["source.cw"]
         commandLine.parse(onlySource)
-    } except() as error {
+    }
+    except() as error {
         failedRequired = format("{}", error).contains("required option")
     }
     print(failedRequired)
@@ -108,7 +127,8 @@ start {
         commandLine = fixture.makeParser()
         list bad = ["--unknown", "--count", "1", "x"]
         commandLine.parse(bad)
-    } except() as error {
+    }
+    except() as error {
         unknown = format("{}", error).contains("unknown option")
     }
     print(unknown)

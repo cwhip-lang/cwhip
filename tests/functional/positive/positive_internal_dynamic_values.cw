@@ -1,14 +1,67 @@
-# Exercises the permitted uses of collection values without declaring any.
+/*
+ * tests/functional/positive/positive_internal_dynamic_values.cw
+ *
+ * Exercises the permitted uses of collection values without declaring any.
+ *
+ * Created: 2026-09-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Holder is a class, used as a fixture by this test.
+ *
+ * Its methods include set, get.
+ */
 class Holder {
     public:
     int64 value
-    void set(int64 input) { value = input }
-    int64 get() { return(value)}
+
+    /*
+     * Stores input in value.
+     *
+     * Parameters:
+     *   input — int64 input.
+     *
+     * Does not return a value.
+     */
+    void set(int64 input) {
+        value = input
+    }
+
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
+    int64 get() {
+        return(value)
+    }
 }
 
+/*
+ * Reader is a class, used as a fixture by this test.
+ *
+ * Its methods include read.
+ */
 class Reader {
     public:
-    int64 read(list values) { return(values[0])}
+    /*
+     * Returns values[0].
+     *
+     * Parameters:
+     *   values — list values.
+     *
+     * Returns int64.
+     */
+    int64 read(list values) {
+        return(values[0])
+    }
 }
 
 start {

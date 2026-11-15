@@ -1,15 +1,66 @@
-# Exercises scalar compound arithmetic, field targets, and one-time receiver evaluation.
+/*
+ * tests/functional/positive/positive_scalar_compound_assignments.cw
+ *
+ * Exercises scalar compound arithmetic, field targets, and one-time receiver
+ * evaluation.
+ *
+ * Created: 2026-10-01
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-01  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Box is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Box {
     public:
     int64 value
-    Box() {}
+
+    /*
+     * Constructs a Box.
+     *
+     * Takes no parameters.
+     *
+     * Returns the constructed Box.
+     */
+    Box() {
+    }
 }
 
+/*
+ * Factory is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, get.
+ */
 class Factory {
     public:
     Box box
     int64 calls
-    Factory(Box value) { box = value }
+
+    /*
+     * Constructs a Factory and stores box.
+     *
+     * Parameters:
+     *   value — Box value.
+     *
+     * Returns the constructed Factory.
+     */
+    Factory(Box value) {
+        box = value
+    }
+
+    /*
+     * Returns the Factory state.
+     *
+     * Takes no parameters.
+     *
+     * Returns Box.
+     */
     Box get() {
         calls += 1
         return(box)
@@ -50,7 +101,8 @@ start {
     int64 wrapped = 9223372036854775807
     try {
         wrapped += 1
-    } except() as error {
+    }
+    except() as error {
         print(error)
     }
     print(wrapped)

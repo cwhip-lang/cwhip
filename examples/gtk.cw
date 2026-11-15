@@ -1,6 +1,22 @@
+/*
+ * examples/gtk.cw — Demonstrates gtk.
+ *
+ * Created: 2026-10-06
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-06  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import gtk
 import system
 
+/*
+ * Editor is a class, used by this example.
+ *
+ * Its methods include activate, edit, toggle, close, test.
+ */
 class Editor {
     public:
     Gtk.Window window
@@ -12,6 +28,13 @@ class Editor {
     void<> closeAction
     void<> testAction
 
+    /*
+     * Handles activate for this Editor.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         if (window != null) {
             if (!window.disposed()) {
@@ -42,9 +65,49 @@ class Editor {
             Gtk.Application().post(testAction)
         }
     }
-    void edit(String text) { preview.setText(text) }
-    void toggle(bool active) { entry.setSensitive(active) }
-    void close() { window.close() }
+
+    /*
+     * Handles edit for this Editor.
+     *
+     * Parameters:
+     *   text — String text.
+     *
+     * Does not return a value.
+     */
+    void edit(String text) {
+        preview.setText(text)
+    }
+
+    /*
+     * Handles toggle for this Editor.
+     *
+     * Parameters:
+     *   active — bool active.
+     *
+     * Does not return a value.
+     */
+    void toggle(bool active) {
+        entry.setSensitive(active)
+    }
+
+    /*
+     * Closes the Editor state.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
+    void close() {
+        window.close()
+    }
+
+    /*
+     * Handles test for this Editor.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void test() {
         entry.setText("Hello GTK")
         print(preview.text())

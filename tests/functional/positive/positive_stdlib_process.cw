@@ -1,3 +1,16 @@
+/*
+ * tests/functional/positive/positive_stdlib_process.cw
+ *
+ * Checks stdlib process.
+ *
+ * Created: 2026-10-01
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-01  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import process as Child
 import system as Sys
 

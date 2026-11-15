@@ -1,21 +1,68 @@
-# A const local accepts one value. A later store raises a catchable exception.
+/*
+ * tests/functional/positive/positive_const_locals.cw
+ *
+ * A const local accepts one value. A later store raises a catchable exception.
+ *
+ * Created: 2026-11-14
+ * Author: Auto
+ *
+ * Changelog:
+ *   2026-11-14  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Box is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, read, write, step.
+ */
 class Box {
     public:
     int64 value
 
+    /*
+     * Constructs a Box and stores seed, value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Box.
+     */
     Box(int64 initial) {
         const int64 seed = initial
         value = seed
     }
 
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 read() {
         return(value)
     }
 
+    /*
+     * Stores next in value.
+     *
+     * Parameters:
+     *   next — int64 next.
+     *
+     * Does not return a value.
+     */
     void write(int64 next) {
         value = next
     }
 
+    /*
+     * Handles step for this Box.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 step() {
         const int64 amount = 1
         return(value + amount)
@@ -27,7 +74,8 @@ start {
     try {
         fixed = 2
         print("missed-fixed")
-    } except() as error {
+    }
+    except() as error {
         print(error)
     }
     print(fixed)
@@ -38,7 +86,8 @@ start {
     try {
         later = 4
         print("missed-later")
-    } except() as error {
+    }
+    except() as error {
         print("later")
     }
     print(later)
@@ -50,7 +99,8 @@ start {
     try {
         branched = 6
         print("missed-branch")
-    } except() as error {
+    }
+    except() as error {
         print("branch")
     }
 
@@ -63,7 +113,8 @@ start {
     try {
         open = 9
         print("missed-open")
-    } except() as error {
+    }
+    except() as error {
         print("open")
     }
     print(open)
@@ -72,7 +123,8 @@ start {
     try {
         count += 1
         print("missed-count")
-    } except() as error {
+    }
+    except() as error {
         print("count")
     }
     print(count)
@@ -82,7 +134,8 @@ start {
     try {
         grown += 1
         print("missed-grown")
-    } except() as error {
+    }
+    except() as error {
         print("grown")
     }
     print(grown)
@@ -94,7 +147,8 @@ start {
     try {
         item = Box(14)
         print("missed-item")
-    } except() as error {
+    }
+    except() as error {
         print("item")
     }
     print(item.read())
@@ -105,7 +159,8 @@ start {
     try {
         numbers = [16]
         print("missed-list")
-    } except() as error {
+    }
+    except() as error {
         print("list")
     }
     print(numbers[0])

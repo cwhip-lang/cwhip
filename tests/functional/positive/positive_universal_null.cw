@@ -1,12 +1,37 @@
-# Exercises the universal-null model (confirmed): null is a single value
-# assignable to every type, including scalars, with no flow-sensitive
-# null analysis. Printing a null value of any type prints "(null)";
-# member access on a null reference raises an exception; every other use
-# of a null scalar decays to that type's zero value.
+/*
+ * tests/functional/positive/positive_universal_null.cw
+ *
+ * Exercises the universal-null model (confirmed): null is a single value
+ * assignable to every type, including scalars, with no flow-sensitive null
+ * analysis. Printing a null value of any type prints "(null)"; member access
+ * on a null reference raises an exception; every other use of a null scalar
+ * decays to that type's zero value.
+ *
+ * Created: 2026-09-29
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-09-29  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Holder is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Holder {
     public:
     int64 value
 
+    /*
+     * Constructs a Holder and stores value.
+     *
+     * Parameters:
+     *   initialValue — int64 initial value.
+     *
+     * Returns the constructed Holder.
+     */
     Holder(int64 initialValue) {
         value = initialValue
     }
@@ -45,7 +70,8 @@ start {
     print(missing == null)
     try {
         print(missing.value)
-    } except() {
+    }
+    except() {
         print("caught")
     }
 

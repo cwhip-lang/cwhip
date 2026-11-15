@@ -1,13 +1,74 @@
+/*
+ * tests/functional/positive/positive_checked_extractions.cw
+ *
+ * Checks checked extractions.
+ *
+ * Created: 2026-10-04
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-04  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Base is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, read.
+ */
 class Base {
     public:
     int64 value
-    Base(int64 initial) { value = initial }
-    int64 read() { return(value)}
+
+    /*
+     * Constructs a Base and stores value.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Base.
+     */
+    Base(int64 initial) {
+        value = initial
+    }
+
+    /*
+     * Returns the stored value.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
+    int64 read() {
+        return(value)
+    }
 }
+
+/*
+ * Derived is a class derived from Base, used as a fixture by this test.
+ *
+ * Its methods include constructor.
+ */
 class Derived : Base {
     public:
-    Derived(int64 initial) { super Base(initial) }
+    /*
+     * Constructs a Derived.
+     *
+     * Parameters:
+     *   initial — int64 initial.
+     *
+     * Returns the constructed Derived.
+     */
+    Derived(int64 initial) {
+        super Base(initial)
+    }
 }
+
+/*
+ * Native is a class, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
 class Native {
     public:
     handle saved
@@ -78,54 +139,105 @@ start {
 
     try {
         int64 wrong = payloads[1] as int64
-    } except(Exception) { print("int mismatch") }
+    }
+    except(Exception) {
+        print("int mismatch")
+    }
     try {
         uint64 wrong = payloads[0] as uint64
-    } except(Exception) { print("unsigned mismatch") }
+    }
+    except(Exception) {
+        print("unsigned mismatch")
+    }
     try {
         bool wrong = payloads[0] as bool
-    } except(Exception) { print("bool mismatch") }
+    }
+    except(Exception) {
+        print("bool mismatch")
+    }
     try {
         fp64 wrong = payloads[0] as fp64
-    } except(Exception) { print("float mismatch") }
+    }
+    except(Exception) {
+        print("float mismatch")
+    }
     try {
         strg wrong = payloads[0] as strg
-    } except(Exception) { print("string mismatch") }
+    }
+    except(Exception) {
+        print("string mismatch")
+    }
     try {
         list wrong = payloads[0] as list
-    } except(Exception) { print("list mismatch") }
+    }
+    except(Exception) {
+        print("list mismatch")
+    }
     try {
         dict wrong = payloads[0] as dict
-    } except(Exception) { print("dict mismatch") }
+    }
+    except(Exception) {
+        print("dict mismatch")
+    }
     try {
         buffer wrong = payloads[0] as buffer
-    } except(Exception) { print("buffer mismatch") }
+    }
+    except(Exception) {
+        print("buffer mismatch")
+    }
     try {
         handle wrong = payloads[0] as handle
-    } except(Exception) { print("handle mismatch") }
+    }
+    except(Exception) {
+        print("handle mismatch")
+    }
     try {
         type wrong = payloads[0] as type
-    } except(Exception) { print("type mismatch") }
+    }
+    except(Exception) {
+        print("type mismatch")
+    }
     try {
         Derived wrong = payloads[0] as Derived
-    } except(Exception) { print("class mismatch") }
+    }
+    except(Exception) {
+        print("class mismatch")
+    }
     try {
         print(type(payloads[0] as null))
-    } except(Exception) { print("null mismatch") }
+    }
+    except(Exception) {
+        print("null mismatch")
+    }
     try {
         list nullList = [null]
         list wrong = nullList[0] as list
-    } except(Exception) { print("list null extraction mismatch") }
+    }
+    except(Exception) {
+        print("list null extraction mismatch")
+    }
     try {
         list wrong = payloads[11] as list
-    } except(Exception) { print("null list extraction mismatch") }
+    }
+    except(Exception) {
+        print("null list extraction mismatch")
+    }
     try {
         dict wrong = payloads[11] as dict
-    } except(Exception) { print("null dict extraction mismatch") }
+    }
+    except(Exception) {
+        print("null dict extraction mismatch")
+    }
     try {
         int64 wrong = null as int64
-    } except(Exception) { print("null scalar mismatch") }
+    }
+    except(Exception) {
+        print("null scalar mismatch")
+    }
     try {
         Base wrong = payloads[0] as Base
-    } except(Exception) { print("object mismatch") }
+    }
+    except(Exception) {
+        print("object mismatch")
+    }
 }

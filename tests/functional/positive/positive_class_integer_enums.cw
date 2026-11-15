@@ -1,3 +1,21 @@
+/*
+ * tests/functional/positive/positive_class_integer_enums.cw
+ *
+ * Checks class integer enums.
+ *
+ * Created: 2026-10-04
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-04  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
+/*
+ * Values is a class, used as a fixture by this test.
+ *
+ * Its methods include read, echo.
+ */
 class Values {
     public:
     enum {
@@ -9,27 +27,68 @@ class Values {
         SAME_VALUE = 123,
     }
 
+    /*
+     * Returns the stored FIRST.
+     *
+     * Takes no parameters.
+     *
+     * Returns int64.
+     */
     int64 read() {
         return(FIRST)
     }
 
+    /*
+     * Returns the stored value.
+     *
+     * Parameters:
+     *   value — int64 value.
+     *
+     * Returns int64.
+     */
     int64 echo(int64 value) {
         return(value)
     }
 }
 
-class Child : Values {}
+/*
+ * Child is a class derived from Values, used as a fixture by this test.
+ *
+ * It groups the data used by the surrounding program.
+ */
+class Child : Values {
+}
 
+/*
+ * Probe is a class, used as a fixture by this test.
+ *
+ * Its methods include constructor, next.
+ */
 class Probe {
     public:
     Values value
     int64 calls
 
+    /*
+     * Constructs a Probe and stores value, calls.
+     *
+     * Parameters:
+     *   initial — Values initial.
+     *
+     * Returns the constructed Probe.
+     */
     Probe(Values initial) {
         value = initial
         calls = 0
     }
 
+    /*
+     * Handles next for this Probe.
+     *
+     * Takes no parameters.
+     *
+     * Returns Values.
+     */
     Values next() {
         calls += 1
         return(value)
@@ -37,9 +96,17 @@ class Probe {
 }
 
 namespace Named {
+
+    /*
+     * Item is a class, used as a fixture by this test.
+     *
+     * It groups the data used by the surrounding program.
+     */
     class Item {
         public:
-        enum { VALUE = 50 }
+        enum {
+            VALUE = 50
+        }
     }
 }
 

@@ -1,12 +1,46 @@
+/*
+ * tests/repro/gtk/sourceview_editing.cw — sourceview editing.
+ *
+ * Created: 2026-10-30
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-30  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import system
+
+/*
+ * UI is a class, used as a fixture by this test.
+ *
+ * Its methods include require, activate.
+ */
 class UI {
     public:
+    /*
+     * Handles require for this UI.
+     *
+     * Parameters:
+     *   condition — bool condition.
+     *   label — String label.
+     *
+     * Does not return a value.
+     */
     void require(bool condition, String label) {
         if (!condition) {
             System.StandardIO().writeErrorLine(label)
             System.Process().exit(1)
         }
     }
+
+    /*
+     * Handles activate for this UI.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         Gtk.Window window = Gtk.Window("SourceView SDK")
         Gtk.Notebook tabs = Gtk.Notebook()
@@ -16,12 +50,28 @@ class UI {
         tabs.appendPage(view.widget(), "source")
         tabs.appendPage(other.widget(), "plain")
         require(tabs.pageCount() == 2, "notebook pages")
-        require(GtkSource.Content().languageFor("fixture.cw").equals("cwhip"), "file language")
-        require(GtkSource.Content().languageFor("notes.txt").equals(""), "plain file")
-        require(GtkSource.Content().languageFor("main.py").equals("python3"), "python file")
-        require(view.setLanguage("cwhip") && view.language().equals("cwhip"), "Cwhip language")
-        require(other.setLanguage("python3") && other.language().equals("python3"), "python language")
-        require(other.setLanguage("") && other.language().equals(""), "clear language")
+        require(
+                GtkSource.Content().languageFor("fixture.cw").equals(
+                "cwhip"),
+                "file language")
+        require(
+                GtkSource.Content().languageFor("notes.txt").equals(
+                ""),
+                "plain file")
+        require(
+                GtkSource.Content().languageFor("main.py").equals(
+                "python3"),
+                "python file")
+        require(
+                view.setLanguage("cwhip") && view.language().equals(
+                "cwhip"),
+                "Cwhip language")
+        require(other.setLanguage("python3") && other.language().equals(
+                "python3"), "python language")
+        require(
+                other.setLanguage("") && other.language().equals(
+                ""),
+                "clear language")
         view.configure("Monospace", 14, 3, true, true, true, true)
         Keys().viewProperties(view._widgetToken(), 3, true)
         view.configure("Monospace", 12, 8, false, false, false, false)
@@ -33,20 +83,32 @@ class UI {
         view.setShowWhitespace(false)
         view.setShowIndentMarkers(false)
         Keys().viewDisplay(view._widgetToken(), false, false)
-        view.setText("start {\n// comment\nstrg name = \"Cwhip\"\nint64 count = 42\n}\n")
+        view.setText(
+                "start {\n// comment\nstrg name = \"Cwhip\"\nint64 count = 42\n}\n")
         require(view.hasContextAt("keyword", 0), "keyword highlighting")
         require(view.hasContextAt("comment", 12), "comment highlighting")
         require(view.hasContextAt("string", 32), "string highlighting")
         require(view.hasContextAt("number", 53), "number highlighting")
         other.setText("plain")
-        require(other.language().equals("") && !other.hasContextAt("keyword", 0), "plain text")
-        require(!view.setLanguage("not-a-language") && view.language().equals("cwhip"), "invalid language")
+        require(
+                other.language().equals("") && !other.hasContextAt(
+                "keyword",
+                0),
+                "plain text")
+        require(!view.setLanguage("not-a-language") && view.language().equals(
+                "cwhip"), "invalid language")
         view.markSaved()
         require(!view.modified(), "saved buffer")
         view.setCursor(1, 1)
-        require(view.find("Cwhip") && view.selectedText().equals("Cwhip"), "find")
+        require(
+                view.find("Cwhip") && view.selectedText().equals(
+                "Cwhip"),
+                "find")
         require(view.replaceNext("Cwhip", "SDK"), "replace")
-        require(view.modified() && view.text().contains("\"SDK\""), "modified buffer")
+        require(
+                view.modified() && view.text().contains(
+                "\"SDK\""),
+                "modified buffer")
         require(view.canUndo(), "can undo")
         view.undo()
         require(view.text().contains("\"Cwhip\""), "undo")
@@ -60,15 +122,26 @@ class UI {
         require(file.readAll().equals(view.text()), "file round trip")
         file.close()
         view.markSaved()
-        require(!view.modified() && other.text().equals("plain"), "independent buffers")
+        require(
+                !view.modified() && other.text().equals(
+                "plain"),
+                "independent buffers")
         view.setText("one\ntwo\nthree\n")
         view.setRightMargin(true, 80)
-        require(view.rightMarginShown() && view.rightMarginColumn() == 80, "right margin")
+        require(
+                view.rightMarginShown() && view.rightMarginColumn() == 80,
+                "right margin")
         view.setRightMargin(false, 120)
-        require(!view.rightMarginShown() && view.rightMarginColumn() == 120, "margin column kept")
+        require(
+                !view.rightMarginShown() && view.rightMarginColumn() == 120,
+                "margin column kept")
         view.selectRange(1, 1, 2, 4)
-        require(view.selectionStartLine() == 1 && view.selectionStartColumn() == 1 &&
-            view.selectionEndLine() == 2 && view.selectionEndColumn() == 4, "selection bounds")
+        require(
+                view.selectionStartLine() == 1
+                && view.selectionStartColumn() == 1
+                && view.selectionEndLine() == 2
+                && view.selectionEndColumn() == 4,
+                "selection bounds")
         view.beginUserAction()
         view.insertText(1, 4, "-x")
         view.endUserAction()

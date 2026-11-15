@@ -1,3 +1,16 @@
+/*
+ * tests/functional/positive/positive_stdlib_terminal_random.cw
+ *
+ * Checks stdlib terminal random.
+ *
+ * Created: 2026-10-01
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-01  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import random as Random
 import terminal as Terminal
 import system as Sys

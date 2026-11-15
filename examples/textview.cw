@@ -1,8 +1,23 @@
+/*
+ * examples/textview.cw — Demonstrates textview.
+ *
+ * Created: 2026-11-09
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-11-09  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import gtk
 import system
 
-// Demonstrates Gtk.TextView: multiline set/get text, wrap/editable, and
-// onChanged for compose-style panes.
+/*
+ * Demo is a class, used by this example.
+ *
+ * Demonstrates Gtk.TextView: multiline set/get text, wrap/editable, and
+ * onChanged for compose-style panes.
+ */
 class Demo {
     public:
     Gtk.Window window
@@ -12,19 +27,52 @@ class Demo {
     void<String> changedAction
     void<> testAction
 
+    /*
+     * Updates readout for this Demo.
+     *
+     * Parameters:
+     *   text — String text.
+     *
+     * Does not return a value.
+     */
     void updateReadout(String text) {
         readout.setText(format("chars={}  changes={}  wrap={}",
             text.length, changes, body.wrap()))
     }
+
+    /*
+     * Handles edited for this Demo.
+     *
+     * Parameters:
+     *   text — String text.
+     *
+     * Does not return a value.
+     */
     void edited(String text) {
         changes = changes + 1
         updateReadout(text)
     }
+
+    /*
+     * Handles test for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void test() {
         body.setText("line one\nline two")
         print("Hello TextView")
         window.close()
     }
+
+    /*
+     * Handles activate for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         window = Gtk.Window("Cwhip GTK TextView")
         window.setDefaultSize(420, 240)

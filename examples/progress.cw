@@ -1,8 +1,23 @@
+/*
+ * examples/progress.cw — Demonstrates progress.
+ *
+ * Created: 2026-11-08
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-11-08  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import gtk
 import system
 
-// Demonstrates Gtk.ProgressBar: determinate fraction with overlay text,
-// and indeterminate pulse mode for unknown ETA.
+/*
+ * Demo is a class, used by this example.
+ *
+ * Demonstrates Gtk.ProgressBar: determinate fraction with overlay text, and
+ * indeterminate pulse mode for unknown ETA.
+ */
 class Demo {
     public:
     Gtk.Window window
@@ -13,10 +28,25 @@ class Demo {
     void<> tickAction
     void<> testAction
 
+    /*
+     * Updates readout for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void updateReadout() {
         readout.setText(format("fraction={}  pulses={}  pulseStep={}",
             determinate.fraction(), pulses, pulsing.pulseStep()))
     }
+
+    /*
+     * Handles tick for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void tick() {
         pulses = pulses + 1
         pulsing.pulse()
@@ -25,6 +55,14 @@ class Demo {
             Gtk.Application().schedule(50, tickAction)
         }
     }
+
+    /*
+     * Handles test for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void test() {
         determinate.setFraction(0.75f64)
         determinate.setText("75%")
@@ -35,6 +73,14 @@ class Demo {
         print("Hello ProgressBar")
         window.close()
     }
+
+    /*
+     * Handles activate for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         window = Gtk.Window("Cwhip GTK ProgressBar")
         window.setDefaultSize(420, 180)
@@ -61,7 +107,8 @@ class Demo {
         window.present()
         if (System.Process().arg(1).equals("--test")) {
             Gtk.Application().post(testAction)
-        } else {
+        }
+        else {
             Gtk.Application().schedule(50, tickAction)
         }
     }

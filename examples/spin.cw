@@ -1,8 +1,23 @@
+/*
+ * examples/spin.cw — Demonstrates spin.
+ *
+ * Created: 2026-11-09
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-11-09  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 import gtk
 import system
 
-// Demonstrates Gtk.SpinButton: range/step configure, get/set value, and
-// value-changed callbacks for bounded numeric entry.
+/*
+ * Demo is a class, used by this example.
+ *
+ * Demonstrates Gtk.SpinButton: range/step configure, get/set value, and
+ * value-changed callbacks for bounded numeric entry.
+ */
 class Demo {
     public:
     Gtk.Window window
@@ -13,19 +28,51 @@ class Demo {
     void<fp64> changedAction
     void<> testAction
 
+    /*
+     * Updates readout for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void updateReadout() {
         readout.setText(format("value={}  changes={}", lastValue, changes))
     }
+
+    /*
+     * Handles moved for this Demo.
+     *
+     * Parameters:
+     *   value — fp64 value.
+     *
+     * Does not return a value.
+     */
     void moved(fp64 value) {
         lastValue = value
         changes = changes + 1
         updateReadout()
     }
+
+    /*
+     * Handles test for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void test() {
         spin.setValue(42.0f64)
         print("Hello SpinButton")
         window.close()
     }
+
+    /*
+     * Handles activate for this Demo.
+     *
+     * Takes no parameters.
+     *
+     * Does not return a value.
+     */
     void activate() {
         window = Gtk.Window("Cwhip GTK SpinButton")
         window.setDefaultSize(360, 140)

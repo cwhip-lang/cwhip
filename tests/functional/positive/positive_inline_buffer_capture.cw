@@ -1,3 +1,16 @@
+/*
+ * tests/functional/positive/positive_inline_buffer_capture.cw
+ *
+ * Checks inline buffer capture.
+ *
+ * Created: 2026-10-09
+ * Author: chuck
+ *
+ * Changelog:
+ *   2026-10-09  Initial file.
+ *   2026-11-15  Apply the Cwhip coding standard.
+ */
+
 start {
     buffer bytes = buffer(2)
     inline (buffer bytes) {

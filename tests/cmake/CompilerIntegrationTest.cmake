@@ -317,7 +317,7 @@ if(DEBUG_INFO)
             execute_process(
                 COMMAND "${DEBUGGER_EXECUTABLE}" --batch --quiet --nx
                     -ex "set pagination off"
-                    -ex "break ${SOURCE}:4"
+                    -ex "break ${SOURCE}:28"
                     -ex run
                     -ex next
                     -ex next
@@ -329,12 +329,12 @@ if(DEBUG_INFO)
                 ERROR_VARIABLE stepping_stderr
             )
             if(NOT stepping_result EQUAL 0 OR
-               NOT stepping_stdout MATCHES "${debug_fixture_name}:13" OR
-               NOT stepping_stdout MATCHES "14[\t ]+answer = answer \\+ 1" OR
+               NOT stepping_stdout MATCHES "${debug_fixture_name}:37" OR
+               NOT stepping_stdout MATCHES "38[\t ]+answer = answer \\+ 1" OR
                stepping_stdout MATCHES "in \\?\\?" OR
                stepping_stderr MATCHES "Cannot find bounds")
                 message(FATAL_ERROR
-                    "DWARF method return/next did not reach caller lines 13 and 14:\n${stepping_stdout}\n${stepping_stderr}")
+                    "DWARF method return/next did not reach caller lines 37 and 38:\n${stepping_stdout}\n${stepping_stderr}")
             endif()
             execute_process(
                 COMMAND "${DEBUGGER_EXECUTABLE}" --batch --quiet --nx
